@@ -1,17 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Settings, Music, Video, Camera, Globe, ChevronDown, Check, HelpCircle } from 'lucide-react';
-import CountdownBar from '../components/CountdownBar';
-import Navbar from '../components/Navbar';
-import HeroCard from '../components/HeroCard';
-import FeatureGrid from '../components/FeatureGrid';
+import React, { useState, useEffect, useRef } from 'react';
+import { Shield, Settings, Music, Video, Camera, Globe, Trash2 } from 'lucide-react';
 
+// LOTES CONFIGURATION (Matches PDF and DB Seeding exactly)
 interface LoteState {
   status: 'ativo' | 'encerrado' | 'em_breve';
   vagasRestantes: number;
   valor: number;
+  desc: string;
 }
 
 interface LotesConfig {
@@ -26,9 +23,9 @@ interface LotesConfig {
 
 export default function Page() {
   const [lotesConfig, setLotesConfig] = useState<LotesConfig>({
-    lote1: { status: 'ativo', vagasRestantes: 25, valor: 35 },
-    lote2: { status: 'em_breve', vagasRestantes: 30, valor: 40 },
-    lote3: { status: 'em_breve', vagasRestantes: 30, valor: 45 },
+    lote1: { status: 'ativo', vagasRestantes: 25, valor: 35, desc: 'Primeiras inscrições. Menor preço histórico.' },
+    lote2: { status: 'em_breve', vagasRestantes: 30, valor: 40, desc: 'Disponível na fase intermediária.' },
+    lote3: { status: 'em_breve', vagasRestantes: 30, valor: 45, desc: 'Reta final de inscrições regulamentares.' },
     live: { status: 'em_breve', horario: '2026-09-07T20:00:00' }
   });
 
@@ -36,11 +33,11 @@ export default function Page() {
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [quizStep, setQuizStep] = useState(1);
   
-  // Quiz states
+  // Quiz form states
   const [projectName, setProjectName] = useState('');
   const [projectStyle, setProjectStyle] = useState('');
   const [projectBio, setProjectBio] = useState('');
-  const [projectPhoto, setProjectPhoto] = useState<File | null>(null);
+  const [projectPhotoName, setProjectPhotoName] = useState<string | null>(null);
   const [respName, setRespName] = useState('');
   const [respCpf, setRespCpf] = useState('');
   const [respBirth, setRespBirth] = useState('');
@@ -49,21 +46,43 @@ export default function Page() {
   const [membersList, setMembersList] = useState<Array<{ name: string; cpf: string; birth: string }>>([]);
   const [acceptRules, setAcceptRules] = useState(false);
 
-  // Checkout Popups states
+  // Popups states
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
 
-  // Admin states
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [admVagas, setAdmVagas] = useState(12);
-  const [adminRole, setAdminRole] = useState<'DEV' | 'ADMIN' | 'MOD'>('DEV');
-  const [adminTab, setAdminTab] = useState<'lotes' | 'inscritos' | 'integracoes'>('lotes');
+  // Dynamic ticking countdown timer (counts to Sep 14, 2026 23:59:00 Lote 1 close)
+  const [timeLeft, setTimeLeft] = useState({ days: '33', hours: '13', minutes: '10', seconds: '00' });
 
-  const activeLotePrice = lotesConfig.lote1.status === 'ativo' ? lotesConfig.lote1.valor : (lotesConfig.lote2.status === 'ativo' ? lotesConfig.lote2.valor : lotesConfig.lote3.valor);
-  const activeLoteName = lotesConfig.lote1.status === 'ativo' ? 'LOTE 1' : (lotesConfig.lote2.status === 'ativo' ? 'LOTE 2' : 'LOTE 3');
+  useEffect(() => {
+    const targetDate = new Date("2026-09-14T23:59:00").getTime();
+    const timer = setInterval(() => {
+      const now = new Date().getTime();
+      const difference = targetDate - now;
 
-  // Sync additional members lists based on selection
+      if (difference <= 0) {
+        clearInterval(timer);
+        setTimeLeft({ days: '00', hours: '00', minutes: '00', seconds: '00' });
+        return;
+      }
+
+      const d = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const h = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const m = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((difference % (1000 * 60)) / 1000);
+
+      setTimeLeft({
+        days: d < 10 ? `0${d}` : d.toString(),
+        hours: h < 10 ? `0${h}` : h.toString(),
+        minutes: m < 10 ? `0${m}` : m.toString(),
+        seconds: s < 10 ? `0${s}` : s.toString()
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Sync members lineup array based on selected count
   useEffect(() => {
     const additionalCount = selectedMembers - 1;
     if (membersList.length < additionalCount) {
@@ -77,55 +96,44 @@ export default function Page() {
     }
   }, [selectedMembers]);
 
-  const handleOpenAdmin = () => {
-    const pass = prompt('Digite a senha do administrador:');
-    if (pass === 'profana2026') {
-      setAdmVagas(lotesConfig.lote1.status === 'ativo' ? lotesConfig.lote1.vagasRestantes : (lotesConfig.lote2.status === 'ativo' ? lotesConfig.lote2.vagasRestantes : lotesConfig.lote3.vagasRestantes));
-      setIsAdminOpen(true);
-    } else if (pass !== null) {
-      alert('Senha incorreta!');
-    }
-  };
+  const activePrice = lotesConfig.lote1.status === 'ativo' ? lotesConfig.lote1.valor : (lotesConfig.lote2.status === 'ativo' ? lotesConfig.lote2.valor : lotesConfig.lote3.valor);
+  const activeLoteName = lotesConfig.lote1.status === 'ativo' ? 'LOTE 1' : (lotesConfig.lote2.status === 'ativo' ? 'LOTE 2' : 'LOTE 3');
+  const totalCost = selectedMembers * activePrice;
 
-  const handleSaveAdminConfig = (e: React.FormEvent) => {
-    e.preventDefault();
-    const updated = { ...lotesConfig };
-    if (updated.lote1.status === 'ativo') updated.lote1.vagasRestantes = admVagas;
-    if (updated.lote2.status === 'ativo') updated.lote2.vagasRestantes = admVagas;
-    if (updated.lote3.status === 'ativo') updated.lote3.vagasRestantes = admVagas;
-    setLotesConfig(updated);
-    setIsAdminOpen(false);
+  const handleOpenQuiz = () => {
+    setIsQuizOpen(true);
+    setQuizStep(1);
   };
 
   const handleQuizNext = () => {
     if (quizStep === 1 && (!projectName || !projectStyle)) {
-      alert('Preencha os campos obrigatórios.'); return;
+      alert('Por favor, preencha todos os campos obrigatórios.'); return;
     }
-    if (quizStep === 2 && (!projectBio || !projectPhoto)) {
-      alert('Forneça a biografia e envie a foto oficial.'); return;
+    if (quizStep === 2 && (!projectBio || !projectPhotoName)) {
+      alert('Por favor, complete a biografia e envie a foto oficial.'); return;
     }
     if (quizStep === 3 && (!respName || respCpf.length < 14 || respBirth.length < 10 || respPhone.length < 14)) {
-      alert('Preencha as credenciais do responsável de forma válida.'); return;
+      alert('Por favor, complete as credenciais do responsável de forma válida.'); return;
     }
     if (quizStep === 4) {
       for (let i = 0; i < membersList.length; i++) {
         if (!membersList[i].name || membersList[i].cpf.length < 14 || membersList[i].birth.length < 10) {
-          alert(`Preencha os dados obrigatórios do Integrante ${i+2}.`); return;
+          alert(`Por favor, preencha todos os dados obrigatórios do Integrante ${i+2}.`); return;
         }
       }
     }
     setQuizStep(quizStep + 1);
   };
 
-  const handleMemberChange = (index: number, field: string, value: string) => {
-    const updated = [...membersList];
-    updated[index] = { ...updated[index], [field]: value };
-    setMembersList(updated);
+  const handleMemberFieldChange = (index: number, field: string, value: string) => {
+    const copy = [...membersList];
+    copy[index] = { ...copy[index], [field]: value };
+    setMembersList(copy);
   };
 
   const handleLaunchCheckout = () => {
     if (!acceptRules) {
-      alert('Aceite os regulamentos para continuar.'); return;
+      alert('Declare concordar com as regras regulamentares para prosseguir.'); return;
     }
     setIsQuizOpen(false);
     setIsCheckoutOpen(true);
@@ -141,11 +149,11 @@ export default function Page() {
   };
 
   const handleBypassClear = () => {
-    if (confirm('Redefinir todo o chassi e formulários?')) {
+    if (confirm('Deseja redefinir todo o chassi e limpar o formulário?')) {
       setProjectName('');
       setProjectStyle('');
       setProjectBio('');
-      setProjectPhoto(null);
+      setProjectPhotoName(null);
       setRespName('');
       setRespCpf('');
       setRespBirth('');
@@ -156,6 +164,7 @@ export default function Page() {
     }
   };
 
+  // Input masks formatting
   const applyCpfMask = (val: string) => {
     let value = val.replace(/\D/g, "");
     if (value.length > 11) value = value.substring(0, 11);
@@ -202,25 +211,35 @@ export default function Page() {
   ];
 
   return (
-    <div className="bg-[#05070B] text-[#F0EAE0] min-h-screen">
+    <div className="bg-[#05070B] text-[#F0EAE0] min-h-screen relative font-sans antialiased">
       
-      {/* COUNTDOWN TOP BAR */}
-      <CountdownBar />
+      {/* A. DYNAMIC COUNTDOWN TOP BAR (Full-width & Red-Neon styled) */}
+      <div className="sticky top-0 z-50 w-full bg-[#8B1E1E] py-2 px-4 flex justify-center items-center gap-2 md:gap-3 select-none text-center text-xs md:text-sm leading-none border-b border-white/5 shadow-md">
+        <span className="w-1.5 h-1.5 rounded-full bg-red-400 shadow-[0_0_8px_#FF4B2E] animate-ping shrink-0"></span>
+        <span className="font-mono text-[#F0EAE0] font-bold uppercase tracking-wider">Lote 1 ativo até:</span>
+        
+        {/* Dynamic ticking countdown capsule */}
+        <div className="bg-[#05070B] px-3.5 py-1.5 rounded-full font-mono font-black text-[#8B1E1E] tracking-widest flex items-center gap-1 shadow-inner border border-white/5">
+          <span className="text-[#8B1E1E] font-bold">{timeLeft.days}</span><span className="text-[#8B1E1E]/50 text-[10px]">D</span> : 
+          <span className="text-[#8B1E1E] font-bold">{timeLeft.hours}</span><span className="text-[#8B1E1E]/50 text-[10px]">H</span> : 
+          <span className="text-[#8B1E1E] font-bold">{timeLeft.minutes}</span><span className="text-[#8B1E1E]/50 text-[10px]">M</span> : 
+          <span className="text-[#8B1E1E] font-bold">{timeLeft.seconds}</span><span className="text-[#8B1E1E]/50 text-[10px]">S</span>
+        </div>
+      </div>
 
-      {/* NAVBAR */}
-      <Navbar onOpenQuiz={() => setIsQuizOpen(true)} />
+      {/* HEADER NAVBAR */}
+      <Navbar onOpenQuiz={handleOpenQuiz} />
 
       {/* MAIN CONTAINER */}
-      <main className="max-w-6xl mx-auto px-6 py-12 space-y-24 relative z-10">
+      <main className="max-w-6xl mx-auto px-6 py-10 grow space-y-24 relative z-10">
         
         {/* HERO SECTION */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-7 space-y-6">
-            
             <h1 className="font-display font-black text-4xl md:text-5xl lg:text-6xl text-white leading-none uppercase tracking-tight">
               Grave seu som. Concorra à produção da sua <span className="bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(240,194,101,0.45)]">carreira</span>.
             </h1>
-            <p className="text-base md:text-lg text-gray-300 leading-relaxed max-w-xl">
+            <p className="text-base md:text-lg text-gray-300 leading-relaxed max-w-xl font-normal">
               A maior vitrine de revelação musical autoral. Grave sua apresentação ao vivo com áudio e vídeo de alta fidelidade de graça e dispute uma produção completa de carreira que mudará sua história.
             </p>
             <div className="flex flex-wrap gap-4 pt-2 text-sm font-mono text-gray-400 uppercase tracking-wider">
@@ -231,8 +250,8 @@ export default function Page() {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4">
               <button
                 type="button"
-                onClick={() => setIsQuizOpen(true)}
-                className="relative overflow-hidden bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black font-display font-black text-sm uppercase tracking-widest px-8 py-4 rounded-full border border-black shadow-[0_0_30px_rgba(227,181,82,0.35)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                onClick={handleOpenQuiz}
+                className="btn-gold-shimmer px-8 py-4 rounded-full text-sm uppercase tracking-widest shadow-[0_0_30px_rgba(227,181,82,0.35)]"
               >
                 INSCREVER-SE
               </button>
@@ -272,7 +291,7 @@ export default function Page() {
           </div>
         </section>
 
-        {/* B. PRINCÍPIOS */}
+        {/* B. AS 3 REGRAS DE MATRÍCULA (Principles) */}
         <section id="principios" className="space-y-12">
           <div className="space-y-2 border-b border-white/5 pb-4">
             <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
@@ -307,7 +326,7 @@ export default function Page() {
           </div>
         </section>
 
-        {/* C. LINHA DO TEMPO */}
+        {/* C. FASES DO CONCURSO (Timeline) */}
         <section id="cronograma" className="space-y-12">
           <div className="space-y-2 border-b border-white/5 pb-4">
             <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
@@ -414,8 +433,8 @@ export default function Page() {
 
           <div className="pt-6 text-center">
             <button
-              onClick={() => setIsQuizOpen(true)}
-              className="relative overflow-hidden bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black font-display font-black px-10 py-4.5 rounded-2xl text-md transition-all border border-black shadow-[0_0_30px_rgba(227,181,82,0.35)] hover:scale-[1.02] active:scale-[0.98]"
+              onClick={handleOpenQuiz}
+              className="btn-gold-shimmer px-10 py-4 rounded-2xl text-md"
             >
               Garantir Inscrição Lote 1
             </button>
@@ -451,7 +470,7 @@ export default function Page() {
             </h2>
           </div>
 
-          <div class="space-y-4 max-w-4xl mx-auto">
+          <div className="space-y-4 max-w-4xl mx-auto">
             {faqs.map((f, i) => (
               <div
                 key={i}
@@ -481,21 +500,18 @@ export default function Page() {
       {/* FOOTER */}
       <footer className="bg-[#030407] border-t border-white/5 py-10 px-6 mt-16 text-center text-sm font-mono text-gray-400 uppercase tracking-widest">
         <div className="max-w-6xl mx-auto flex flex-col items-center gap-4">
-          <!-- Line 1 -->
           <div>
             Estúdio Pedra Profana © 2026 • Todos os Direitos Reservados.
           </div>
-          <!-- Line 2 -->
           <div className="flex items-center gap-4 text-xs">
-            <a href="/termos" className="hover:text-white transition-colors font-semibold">Termos de Uso</a>
+            <Link href="/termos" className="hover:text-white transition-colors font-semibold">Termos de Uso</Link>
             <span className="text-white/20">•</span>
-            <a href="/privacidade" className="hover:text-white transition-colors font-semibold">Privacidade</a>
+            <Link href="/privacidade" className="hover:text-white transition-colors font-semibold">Privacidade</Link>
           </div>
-          <!-- Line 3 -->
           <div className="flex items-center gap-3 text-xs">
-            <button onClick={handleOpenAdmin} className="text-[#8B6F47] hover:text-[#F0C265]">
+            <Link href="/sagrado" className="text-[#8B6F47] hover:text-[#F0C265] transition-colors" title="Painel Admin">
               <Settings className="w-4 h-4" />
-            </button>
+            </Link>
             <span>Sistema criado por <a href="https://instagram.com/ww.wagner" target="_blank" rel="noopener noreferrer" className="text-[#D4A843] hover:text-[#E8C06B] transition-colors font-bold">@ww.wagner</a></span>
           </div>
         </div>
@@ -521,7 +537,7 @@ export default function Page() {
               {/* STATUS PROGRESS BAR */}
               <div className="space-y-2 shrink-0">
                 <div className="flex justify-between items-baseline">
-                  <span class="font-mono text-sm md:text-base text-[#F0C265] font-black uppercase tracking-widest">
+                  <span className="font-mono text-sm md:text-base text-[#F0C265] font-black uppercase tracking-widest">
                     Passo {quizStep} de 5
                   </span>
                   <span className="font-mono text-sm md:text-base text-gray-400 font-bold">
@@ -564,9 +580,9 @@ export default function Page() {
                       <div className="space-y-1">
                         <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Foto Oficial *</label>
                         <div className="border border-dashed border-white/10 hover:border-[#E3B552] rounded-xl p-5 text-center cursor-pointer bg-black/40 relative">
-                          <input type="file" onChange={(e) => setProjectPhoto(e.target.files ? e.target.files[0] : null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" required />
-                          {projectPhoto ? (
-                            <span className="text-sm text-[#10B981] font-bold">✓ Foto Selecionada: {projectPhoto.name}</span>
+                          <input type="file" onChange={(e) => setProjectPhotoName(e.target.files ? e.target.files[0].name : null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" required />
+                          {projectPhotoName ? (
+                            <span className="text-sm text-[#10B981] font-bold">✓ Foto Selecionada: {projectPhotoName}</span>
                           ) : (
                             <span className="text-sm text-[#B3B3B3]">Arraste ou clique para carregar foto</span>
                           )}
@@ -659,21 +675,21 @@ export default function Page() {
                     <p className="text-sm text-gray-300">Confirme os dados consolidados do sinal.</p>
                     
                     <div className="bg-black/50 p-5 rounded-2xl border border-white/5 space-y-4 text-xs font-mono">
-                      <div class="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <span className="text-[#A89880] block text-sm font-bold">PROJETO BANDA:</span>
+                          <span className="text-gray-400 block text-sm font-bold">PROJETO BANDA:</span>
                           <span className="font-bold text-white text-sm block mt-1">{projectName || '-'}</span>
                         </div>
                         <div>
-                          <span className="text-[#A89880] block text-sm font-bold">RESPONSÁVEL LÍDER:</span>
+                          <span className="text-gray-400 block text-sm font-bold">RESPONSÁVEL LÍDER:</span>
                           <span className="font-bold text-white text-sm block mt-1">{respName || '-'}</span>
                         </div>
                         <div>
-                          <span className="text-[#A89880] block text-sm font-bold">LOTE VIGENTE:</span>
-                          <span className="font-bold text-[#F0C265] text-sm block mt-1 uppercase">{activeLoteName} (R$ {activeLotePrice} / integrante)</span>
+                          <span className="text-gray-400 block text-sm font-bold">LOTE VIGENTE:</span>
+                          <span className="font-bold text-[#F0C265] text-sm block mt-1 uppercase">{activeLoteName} (R$ {activePrice} / integrante)</span>
                         </div>
                         <div>
-                          <span className="text-[#A89880] block text-sm font-bold">INTEGRANTES CONECTADOS:</span>
+                          <span className="text-gray-400 block text-sm font-bold font-bold">INTEGRANTES CONECTADOS:</span>
                           <span className="font-bold text-white text-sm block mt-1">{selectedMembers}</span>
                         </div>
                       </div>
@@ -688,7 +704,7 @@ export default function Page() {
                         </div>
                         <div className="text-right">
                           <span className="font-mono text-sm text-gray-300 block font-bold">TAXA TOTAL DO GRUPO:</span>
-                          <span className="text-3xl font-display font-black text-[#F0C265] block mt-1">R$ {selectedMembers * activeLotePrice},00</span>
+                          <span className="text-3xl font-display font-black text-[#F0C265] block mt-1">R$ {totalCost},00</span>
                           <span className="text-xs text-gray-300 font-mono block mt-1 uppercase">E mais {selectedMembers}kg de alimento</span>
                         </div>
                       </div>
@@ -746,44 +762,44 @@ export default function Page() {
               exit={{ scale: 0.95 }}
               className="bg-[#0B0F19]/90 backdrop-blur-xl border-2 border-[#E3B552] max-w-sm w-full p-6 rounded-[32px] relative space-y-6 shadow-2xl"
             >
-              <button onClick={closeCheckoutModal} className="absolute right-4 top-4 text-gray-400 hover:text-white font-mono text-xl">&times;</button>
+              <button onClick={() => setIsCheckoutOpen(false)} className="absolute right-4 top-4 text-gray-400 hover:text-white font-mono text-xl">&times;</button>
               
-              <div class="text-center space-y-2 pt-2">
-                <span class="font-mono text-sm text-lime font-bold bg-lime/10 border border-lime/20 px-3 py-1 rounded-full w-max mx-auto block uppercase">● Servidor Autenticado</span>
-                <h3 class="font-display font-bold text-xl text-white uppercase tracking-tight">PIX DE INSCRIÇÃO</h3>
-                <p class="text-sm text-gray-300">Sua vaga será confirmada após compensação do Pix.</p>
+              <div className="text-center space-y-2 pt-2">
+                <span className="font-mono text-sm text-lime font-bold bg-lime/10 border border-lime/20 px-3 py-1 rounded-full w-max mx-auto block uppercase">● Servidor Autenticado</span>
+                <h3 className="font-display font-bold text-xl text-white uppercase tracking-tight">PIX DE INSCRIÇÃO</h3>
+                <p className="text-sm text-gray-300">Sua vaga será confirmada após compensação do Pix.</p>
               </div>
 
-              <div class="bg-[#030407] p-4 rounded-xl flex flex-col items-center space-y-4 border border-white/5">
-                <div class="w-48 h-48 bg-white p-3 rounded-xl flex items-center justify-center relative shadow-lg">
-                  <div class="w-full h-full border border-black/10 flex flex-col justify-between p-2">
-                    <div class="flex justify-between">
-                      <div class="w-8 h-8 bg-black"></div>
-                      <div class="w-8 h-8 bg-black"></div>
+              <div className="bg-[#030407] p-4 rounded-xl flex flex-col items-center space-y-4 border border-white/5">
+                <div className="w-48 h-48 bg-white p-3 rounded-xl flex items-center justify-center relative shadow-lg">
+                  <div className="w-full h-full border border-black/10 flex flex-col justify-between p-2">
+                    <div className="flex justify-between">
+                      <div className="w-8 h-8 bg-black"></div>
+                      <div className="w-8 h-8 bg-black"></div>
                     </div>
-                    <div class="text-center font-bold text-[8px] text-[#05070B] font-mono uppercase tracking-widest leading-none py-2">Canção Profana</div>
-                    <div class="flex justify-between">
-                      <div class="w-8 h-8 bg-black"></div>
-                      <div class="w-12 h-12 border border-black border-dashed flex items-center justify-center"><div class="w-6 h-6 bg-[#F0C265]"></div></div>
+                    <div className="text-center font-bold text-[8px] text-[#05070B] font-mono uppercase tracking-widest leading-none py-2">Canção Profana</div>
+                    <div className="flex justify-between">
+                      <div className="w-8 h-8 bg-black"></div>
+                      <div className="w-12 h-12 border border-black border-dashed flex items-center justify-center"><div class="w-6 h-6 bg-[#F0C265]"></div></div>
                     </div>
                   </div>
                   {isCheckoutLoading && (
-                    <div class="absolute inset-0 bg-[#05070B]/95 flex flex-col items-center justify-center text-center p-3 rounded-xl">
-                      <span class="w-8 h-8 rounded-full border-2 border-[#F0C265] border-t-transparent animate-spin mb-3"></span>
-                      <span class="font-mono text-sm text-[#F0C265] uppercase tracking-widest font-bold">AGUARDANDO WEBHOOK...</span>
+                    <div className="absolute inset-0 bg-[#05070B]/95 flex flex-col items-center justify-center text-center p-3 rounded-xl">
+                      <span className="w-8 h-8 rounded-full border-2 border-[#F0C265] border-t-transparent animate-spin mb-3"></span>
+                      <span className="font-mono text-sm text-[#F0C265] uppercase tracking-widest font-bold">AGUARDANDO WEBHOOK...</span>
                     </div>
                   )}
                 </div>
 
-                <div class="text-center">
-                  <span class="font-mono text-sm text-gray-400 block uppercase font-bold">TOTAL CONVERSÃO:</span>
-                  <span class="text-2xl font-mono font-black text-lime block mt-1">R$ {selectedMembers * activeLotePrice},00</span>
+                <div className="text-center">
+                  <span className="font-mono text-sm text-gray-400 block uppercase font-bold">TOTAL CONVERSÃO:</span>
+                  <span className="text-2xl font-mono font-black text-lime block mt-1">R$ {totalCost},00</span>
                 </div>
               </div>
 
-              <div class="space-y-3">
-                <button onClick={copyPixCode} class="font-mono text-sm font-bold text-white bg-white/5 border border-[#2E2820] py-3 rounded-xl w-full hover:bg-white/10 transition-colors uppercase">Copiar Código Pix</button>
-                <button onClick={handleSimulateWebhook} class="font-mono text-sm font-bold text-black bg-lime py-3 rounded-xl w-full hover:bg-lime/90 transition-colors uppercase border-none shadow-lg shadow-lime/20">Confirmar Webhook</button>
+              <div className="space-y-3">
+                <button onClick={copyPixCode} className="font-mono text-sm font-bold text-white bg-white/5 border border-[#2E2820] py-3 rounded-xl w-full hover:bg-white/10 transition-colors uppercase">Copiar Código Pix</button>
+                <button onClick={handleSimulateWebhook} className="font-mono text-sm font-bold text-black bg-lime py-3 rounded-xl w-full hover:bg-lime/90 transition-colors uppercase border-none shadow-lg shadow-lime/20">Confirmar Webhook</button>
               </div>
             </motion.div>
           </motion.div>
@@ -805,271 +821,31 @@ export default function Page() {
               exit={{ scale: 0.95 }}
               className="bg-[#0B0F19]/90 backdrop-blur-xl border-2 border-[#E3B552] max-w-lg w-full p-8 rounded-[32px] text-center space-y-6"
             >
-              <div class="w-16 h-16 rounded-full bg-lime/10 text-lime border-2 border-lime flex items-center justify-center mx-auto text-3xl shadow font-bold">✓</div>
-              <div class="space-y-2">
-                <span class="font-mono text-sm text-lime uppercase tracking-widest font-bold">● Matrícula Concluída</span>
-                <h3 class="font-display font-black text-3xl text-white uppercase tracking-tight">BANDA MATRICULADA!</h3>
-                <p class="text-xs text-gray-300 leading-relaxed max-w-sm mx-auto">O webhook do servidor processou o Pix de forma segura. O recibo regulamentar foi transmitido ao e-mail cadastrado.</p>
+              <div className="w-16 h-16 rounded-full bg-lime/10 text-lime border-2 border-lime flex items-center justify-center mx-auto text-3xl shadow font-bold">✓</div>
+              <div className="space-y-2">
+                <span className="font-mono text-sm text-lime uppercase tracking-widest font-bold">● Matrícula Concluída</span>
+                <h3 className="font-display font-black text-3xl text-white uppercase tracking-tight">BANDA MATRICULADA!</h3>
+                <p className="text-xs text-gray-300 leading-relaxed max-w-sm mx-auto">O webhook do servidor processou o Pix de forma segura. O recibo regulamentar foi transmitido ao e-mail cadastrado.</p>
               </div>
 
-              <div class="bg-black/50 p-5 max-w-xs mx-auto grid grid-cols-2 gap-4 text-left border border-white/5">
+              <div className="bg-black/50 p-5 max-w-xs mx-auto grid grid-cols-2 gap-4 text-left border border-white/5">
                 <div>
                   <span class="font-mono text-sm text-gray-400 uppercase">CÓDIGO ID BANDA:</span>
-                  <span class="text-xs font-bold text-white font-mono block mt-1">CP-2026-X7Y9</span>
+                  <span className="text-xs font-bold text-white font-mono block mt-1">CP-2026-X7Y9</span>
                 </div>
                 <div>
                   <span class="font-mono text-sm text-gray-400 uppercase">FILA CANAL:</span>
-                  <span class="text-xs font-bold text-white font-mono block mt-1">{selectedMembers} MEMBROS</span>
+                  <span className="text-xs font-bold text-white font-mono block mt-1">{selectedMembers} MEMBROS</span>
                 </div>
-                <div class="col-span-2 border-t border-white/5 pt-3">
-                  <span class="font-mono text-sm text-lime uppercase font-bold">Condição Solidária:</span>
-                  <p class="text-xs text-gray-300 mt-1 leading-relaxed font-mono font-mono">Trazer {selectedMembers}kg de alimento no dia do show.</p>
+                <div className="col-span-2 border-t border-white/5 pt-3">
+                  <span className="font-mono text-sm text-lime uppercase font-bold">Condição Solidária:</span>
+                  <p className="text-xs text-gray-300 mt-1 leading-relaxed font-mono font-mono">Trazer {selectedMembers}kg de alimento no dia do show.</p>
                 </div>
               </div>
 
-              <div class="space-y-3 pt-2">
+              <div className="space-y-3 pt-2">
                 <button onClick={() => window.location.reload()} className="btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-wider block w-full max-w-xs mx-auto border-none">Voltar para Home</button>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ADMIN CONTROL MODAL (UNIFIED PORTAL with Dev, Admin, Mod RBAC) */}
-      <AnimatePresence>
-        {isAdminOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
-          >
-            <motion.div
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
-              className="bg-[#0B0F19] border-2 border-[#E3B552] rounded-3xl p-6 w-full max-w-2xl space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto"
-            >
-              <button onClick={() => setIsAdminOpen(false)} className="absolute right-5 top-5 text-[#B3B3B3] hover:text-white font-mono text-2xl font-bold">&times;</button>
-              
-              <div className="text-center border-b border-white/5 pb-3 space-y-2">
-                <span className="font-mono text-sm text-[#F0C265] font-bold uppercase block tracking-wider">MÓDULO CENTRAL DE ADMINISTRAÇÃO UNIFICADA</span>
-                
-                {/* Role selector button group */}
-                <div className="flex justify-center gap-1.5 mt-2 bg-black/50 p-1 rounded-xl w-max mx-auto border border-white/5">
-                  {(['DEV', 'ADMIN', 'MOD'] as const).map((r) => {
-                    const isActive = adminRole === r;
-                    return (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => {
-                          setAdminRole(r);
-                          if (r === 'MOD' && adminTab === 'integracoes') setAdminTab('lotes');
-                          if (r === 'ADMIN' && adminTab === 'integracoes') setAdminTab('lotes');
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase tracking-wider transition-all ${
-                          isActive
-                            ? 'bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black font-black'
-                            : 'text-[#A89880] hover:text-white font-bold'
-                        }`}
-                      >
-                        {r}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Tab selectors */}
-              <div className="flex gap-2 border-b border-white/5 pb-2">
-                <button
-                  type="button"
-                  onClick={() => setAdminTab('lotes')}
-                  className={`px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-wider ${
-                    adminTab === 'lotes'
-                      ? 'bg-white/10 text-white rounded-lg border border-white/10'
-                      : 'text-[#A89880] hover:text-white transition-colors border border-transparent'
-                  }`}
-                >
-                  Lotes & Live
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAdminTab('inscritos')}
-                  className={`px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-wider ${
-                    adminTab === 'inscritos'
-                      ? 'bg-white/10 text-white rounded-lg border border-white/10'
-                      : 'text-[#A89880] hover:text-white transition-colors border border-transparent'
-                  }`}
-                >
-                  Inscritos (Tabela)
-                </button>
-                <button
-                  type="button"
-                  disabled={adminRole !== 'DEV'}
-                  onClick={() => setAdminTab('integracoes')}
-                  className={`px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed ${
-                    adminTab === 'integracoes'
-                      ? 'bg-white/10 text-white rounded-lg border border-white/10'
-                      : 'text-[#A89880] hover:text-white transition-colors border border-transparent'
-                  }`}
-                >
-                  Integrações {adminRole !== 'DEV' && '🔒'}
-                </button>
-              </div>
-
-              {/* TAB 1: LOTES & LIVE */}
-              {adminTab === 'lotes' && (
-                <form onSubmit={handleSaveAdminConfig} className="space-y-4">
-                  <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
-                    <span className="font-mono text-sm text-white uppercase">Lote 1 Status:</span>
-                    <select
-                      disabled={adminRole === 'MOD'}
-                      value={lotesConfig.lote1.status}
-                      onChange={(e) => setLotesConfig({ ...lotesConfig, lote1: { ...lotesConfig.lote1, status: e.target.value as any } })}
-                      className="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none disabled:opacity-50"
-                    >
-                      <option value="ativo">Ativo</option>
-                      <option value="encerrado">Encerrado</option>
-                      <option value="em_breve">Em Breve</option>
-                    </select>
-                  </div>
-                  <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
-                    <span class="font-mono text-sm text-white uppercase">Lote 2 Status:</span>
-                    <select
-                      disabled={adminRole === 'MOD'}
-                      value={lotesConfig.lote2.status}
-                      onChange={(e) => setLotesConfig({ ...lotesConfig, lote2: { ...lotesConfig.lote2, status: e.target.value as any } })}
-                      className="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none disabled:opacity-50"
-                    >
-                      <option value="em_breve">Em Breve</option>
-                      <option value="ativo">Ativo</option>
-                      <option value="encerrado">Encerrado</option>
-                    </select>
-                  </div>
-                  <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
-                    <span class="font-mono text-sm text-white uppercase">Lote 3 Status:</span>
-                    <select
-                      disabled={adminRole === 'MOD'}
-                      value={lotesConfig.lote3.status}
-                      onChange={(e) => setLotesConfig({ ...lotesConfig, lote3: { ...lotesConfig.lote3, status: e.target.value as any } })}
-                      className="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none disabled:opacity-50"
-                    >
-                      <option value="em_breve">Em Breve</option>
-                      <option value="ativo">Ativo</option>
-                      <option value="encerrado">Encerrado</option>
-                    </select>
-                  </div>
-                  <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
-                    <span class="font-mono text-sm text-white uppercase">Live Transmissão:</span>
-                    <select
-                      disabled={adminRole === 'MOD'}
-                      value={lotesConfig.live.status}
-                      onChange={(e) => setLotesConfig({ ...lotesConfig, live: { ...lotesConfig.live, status: e.target.value as any } })}
-                      className="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none disabled:opacity-50"
-                    >
-                      <option value="em_breve">Em Breve</option>
-                      <option value="ao_vivo">🔴 Ao Vivo Agora</option>
-                      <option value="encerrada">Encerrada</option>
-                    </select>
-                  </div>
-                  <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
-                    <span class="font-mono text-sm text-white uppercase">Vagas Restantes:</span>
-                    <input
-                      disabled={adminRole === 'MOD'}
-                      type="number"
-                      value={admVagas}
-                      onChange={(e) => setAdmVagas(parseInt(e.target.value) || 0)}
-                      className="w-20 bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 text-center outline-none disabled:opacity-50"
-                    />
-                  </div>
-                  <button
-                    disabled={adminRole === 'MOD'}
-                    type="submit"
-                    className="btn-gold-shimmer py-2.5 rounded w-full border-none text-black uppercase disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    SALVAR CONFIGURAÇÃO
-                  </button>
-                </form>
-              )}
-
-              {/* TAB 2: INSCRITOS (DATA TABLE) */}
-              {adminTab === 'inscritos' && (
-                <div className="space-y-4">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs md:text-sm">
-                      <thead>
-                        <tr className="border-b border-[#2C2C2C] text-gray-400 font-mono">
-                          <th className="py-3 px-2 uppercase tracking-widest text-[9px]">ID</th>
-                          <th className="py-3 px-2 uppercase tracking-widest text-[9px]">Projeto / Banda</th>
-                          <th className="py-3 px-2 uppercase tracking-widest text-[9px]">Gênero</th>
-                          <th className="py-3 px-2 uppercase tracking-widest text-[9px]">Lineup</th>
-                          <th className="py-3 px-2 uppercase tracking-widest text-[9px]">Status</th>
-                          {adminRole !== 'MOD' && <th className="py-3 px-2 uppercase tracking-widest text-[9px] text-right">Ações</th>}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5">
-                        <tr>
-                          <td className="py-3 px-2 font-mono text-gray-400">#001</td>
-                          <td className="py-3 px-2 font-bold text-white">Os Profanos do Ritmo</td>
-                          <td className="py-3 px-2 text-gray-300">Rock Autoral</td>
-                          <td className="py-3 px-2 font-mono text-gray-300">4 Membros</td>
-                          <td className="py-3 px-2">
-                            <span className="bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 text-[9px] font-bold px-2 py-0.5 rounded font-mono">PAGO</span>
-                          </td>
-                          {adminRole !== 'MOD' && (
-                            <td className="py-3 px-2 text-right">
-                              <button type="button" onClick={() => alert('Matrícula homologada.')} className="bg-white/5 border border-white/10 text-white font-mono text-[9px] font-bold px-2.5 py-1 rounded">Ver Recibo</button>
-                            </td>
-                          )}
-                        </tr>
-                        <tr>
-                          <td className="py-3 px-2 font-mono text-gray-400">#002</td>
-                          <td className="py-3 px-2 font-bold text-white">Daily Chaos</td>
-                          <td className="py-3 px-2 text-gray-300">Metal Core</td>
-                          <td className="py-3 px-2 font-mono text-gray-300">3 Membros</td>
-                          <td className="py-3 px-2">
-                            <span className="bg-amber-500/15 text-amber-500 border border-amber-500/30 text-[9px] font-bold px-2 py-0.5 rounded font-mono">PENDENTE</span>
-                          </td>
-                          {adminRole !== 'MOD' && (
-                            <td className="py-3 px-2 text-right space-x-1">
-                              <button type="button" onClick={() => alert('Inscrição aprovada manualmente!')} className="bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-[9px] font-bold px-2 py-1 rounded border border-black shadow">Aprovar</button>
-                              <button type="button" onClick={() => alert('Inscrição rejeitada!')} className="bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white font-mono text-[9px] font-bold px-2 py-1 rounded border border-red-500/20">Rejeitar</button>
-                            </td>
-                          )}
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 3: INTEGRAÇÕES (GATEWAYS) */}
-              {adminTab === 'integracoes' && adminRole === 'DEV' && (
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="block font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-wider">Gateway de Pagamento Ativo *</label>
-                    <select className="w-full bg-[#0B0F19] border border-white/10 rounded-xl px-4 py-3 text-white text-xs outline-none">
-                      <option value="asaas">Asaas (PIX Transparente)</option>
-                      <option value="mercadopago">Mercado Pago (PIX + Cartão Bricks)</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block font-mono text-[9px] text-gray-400 uppercase tracking-wider">Asaas API Production Token *</label>
-                    <div className="bg-black/50 border border-white/5 rounded-xl p-1.5">
-                      <input type="password" value="****************************************" readOnly className="w-full bg-transparent border-none outline-none px-4 py-2 text-white text-xs" />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block font-mono text-[9px] text-gray-400 uppercase tracking-wider">Mercado Pago Access Token *</label>
-                    <div className="bg-black/50 border border-white/5 rounded-xl p-1.5">
-                      <input type="password" value="****************************************" readOnly className="w-full bg-transparent border-none outline-none px-4 py-2 text-white text-xs" />
-                    </div>
-                  </div>
-                </div>
-              )}
-
             </motion.div>
           </motion.div>
         )}
@@ -1078,9 +854,6 @@ export default function Page() {
     </div>
   );
 
-  function closeQuiz() {
-    setIsQuizOpen(false);
-  }
   function closeCheckoutModal() {
     setIsCheckoutOpen(false);
   }
