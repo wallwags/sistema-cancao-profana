@@ -131,11 +131,12 @@
   <!-- A. DYNAMIC HEADER & TOP BAR OF URGÊNCIA (Sticky Countdown) -->
   <div class="sticky top-0 z-50 w-full">
     <!-- Countdown top bar -->
-    <div class="bg-[#D4A843] py-3 px-4 flex justify-center items-center gap-3 select-none text-center">
-      <span class="font-mono text-sm md:text-base text-[#0F0D0B] tracking-widest uppercase font-bold">FECHAMENTO DO LOTE ATIVO EM:</span>
-      <div class="font-mono text-sm md:text-base text-[#0F0D0B] font-bold tracking-widest flex items-center gap-1">
-        <span id="header-days">09</span>D : <span id="header-hours">13</span>H : <span id="header-minutes">10</span>M
+    <div class="bg-[#120F0D] py-3 px-4 border-b border-white/5 flex justify-center items-center gap-3 select-none text-center">
+      <span class="font-mono text-xs md:text-sm text-[#A89880] tracking-widest uppercase font-bold">FECHAMENTO DO LOTE ATIVO EM:</span>
+      <div class="font-mono text-sm md:text-base font-bold tracking-widest flex items-center gap-1 text-[#F0EAE0]">
+        <span id="header-days" class="text-[#FF4B2E] font-black">09</span>D : <span id="header-hours" class="text-[#FF4B2E] font-black">13</span>H : <span id="header-minutes" class="text-[#FF4B2E] font-black">10</span>M
       </div>
+      <span class="w-1.5 h-1.5 rounded-full bg-[#FF4B2E] shadow-[0_0_8px_#FF4B2E] animate-ping hidden sm:inline"></span>
     </div>
 
     <!-- Navigation Header -->
@@ -174,10 +175,6 @@
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
       <div class="lg:col-span-7 space-y-6">
         
-        <!-- Context badge with thin border -->
-        <div class="inline-block px-3.5 py-1.5 bg-[#0B0F19]/40 border border-white/10 rounded text-sm font-mono text-gray-400 uppercase tracking-widest">
-          # ESTÚDIO PEDRA PROFANA CONCURSO MUSICAL
-        </div>
 
         <h1 class="font-display font-black text-4xl md:text-5xl lg:text-6xl text-white leading-none uppercase tracking-tight">
           Grave seu som. Concorra à produção da sua <span class="gold-gradient-text">carreira</span>.
@@ -348,7 +345,7 @@
           R$ 20.000,00
         </div>
         <p class="text-sm text-gray-300 max-w-md mx-auto">
-          Um pacote completo de estúdio físico e lançamentos digitais garantidos, entregues diretamente pela equipe Pedra Profana.
+          Um pacote completo de estúdio físico e lançamentos digitais garantidos, entregues diretamente pela equipe Pedra Profana. <strong class="text-white block mt-2">Atenção: Os valores indicados representam custos equivalentes em serviços de produção no estúdio, e não dinheiro físico.</strong>
         </p>
       </div>
 
@@ -538,18 +535,26 @@
 
   </div>
 
-  <!-- G. RODAPÉ TÉCNICO MINIMALISTA (Footer Space-Between) -->
-  <footer class="bg-[#030407] border-t border-white/5 py-8 px-6 mt-16 text-center text-sm font-mono text-gray-400 uppercase tracking-widest">
-    <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+  <!-- G. RODAPÉ TÉCNICO MINIMALISTA (Footer Organized) -->
+  <footer class="bg-[#030407] border-t border-white/5 py-10 px-6 mt-16 text-center text-sm font-mono text-gray-400 uppercase tracking-widest">
+    <div class="max-w-6xl mx-auto flex flex-col items-center gap-4">
+      <!-- Line 1 -->
       <div>
-        © 2026 Canção Profana. Estúdio Pedra Profana. Todos os Direitos Reservados.
+        Estúdio Pedra Profana © 2026 • Todos os Direitos Reservados.
       </div>
-      <div class="flex items-center gap-3">
+      <!-- Line 2 -->
+      <div class="flex items-center gap-4 text-xs">
+        <a href="termos.html" class="hover:text-white transition-colors font-semibold">Termos de Uso</a>
+        <span class="text-white/20">•</span>
+        <a href="privacidade.html" class="hover:text-white transition-colors font-semibold">Privacidade</a>
+      </div>
+      <!-- Line 3 -->
+      <div class="flex items-center gap-3 text-xs">
         <!-- Subtle cog settings icon for Admin Panel -->
         <button type="button" onclick="promptAdminPassword()" class="text-[#8B6F47] hover:text-[#F0C265] transition-colors" title="Painel Admin">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2.5"/></svg>
         </button>
-        <span>Sistema criado por <a href="https://instagram.com/ww.wagner" target="_blank" class="text-[#D4A843] hover:text-[#E8C06B] transition-colors font-bold">@ww.wagner</a> • <a href="termos.html" class="hover:text-white transition-colors">Termos de Uso</a> • <a href="privacidade.html" class="hover:text-white transition-colors">Privacidade</a></span>
+        <span>Sistema criado por <a href="https://instagram.com/ww.wagner" target="_blank" class="text-[#D4A843] hover:text-[#E8C06B] transition-colors font-bold">@ww.wagner</a></span>
       </div>
     </div>
   </footer>
@@ -1065,9 +1070,12 @@
       const activePrice = getActiveLotePrice();
       const totalCost = selectedMembers * activePrice;
       
-      // Update inline displays
-      document.getElementById('q-display-members').innerText = selectedMembers;
-      document.getElementById('q-display-price').innerText = `R$ ${totalCost}`;
+      // Update inline displays if they exist
+      const elMembers = document.getElementById('q-display-members');
+      const elPrice = document.getElementById('q-display-price');
+      if (elMembers) elMembers.innerText = selectedMembers;
+      if (elPrice) elPrice.innerText = `R$ ${totalCost}`;
+      
       document.getElementById('lcd-members').innerText = selectedMembers;
       document.getElementById('lcd-price').innerText = `R$ ${totalCost},00`;
 

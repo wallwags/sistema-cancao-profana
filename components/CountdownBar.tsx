@@ -44,27 +44,28 @@ export default function CountdownBar() {
   }, []);
 
   return (
-    <div className="w-full bg-[#D4A843] py-3 px-6 flex justify-center items-center gap-3 select-none text-center relative z-50">
-      <span className="font-mono text-xs md:text-sm text-[#05070B] tracking-widest uppercase font-bold">
+    <div className="w-full bg-[#120F0D] border-b border-white/5 py-3 px-6 flex justify-center items-center gap-3 select-none text-center relative z-50">
+      <span className="font-mono text-xs md:text-sm text-[#A89880] tracking-widest uppercase font-bold">
         FECHAMENTO DO LOTE ATIVO EM:
       </span>
-      <div className="font-mono text-sm md:text-base font-black tracking-widest flex items-center gap-1.5 text-[#05070B]">
-        <span className="animate-pulse">
+      <div className="font-mono text-sm md:text-base font-bold tracking-widest flex items-center gap-1.5 text-[#F0EAE0]">
+        <span className="text-[#FF4B2E] font-black animate-pulse">
           {timeLeft.days} D
         </span>
-        <span className="text-[#05070B]/50">:</span>
-        <span className="animate-pulse">
+        <span className="text-white/20">:</span>
+        <span className="text-[#FF4B2E] font-black animate-pulse">
           {timeLeft.hours} H
         </span>
-        <span className="text-[#05070B]/50">:</span>
-        <span className="animate-pulse">
+        <span className="text-white/20">:</span>
+        <span className="text-[#FF4B2E] font-black animate-pulse">
           {timeLeft.minutes} M
         </span>
-        <span className="text-[#05070B]/50">:</span>
-        <span className="animate-pulse">
+        <span className="text-white/20">:</span>
+        <span className="text-[#FF4B2E] font-black animate-pulse">
           {timeLeft.seconds} S
         </span>
       </div>
+      <span className="w-1.5 h-1.5 rounded-full bg-[#FF4B2E] shadow-[0_0_8px_#FF4B2E] animate-ping hidden sm:inline"></span>
     </div>
   );
 }

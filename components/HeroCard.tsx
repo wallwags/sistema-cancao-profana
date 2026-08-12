@@ -26,7 +26,7 @@ export default function HeroCard() {
         </h1>
         
         <p className="text-sm md:text-base text-[#E0E0E0] max-w-xl mx-auto leading-relaxed font-normal pt-2">
-          Um pacote completo de estúdio físico e lançamentos digitais garantidos, entregues diretamente pela equipe Pedra Profana.
+          Um pacote completo de estúdio físico e lançamentos digitais garantidos, entregues diretamente pela equipe Pedra Profana. <strong className="text-white block mt-2 text-xs">Os valores indicados representam custos equivalentes em serviços de produção profissional no estúdio, e não prêmio em dinheiro físico.</strong>
         </p>
       </div>
 

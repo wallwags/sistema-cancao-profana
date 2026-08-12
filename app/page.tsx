@@ -214,9 +214,7 @@ export default function Page() {
         {/* HERO SECTION */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-7 space-y-6">
-            <div className="inline-block px-3.5 py-1.5 bg-[#0B0F19]/40 border border-white/10 rounded text-sm font-mono text-gray-400 uppercase tracking-widest">
-              # ESTÚDIO PEDRA PROFANA CONCURSO MUSICAL
-            </div>
+            
             <h1 className="font-display font-black text-4xl md:text-5xl lg:text-6xl text-white leading-none uppercase tracking-tight">
               Grave seu som. Concorra à produção da sua <span className="bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(240,194,101,0.45)]">carreira</span>.
             </h1>
@@ -479,14 +477,24 @@ export default function Page() {
       </main>
 
       {/* FOOTER */}
-      <footer className="bg-[#030407] border-t border-white/5 py-8 px-6 mt-16 text-center text-sm font-mono text-gray-400 uppercase tracking-widest">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div>© 2026 Canção Profana. Estúdio Pedra Profana. Todos os Direitos Reservados.</div>
-          <div className="flex items-center gap-3">
+      <footer className="bg-[#030407] border-t border-white/5 py-10 px-6 mt-16 text-center text-sm font-mono text-gray-400 uppercase tracking-widest">
+        <div className="max-w-6xl mx-auto flex flex-col items-center gap-4">
+          <!-- Line 1 -->
+          <div>
+            Estúdio Pedra Profana © 2026 • Todos os Direitos Reservados.
+          </div>
+          <!-- Line 2 -->
+          <div className="flex items-center gap-4 text-xs">
+            <a href="/termos" className="hover:text-white transition-colors font-semibold">Termos de Uso</a>
+            <span className="text-white/20">•</span>
+            <a href="/privacidade" className="hover:text-white transition-colors font-semibold">Privacidade</a>
+          </div>
+          <!-- Line 3 -->
+          <div className="flex items-center gap-3 text-xs">
             <button onClick={handleOpenAdmin} className="text-[#8B6F47] hover:text-[#F0C265]">
               <Settings className="w-4 h-4" />
             </button>
-            <span>Sistema criado por <a href="https://instagram.com/ww.wagner" target="_blank" rel="noopener noreferrer" className="text-[#D4A843] hover:text-[#E8C06B] transition-colors font-bold">@ww.wagner</a> • <a href="/termos" className="hover:text-white transition-colors">Termos de Uso</a> • <a href="/privacidade" className="hover:text-white transition-colors">Privacidade</a></span>
+            <span>Sistema criado por <a href="https://instagram.com/ww.wagner" target="_blank" rel="noopener noreferrer" className="text-[#D4A843] hover:text-[#E8C06B] transition-colors font-bold">@ww.wagner</a></span>
           </div>
         </div>
       </footer>
