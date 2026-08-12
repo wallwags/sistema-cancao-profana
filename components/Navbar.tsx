@@ -22,7 +22,7 @@ export default function Navbar({ onOpenQuiz }: NavbarProps) {
 
   return (
     <header className="sticky top-0 z-40 bg-[#05070B]/85 backdrop-blur-md border-b border-white/5 py-4 px-6">
-      <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <div className="max-w-6xl mx-auto flex justify-between items-center">
         
         {/* LOGO ASSEMBLY */}
         <div className="flex items-center gap-3">

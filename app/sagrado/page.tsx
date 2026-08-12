@@ -191,7 +191,7 @@ export default function SagradoPage() {
                   </select>
                 </div>
                 <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
-                  <span class="font-mono text-sm text-white uppercase">Live Transmissão:</span>
+                  <span className="font-mono text-sm text-white uppercase">Live Transmissão:</span>
                   <select 
                     disabled={role === 'MOD'}
                     value={lotes.live}
@@ -204,7 +204,7 @@ export default function SagradoPage() {
                   </select>
                 </div>
                 <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
-                  <span class="font-mono text-sm text-white uppercase">Vagas Lote Ativo:</span>
+                  <span className="font-mono text-sm text-white uppercase">Vagas Lote Ativo:</span>
                   <input 
                     disabled={role === 'MOD'}
                     type="number" 
@@ -255,7 +255,7 @@ export default function SagradoPage() {
                       <td className="py-3 px-2 font-bold text-white">Daily Chaos</td>
                       <td className="py-3 px-2 text-gray-300">Metal Core</td>
                       <td className="py-3 px-2 font-mono text-gray-300">3 Membros</td>
-                      <td className="py-3 px-2"><span class="bg-amber-500/15 text-amber-500 border border-amber-500/30 text-[9px] font-bold px-2 py-0.5 rounded font-mono">PENDENTE</span></td>
+                      <td className="py-3 px-2"><span className="bg-amber-500/15 text-amber-500 border border-amber-500/30 text-[9px] font-bold px-2 py-0.5 rounded font-mono">PENDENTE</span></td>
                       {role !== 'MOD' && (
                         <td className="py-3 px-2 text-right space-x-1">
                           <button type="button" onClick={() => alert('Aprovado manualmente!')} className="bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-[9px] font-bold px-2.5 py-1 rounded">Aprovar</button>

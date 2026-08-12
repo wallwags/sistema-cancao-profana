@@ -1,7 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Settings, Music, Video, Camera, Globe, Trash2 } from 'lucide-react';
+import Navbar from '../components/Navbar';
+import HeroCard from '../components/HeroCard';
+import FeatureGrid from '../components/FeatureGrid';
 
 // LOTES CONFIGURATION (Matches PDF and DB Seeding exactly)
 interface LoteState {
@@ -123,6 +128,25 @@ export default function Page() {
       }
     }
     setQuizStep(quizStep + 1);
+  };
+
+  const addQuizMember = () => {
+    if (selectedMembers >= 7) {
+      alert("O limite máximo do regulamento é de 7 integrantes por projeto.");
+      return;
+    }
+    setSelectedMembers(selectedMembers + 1);
+  };
+
+  const removeQuizMember = (index: number) => {
+    if (selectedMembers <= 2) {
+      alert("O limite mínimo do regulamento é de 2 integrantes por projeto.");
+      return;
+    }
+    setSelectedMembers(selectedMembers - 1);
+    const copy = [...membersList];
+    copy.splice(index, 1);
+    setMembersList(copy);
   };
 
   const handleMemberFieldChange = (index: number, field: string, value: string) => {
@@ -652,15 +676,15 @@ export default function Page() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1">
                               <label className="block font-mono text-xs text-gray-300 uppercase">Nome Completo</label>
-                              <input type="text" value={m.name} onChange={(e) => handleMemberChange(index, 'name', e.target.value)} className="w-full bg-[#05070B] border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" />
+                              <input type="text" value={m.name} onChange={(e) => handleMemberFieldChange(index, 'name', e.target.value)} className="w-full bg-[#05070B] border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" />
                             </div>
                             <div className="space-y-1">
                               <label className="block font-mono text-xs text-gray-300 uppercase">CPF</label>
-                              <input type="text" value={m.cpf} onChange={(e) => handleMemberChange(index, 'cpf', applyCpfMask(e.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" maxLength={14} />
+                              <input type="text" value={m.cpf} onChange={(e) => handleMemberFieldChange(index, 'cpf', applyCpfMask(e.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" maxLength={14} />
                             </div>
                             <div className="space-y-1 md:col-span-2">
-                              <label class="block font-mono text-xs text-gray-300 uppercase">Data de Nascimento</label>
-                              <input type="text" value={m.birth} onChange={(e) => handleMemberChange(index, 'birth', applyDateMask(e.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" maxLength={10} />
+                              <label className="block font-mono text-xs text-gray-300 uppercase">Data de Nascimento</label>
+                              <input type="text" value={m.birth} onChange={(e) => handleMemberFieldChange(index, 'birth', applyDateMask(e.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" maxLength={10} />
                             </div>
                           </div>
                         </div>
@@ -780,7 +804,7 @@ export default function Page() {
                     <div className="text-center font-bold text-[8px] text-[#05070B] font-mono uppercase tracking-widest leading-none py-2">Canção Profana</div>
                     <div className="flex justify-between">
                       <div className="w-8 h-8 bg-black"></div>
-                      <div className="w-12 h-12 border border-black border-dashed flex items-center justify-center"><div class="w-6 h-6 bg-[#F0C265]"></div></div>
+                      <div className="w-12 h-12 border border-black border-dashed flex items-center justify-center"><div className="w-6 h-6 bg-[#F0C265]"></div></div>
                     </div>
                   </div>
                   {isCheckoutLoading && (
@@ -830,11 +854,11 @@ export default function Page() {
 
               <div className="bg-black/50 p-5 max-w-xs mx-auto grid grid-cols-2 gap-4 text-left border border-white/5">
                 <div>
-                  <span class="font-mono text-sm text-gray-400 uppercase">CÓDIGO ID BANDA:</span>
+                  <span className="font-mono text-sm text-gray-400 uppercase">CÓDIGO ID BANDA:</span>
                   <span className="text-xs font-bold text-white font-mono block mt-1">CP-2026-X7Y9</span>
                 </div>
                 <div>
-                  <span class="font-mono text-sm text-gray-400 uppercase">FILA CANAL:</span>
+                  <span className="font-mono text-sm text-gray-400 uppercase">FILA CANAL:</span>
                   <span className="text-xs font-bold text-white font-mono block mt-1">{selectedMembers} MEMBROS</span>
                 </div>
                 <div className="col-span-2 border-t border-white/5 pt-3">
@@ -857,5 +881,7 @@ export default function Page() {
   function closeCheckoutModal() {
     setIsCheckoutOpen(false);
   }
-  const copyPixCode = () => alert('✓ Código Pix Copiado!');
+  function copyPixCode() {
+    alert('✓ Código Pix Copiado!');
+  }
 }
