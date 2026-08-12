@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Administração — Canção Profana</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Space Grotesk & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            vstBg: '#05070B',
+            vstPanel: '#0B0F19',
+            goldAccent: '#E3B552',
+            goldLight: '#FFF2D4',
+            goldMedium: '#F0C265',
+            goldDark: '#B88A28',
+            lime: '#10B981',
+            coral: '#FF4B2E',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    body {
+      background-color: #05070B;
+      color: #F0EAE0;
+      font-family: 'Inter', sans-serif;
+      background-image: radial-gradient(ellipse at top, rgba(227, 181, 82, 0.1) 0%, #05070B 80%);
+    }
+    
+    .glass-card-2 {
+      background: rgba(11, 15, 25, 0.65);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 
+        0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    }
+    
+    .btn-gold-shimmer {
+      background: linear-gradient(135deg, #FFF2D4 0%, #F0C265 50%, #B88A28 100%);
+      border: 1px solid #000000;
+      box-shadow: 0 0 25px rgba(227, 181, 82, 0.3);
+      color: #000000;
+      font-weight: 900;
+    }
+  </style>
+</head>
+<body class="min-h-screen py-16 px-6 flex items-center justify-center">
+
+  <div class="glass-card-2 max-w-2xl w-full p-6 md:p-8 rounded-[32px] relative space-y-6 shadow-2xl">
+    
+    <!-- 1. AUTHENTICATION LOGIN GATE -->
+    <div id="adm-login-pane" class="space-y-6 py-4">
+      <div class="text-center space-y-2 border-b border-white/5 pb-4">
+        <svg class="w-10 h-10 text-[#F0C265] mx-auto animate-bounce" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        <h1 class="font-display font-black text-xl text-[#F0C265] tracking-wider uppercase">SISTEMA DE AUTENTICAÇÃO SEGURO</h1>
+        <p class="text-xs text-gray-400">Entre com seu usuário administrativo e senha cadastrados no banco de dados.</p>
+      </div>
+
+      <form onsubmit="event.preventDefault(); handleAdminLogin();" class="space-y-4 max-w-sm mx-auto">
+        <div class="space-y-1.5">
+          <label class="block font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-wider">Selecionar Usuário / Função *</label>
+          <select id="adm-login-role" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-xs outline-none font-semibold">
+            <option value="DEV">Wagner — @ww.wagner (Líder Developer)</option>
+            <option value="ADMIN">Estúdio Admin (Diretor do Concurso)</option>
+            <option value="MOD">Moderador de Cadastro (Apenas Leitura)</option>
+          </select>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="block font-mono text-[9px] text-gray-400 uppercase tracking-wider">Senha de Segurança *</label>
+          <div class="bg-black/50 border border-white/10 rounded-xl p-1.5">
+            <input type="password" id="adm-login-pass" class="w-full bg-transparent border-none outline-none px-4 py-2 text-white text-xs" placeholder="••••••••" required />
+          </div>
+        </div>
+
+        <button type="submit" class="btn-gold-shimmer py-3 rounded-xl w-full border-none text-black uppercase font-black text-xs tracking-widest mt-2">
+          AUTENTICAR SESSÃO
+        </button>
+      </form>
+    </div>
+
+    <!-- 2. CENTRAL DASHBOARD CONTAINER (UNLOCKED ONLY ON SUCCESSFUL LOGIN) -->
+    <div id="adm-dashboard-pane" class="space-y-6 hidden">
+      
+      <div class="text-center border-b border-white/5 pb-3 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="font-mono text-sm text-[#F0C265] font-bold uppercase block tracking-wider">MÓDULO CENTRAL DE ADMINISTRAÇÃO UNIFICADA</span>
+          <span id="adm-active-role-badge" class="bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black font-mono text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider border border-black shadow">DEV</span>
+        </div>
+        <p class="text-xs text-gray-400 text-left" id="adm-role-desc-text">Você está logado com acesso root completo ao sistema e gateways.</p>
+      </div>
+
+      <!-- Tab selectors -->
+      <div class="flex gap-2 border-b border-white/5 pb-2" id="adm-tabs">
+        <button type="button" onclick="switchAdminTab('lotes')" id="adm-tab-lotes" class="px-4 py-2 font-mono text-[10px] font-black uppercase tracking-wider bg-white/10 text-white rounded-lg border border-white/10">Lotes & Live</button>
+        <button type="button" onclick="switchAdminTab('inscritos')" id="adm-tab-inscritos" class="px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-wider text-[#A89880] hover:text-white rounded-lg transition-colors">Inscritos (Tabela)</button>
+        <button type="button" onclick="switchAdminTab('integracoes')" id="adm-tab-integracoes" class="px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-wider text-[#A89880] hover:text-white rounded-lg transition-colors">Integrações (Gateways)</button>
+      </div>
+
+      <!-- TAB 1: LOTES & LIVE -->
+      <form onsubmit="event.preventDefault(); saveAdminConfig();" id="adm-panel-lotes" class="space-y-4">
+        <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
+          <span class="font-mono text-sm text-white uppercase">Lote 1 Status:</span>
+          <select id="adm-lote1-status" class="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none">
+            <option value="ativo">Ativo</option>
+            <option value="encerrado">Encerrado</option>
+            <option value="em_breve">Em Breve</option>
+          </select>
+        </div>
+        <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
+          <span class="font-mono text-sm text-white uppercase">Lote 2 Status:</span>
+          <select id="adm-lote2-status" class="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none">
+            <option value="em_breve">Em Breve</option>
+            <option value="ativo">Ativo</option>
+            <option value="encerrado">Encerrado</option>
+          </select>
+        </div>
+        <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
+          <span class="font-mono text-sm text-white uppercase">Lote 3 Status:</span>
+          <select id="adm-lote3-status" class="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none">
+            <option value="em_breve">Em Breve</option>
+            <option value="ativo">Ativo</option>
+            <option value="encerrado">Encerrado</option>
+          </select>
+        </div>
+        <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
+          <span class="font-mono text-sm text-white uppercase">Live Transmissão:</span>
+          <select id="adm-live-status" class="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none">
+            <option value="em_breve">Em Breve</option>
+            <option value="ao_vivo">🔴 Ao Vivo Agora</option>
+            <option value="encerrada">Encerrada</option>
+          </select>
+        </div>
+        <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
+          <span class="font-mono text-sm text-white uppercase">Vagas Restantes:</span>
+          <input type="number" id="adm-vagas-count" class="w-20 bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 text-center outline-none" />
+        </div>
+        <button type="submit" id="adm-lotes-submit" class="btn-gold-shimmer py-2.5 rounded w-full border-none text-black uppercase">SALVAR CONFIGURAÇÃO</button>
+      </form>
+
+      <!-- TAB 2: INSCRITOS (DATA TABLE) -->
+      <div id="adm-panel-inscritos" class="space-y-4 hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs md:text-sm">
+            <thead>
+              <tr class="border-b border-[#2C2C2C] text-gray-400 font-mono">
+                <th class="py-3 px-2 uppercase tracking-widest text-[9px]">ID</th>
+                <th class="py-3 px-2 uppercase tracking-widest text-[9px]">Projeto / Banda</th>
+                <th class="py-3 px-2 uppercase tracking-widest text-[9px]">Gênero</th>
+                <th class="py-3 px-2 uppercase tracking-widest text-[9px]">Lineup</th>
+                <th class="py-3 px-2 uppercase tracking-widest text-[9px]">Status</th>
+                <th class="py-3 px-2 uppercase tracking-widest text-[9px] text-right" id="adm-col-actions-head">Ações</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5">
+              <tr>
+                <td class="py-3 px-2 font-mono text-gray-400">#001</td>
+                <td class="py-3 px-2 font-bold text-white">Os Profanos do Ritmo</td>
+                <td class="py-3 px-2 text-gray-300">Rock Autoral</td>
+                <td class="py-3 px-2 font-mono text-gray-300">4 Membros</td>
+                <td class="py-3 px-2"><span class="bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 text-[9px] font-bold px-2 py-0.5 rounded font-mono">PAGO</span></td>
+                <td class="py-3 px-2 text-right adm-actions-cell">
+                  <button type="button" onclick="alert('Matrícula homologada e comprovante gerado.')" class="bg-white/5 border border-white/10 text-white font-mono text-[9px] font-bold px-2.5 py-1 rounded">Ver Recibo</button>
+                </td>
+              </tr>
+              <tr>
+                <td class="py-3 px-2 font-mono text-gray-400">#002</td>
+                <td class="py-3 px-2 font-bold text-white">Daily Chaos</td>
+                <td class="py-3 px-2 text-gray-300">Metal Core</td>
+                <td class="py-3 px-2 font-mono text-gray-300">3 Membros</td>
+                <td class="py-3 px-2"><span class="bg-amber-500/15 text-amber-500 border border-amber-500/30 text-[9px] font-bold px-2 py-0.5 rounded font-mono">PENDENTE</span></td>
+                <td class="py-3 px-2 text-right adm-actions-cell">
+                  <button type="button" onclick="alert('Inscrição aprovada manualmente!')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-[9px] font-bold px-2.5 py-1 rounded border border-black shadow">Aprovar</button>
+                  <button type="button" onclick="alert('Inscrição rejeitada e vaga liberada no lote.')" class="bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white font-mono text-[9px] font-bold px-2.5 py-1 rounded ml-1 transition-colors border border-red-500/20">Rejeitar</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 3: INTEGRAÇÕES / GATEWAYS -->
+      <div id="adm-panel-integracoes" class="space-y-4 hidden relative">
+        <div id="adm-integracoes-lock" class="absolute inset-0 bg-black/90 backdrop-blur-sm z-30 flex flex-col items-center justify-center text-center p-6 space-y-2 hidden">
+          <svg class="w-8 h-8 text-[#F0C265] animate-bounce" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          <span class="font-mono text-xs text-white font-bold uppercase tracking-wider">ABA DE INTEGRAÇÕES BLOQUEADA</span>
+          <span class="text-[10px] text-gray-400">Apenas a Role: <strong class="text-[#F0C265] font-black uppercase">DEV</strong> possui credenciais para alterar gateways.</span>
+        </div>
+
+        <div class="space-y-4">
+          <div class="space-y-1.5">
+            <label class="block font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-wider">Gateway de Pagamento Ativo *</label>
+            <select class="w-full bg-[#0B0F19] border border-white/10 rounded-xl px-4 py-3 text-white text-xs outline-none">
+              <option value="asaas">Asaas (PIX Transparente)</option>
+              <option value="mercadopago">Mercado Pago (PIX + Cartão Bricks)</option>
+            </select>
+          </div>
+          
+          <div class="space-y-1.5">
+            <label class="block font-mono text-[9px] text-gray-400 uppercase tracking-wider">Asaas API Production Token *</label>
+            <div class="bg-black/50 border border-white/5 rounded-xl p-1.5">
+              <input type="password" value="****************************************" class="w-full bg-transparent border-none outline-none px-4 py-2 text-white text-xs" />
+            </div>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="block font-mono text-[9px] text-gray-400 uppercase tracking-wider">Mercado Pago Access Token *</label>
+            <div class="bg-black/50 border border-white/5 rounded-xl p-1.5">
+              <input type="password" value="****************************************" class="w-full bg-transparent border-none outline-none px-4 py-2 text-white text-xs" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let CURRENT_ADMIN_ROLE = 'DEV';
+    let CURRENT_ADMIN_TAB = 'lotes';
+
+    function handleAdminLogin() {
+      const pass = document.getElementById('adm-login-pass').value;
+      if (pass === 'profana2026') {
+        const role = document.getElementById('adm-login-role').value;
+        document.getElementById('adm-login-pane').classList.add('hidden');
+        document.getElementById('adm-dashboard-pane').classList.remove('hidden');
+        
+        switchAdminTab('lotes');
+        setAdminRole(role);
+      } else {
+        alert('Senha incorreta!');
+      }
+    }
+
+    function setAdminRole(role) {
+      CURRENT_ADMIN_ROLE = role;
+      
+      const btnDev = document.getElementById('role-btn-dev');
+      const btnAdmin = document.getElementById('role-btn-admin');
+      const btnMod = document.getElementById('role-btn-mod');
+      const badge = document.getElementById('adm-active-role-badge');
+      const desc = document.getElementById('adm-role-desc-text');
+      
+      if (badge) badge.innerText = role;
+
+      const activeClass = "bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black font-black";
+      const inactiveClass = "text-[#A89880] hover:text-white font-bold";
+      
+      if (btnDev && btnAdmin && btnMod) {
+        btnDev.className = "px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase tracking-wider transition-all " + (role === 'DEV' ? activeClass : inactiveClass);
+        btnAdmin.className = "px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase tracking-wider transition-all " + (role === 'ADMIN' ? activeClass : inactiveClass);
+        btnMod.className = "px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase tracking-wider transition-all " + (role === 'MOD' ? activeClass : inactiveClass);
+      }
+      
+      const lockOverlay = document.getElementById('adm-integracoes-lock');
+      const submitBtn = document.getElementById('adm-lotes-submit');
+      const actionCells = document.querySelectorAll('.adm-actions-cell');
+      const actionHead = document.getElementById('adm-col-actions-head');
+      
+      if (lockOverlay) {
+        if (role !== 'DEV') {
+          lockOverlay.classList.remove('hidden');
+        } else {
+          lockOverlay.classList.add('hidden');
+        }
+      }
+      
+      if (desc) {
+        if (role === 'DEV') desc.innerText = "Acesso completo (Root). Permissão para ler, editar lotes/vagas e alterar tokens de chaves de APIs de gateways.";
+        if (role === 'ADMIN') desc.innerText = "Acesso de Gestão (Diretor). Permissão para editar lotes/vagas e aprovar/rejeitar bandas, exceto alterar tokens de APIs de gateways.";
+        if (role === 'MOD') desc.innerText = "Acesso de Moderação (Auditores). Permissão de apenas leitura para visualizar as inscrições. Mudanças de lotes e aprovações estão desativadas.";
+      }
+
+      if (submitBtn) {
+        if (role === 'MOD') {
+          submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          submitBtn.disabled = true;
+          if (actionHead) actionHead.classList.add('hidden');
+          actionCells.forEach(cell => cell.classList.add('hidden'));
+        } else {
+          submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          submitBtn.disabled = false;
+          if (actionHead) actionHead.classList.remove('hidden');
+          actionCells.forEach(cell => cell.classList.remove('hidden'));
+        }
+      }
+    }
+
+    function switchAdminTab(tab) {
+      CURRENT_ADMIN_TAB = tab;
+      
+      document.getElementById('adm-panel-lotes').classList.add('hidden');
+      document.getElementById('adm-panel-inscritos').classList.add('hidden');
+      document.getElementById('adm-panel-integracoes').classList.add('hidden');
+      
+      document.getElementById(`adm-panel-${tab}`).classList.remove('hidden');
+      
+      const tabLotes = document.getElementById('adm-tab-lotes');
+      const tabInscritos = document.getElementById('adm-tab-inscritos');
+      const tabIntegracoes = document.getElementById('adm-tab-integracoes');
+      
+      const activeClass = "bg-white/10 text-white rounded-lg border border-white/10";
+      const inactiveClass = "text-[#A89880] hover:text-white transition-colors border border-transparent";
+      
+      if (tabLotes && tabInscritos && tabIntegracoes) {
+        tabLotes.className = "px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-wider " + (tab === 'lotes' ? activeClass : inactiveClass);
+        tabInscritos.className = "px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-wider " + (tab === 'inscritos' ? activeClass : inactiveClass);
+        tabIntegracoes.className = "px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-wider " + (tab === 'integracoes' ? activeClass : inactiveClass);
+      }
+      
+      setAdminRole(CURRENT_ADMIN_ROLE);
+    }
+
+    function closeAdminModal() {
+      // Go back to public home index.html
+      window.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>
