@@ -431,7 +431,7 @@
             <span class="text-[#F0C265] font-bold text-md leading-none">+</span>
           </div>
           <p class="hidden text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3">
-            O valor de R$ 60 (do Lote 1 ativo) é cobrado **por integrante** cadastrado no grupo musical (mínimo 2, máximo 7). Ao preencher o quiz e definir o lineup final, o sistema calcula o valor total. Essa taxa garante toda a infraestrutura e a gravação de estúdio da live.
+            O valor de R$ 35 (do Lote 1 ativo) é cobrado **por integrante** cadastrado no grupo musical (mínimo 2, máximo 7). Ao preencher o quiz e definir o lineup final, o sistema calcula o valor total. Essa taxa garante toda a infraestrutura e a gravação de estúdio da live.
           </p>
         </div>
 
@@ -717,7 +717,7 @@
               </div>
               <div>
                 <span class="text-gray-400 block text-sm md:text-base font-bold">LOTE VIGENTE:</span>
-                <span id="q-review-active-lote-text" class="font-bold text-[#F0C265] text-sm block mt-1 uppercase">LOTE 1 (R$ 60 / integrante)</span>
+                <span id="q-review-active-lote-text" class="font-bold text-[#F0C265] text-sm block mt-1 uppercase">LOTE 1 (R$ 35 / integrante)</span>
               </div>
               <div>
                 <span class="text-gray-400 block text-sm md:text-base font-bold font-bold">INTEGRANTES CONECTADOS:</span>
@@ -737,7 +737,7 @@
               
               <div class="text-right">
                 <span class="font-mono text-sm md:text-base text-gray-400 block font-bold">TAXA TOTAL DO GRUPO:</span>
-                <span id="q-review-total-price" class="text-3xl font-display font-black text-[#F0C265] block mt-1">R$ 120,00</span>
+                <span id="q-review-total-price" class="text-3xl font-display font-black text-[#F0C265] block mt-1">R$ 70,00</span>
                 <span class="text-sm text-gray-400 font-mono block mt-1 uppercase">E mais <span id="q-review-food-weight">2</span>kg de alimento no dia do show</span>
               </div>
             </div>
@@ -812,7 +812,7 @@
 
         <div class="text-center">
           <span class="font-mono text-sm md:text-base text-gray-400 block uppercase">TOTAL CONVERSÃO:</span>
-          <span id="checkout-total-price" class="text-2xl font-mono font-black text-lime block mt-1">R$ 120,00</span>
+          <span id="checkout-total-price" class="text-2xl font-mono font-black text-lime block mt-1">R$ 70,00</span>
         </div>
       </div>
 
@@ -923,10 +923,10 @@
   <script>
     // 2. SEÇÃO #LOTES — CONFIGURAÇÃO CENTRALIZADA (JavaScript Control States)
     let LOTES_CONFIG = {
-      lote1: { status: "ativo", vagasRestantes: 12, valor: 60 },
-      lote2: { status: "em_breve", vagasRestantes: 25, valor: 80 },
-      lote3: { status: "em_breve", vagasRestantes: 30, valor: 100 },
-      live:  { status: "em_breve", horario: "2026-08-20T20:00:00" }
+      lote1: { status: "ativo", vagasRestantes: 25, valor: 35 },
+      lote2: { status: "em_breve", vagasRestantes: 30, valor: 40 },
+      lote3: { status: "em_breve", vagasRestantes: 30, valor: 45 },
+      live:  { status: "em_breve", horario: "2026-09-07T20:00:00" }
     };
 
     let currentQuizStep = 1;
@@ -1052,7 +1052,7 @@
       if (LOTES_CONFIG.lote1.status === "ativo") return LOTES_CONFIG.lote1.valor;
       if (LOTES_CONFIG.lote2.status === "ativo") return LOTES_CONFIG.lote2.valor;
       if (LOTES_CONFIG.lote3.status === "ativo") return LOTES_CONFIG.lote3.valor;
-      return 60; // Fallback
+      return 35; // Fallback
     }
 
     function getActiveLoteName() {
@@ -1286,10 +1286,10 @@
 
       // Render Lotes list (Dia 0, Lote 1, Lote 2, Lote 3)
       const data = [
-        { key: "dia0", title: "Dia 0 (Live)", status: "encerrado", desc: "Apenas durante a transmissão ao vivo.", valor: 40 },
-        { key: "lote1", title: "Lote 1", status: LOTES_CONFIG.lote1.status, desc: "Primeiras inscrições. Menor preço histórico.", valor: 60, vagas: LOTES_CONFIG.lote1.vagasRestantes, cap: 25 },
-        { key: "lote2", title: "Lote 2", status: LOTES_CONFIG.lote2.status, desc: "Disponível na fase intermediária.", valor: 80, vagas: LOTES_CONFIG.lote2.vagasRestantes, cap: 30 },
-        { key: "lote3", title: "Lote 3", status: LOTES_CONFIG.lote3.status, desc: "Reta final de inscrições regulamentares.", valor: 100, vagas: LOTES_CONFIG.lote3.vagasRestantes, cap: 30 }
+        { key: "dia0", title: "Dia 0 (Live)", status: "encerrado", desc: "Apenas durante a transmissão ao vivo.", valor: 25 },
+        { key: "lote1", title: "Lote 1", status: LOTES_CONFIG.lote1.status, desc: "Primeiras inscrições. Menor preço histórico.", valor: 35, vagas: LOTES_CONFIG.lote1.vagasRestantes, cap: 25 },
+        { key: "lote2", title: "Lote 2", status: LOTES_CONFIG.lote2.status, desc: "Disponível na fase intermediária.", valor: 40, vagas: LOTES_CONFIG.lote2.vagasRestantes, cap: 30 },
+        { key: "lote3", title: "Lote 3", status: LOTES_CONFIG.lote3.status, desc: "Reta final de inscrições regulamentares.", valor: 45, vagas: LOTES_CONFIG.lote3.vagasRestantes, cap: 30 }
       ];
 
       data.forEach(item => {

@@ -26,10 +26,10 @@ interface LotesConfig {
 
 export default function Page() {
   const [lotesConfig, setLotesConfig] = useState<LotesConfig>({
-    lote1: { status: 'ativo', vagasRestantes: 12, valor: 60 },
-    lote2: { status: 'em_breve', vagasRestantes: 25, valor: 80 },
-    lote3: { status: 'em_breve', vagasRestantes: 30, valor: 100 },
-    live: { status: 'em_breve', horario: '2026-08-20T20:00:00' }
+    lote1: { status: 'ativo', vagasRestantes: 25, valor: 35 },
+    lote2: { status: 'em_breve', vagasRestantes: 30, valor: 40 },
+    lote3: { status: 'em_breve', vagasRestantes: 30, valor: 45 },
+    live: { status: 'em_breve', horario: '2026-09-07T20:00:00' }
   });
 
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -187,7 +187,7 @@ export default function Page() {
   };
 
   const faqs = [
-    { q: 'Como é calculada a taxa de inscrição?', a: 'O valor de R$ 60 (do Lote 1 ativo) é cobrado por integrante cadastrado no grupo musical (mínimo 2, máximo 7). Ao preencher o quiz e definir o lineup final, o sistema calcula o valor total. Essa taxa garante toda a infraestrutura e a gravação de estúdio da live.' },
+    { q: 'Como é calculada a taxa de inscrição?', a: 'O valor de R$ 35 (do Lote 1 ativo) é cobrado por integrante cadastrado no grupo musical (mínimo 2, máximo 7). Ao preencher o quiz e definir o lineup final, o sistema calcula o valor total. Essa taxa garante toda a infraestrutura e a gravação de estúdio da live.' },
     { q: 'Quem pode participar do concurso?', a: 'O concurso é aberto a qualquer artista independente ou banda que apresente um repertório autoral (com pelo menos uma música escrita majoritariamente em português ou instrumental). A banda precisa ter no mínimo 2 e no máximo 7 integrantes ativos.' },
     { q: 'Como funciona o sistema de votação durante a live?', a: 'A votação possui três canais complementares de avaliação: 1. Voto dos Jurados (Índio, Naraiane e Matheus T dão notas de 0 a 10 nos critérios de Apresentação, Composição e Estética); 2. Voto da Equipe do Estúdio (Nota baseada no envolvimento); 3. Voto Popular (Computado logo após cada live sessions, onde o volume absoluto de votos destrava as vagas de avanço).' },
     { q: 'Quantas músicas posso inscrever no concurso?', a: 'Cada grupo pode inscrever um repertório de no máximo 3 músicas para se apresentar e gravar nas transmissões oficiais.' },
@@ -358,10 +358,10 @@ export default function Page() {
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
-              { key: 'dia0', title: 'Dia 0 (Live)', status: 'encerrado', desc: 'Apenas durante a transmissão ao vivo.', valor: 40 },
-              { key: 'lote1', title: 'Lote 1', status: lotesConfig.lote1.status, desc: 'Primeiras inscrições. Menor preço histórico.', valor: 60, vagas: lotesConfig.lote1.vagasRestantes },
-              { key: 'lote2', title: 'Lote 2', status: lotesConfig.lote2.status, desc: 'Disponível na fase intermediária.', valor: 80, vagas: lotesConfig.lote2.vagasRestantes },
-              { key: 'lote3', title: 'Lote 3', status: lotesConfig.lote3.status, desc: 'Reta final de inscrições regulamentares.', valor: 100, vagas: lotesConfig.lote3.vagasRestantes }
+              { key: 'dia0', title: 'Dia 0 (Live)', status: 'encerrado', desc: 'Apenas durante a transmissão ao vivo.', valor: 25 },
+              { key: 'lote1', title: 'Lote 1', status: lotesConfig.lote1.status, desc: 'Primeiras inscrições. Menor preço histórico.', valor: 35, vagas: lotesConfig.lote1.vagasRestantes },
+              { key: 'lote2', title: 'Lote 2', status: lotesConfig.lote2.status, desc: 'Disponível na fase intermediária.', valor: 40, vagas: lotesConfig.lote2.vagasRestantes },
+              { key: 'lote3', title: 'Lote 3', status: lotesConfig.lote3.status, desc: 'Reta final de inscrições regulamentares.', valor: 45, vagas: lotesConfig.lote3.vagasRestantes }
             ].map((l, i) => {
               const isActive = l.status === 'ativo';
               const isClosed = l.status === 'encerrado';
