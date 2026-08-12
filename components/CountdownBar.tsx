@@ -44,28 +44,27 @@ export default function CountdownBar() {
   }, []);
 
   return (
-    <div className="w-full bg-[#05070B] border-b border-white/5 py-3 px-6 flex justify-center items-center gap-3 select-none text-center relative z-50">
-      <span className="font-mono text-xs md:text-sm text-[#B3B3B3] tracking-widest uppercase font-bold">
+    <div className="w-full bg-[#D4A843] py-3 px-6 flex justify-center items-center gap-3 select-none text-center relative z-50">
+      <span className="font-mono text-xs md:text-sm text-[#05070B] tracking-widest uppercase font-bold">
         FECHAMENTO DO LOTE ATIVO EM:
       </span>
-      <div className="font-mono text-sm md:text-base font-black tracking-widest flex items-center gap-1.5">
-        <span className="bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] bg-clip-text text-transparent animate-pulse">
+      <div className="font-mono text-sm md:text-base font-black tracking-widest flex items-center gap-1.5 text-[#05070B]">
+        <span className="animate-pulse">
           {timeLeft.days} D
         </span>
-        <span className="text-white/30">:</span>
-        <span className="bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] bg-clip-text text-transparent animate-pulse">
+        <span className="text-[#05070B]/50">:</span>
+        <span className="animate-pulse">
           {timeLeft.hours} H
         </span>
-        <span className="text-white/30">:</span>
-        <span className="bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] bg-clip-text text-transparent animate-pulse">
+        <span className="text-[#05070B]/50">:</span>
+        <span className="animate-pulse">
           {timeLeft.minutes} M
         </span>
-        <span className="text-white/30">:</span>
-        <span className="bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] bg-clip-text text-transparent animate-pulse">
+        <span className="text-[#05070B]/50">:</span>
+        <span className="animate-pulse">
           {timeLeft.seconds} S
         </span>
       </div>
-      <span className="w-2 h-2 rounded-full bg-[#F0C265] shadow-[0_0_8px_#F0C265] animate-ping hidden sm:inline"></span>
     </div>
   );
 }

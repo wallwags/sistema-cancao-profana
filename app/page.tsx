@@ -276,32 +276,32 @@ export default function Page() {
         <section id="principios" className="space-y-12">
           <div className="space-y-2 border-b border-white/5 pb-4">
             <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
-              # PRINCÍPIOS REGULAMENTARES
+              # REGRAS INVIOLÁVEIS DO CONCURSO
             </span>
             <h2 className="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">
-              O QUE VOCÊ PRECISA SABER
+              AS 3 REGRAS DE MATRÍCULA
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 hover:border-[#E3B552]/30 rounded-2xl p-6 space-y-4 shadow-lg transition-colors">
               <span className="font-display font-black text-5xl text-[#F0C265] block select-none">01</span>
-              <h3 className="font-display font-bold text-lg text-white uppercase">Inscrição Simples</h3>
+              <h3 className="font-display font-bold text-lg text-white uppercase">Repertório & Música Autoral</h3>
               <p className="text-sm text-gray-300">
-                Configure seu projeto de 2 a 7 integrantes através de nosso quiz e preencha as credenciais. Toda a banda é validada no processo.
+                Seu repertório deve ter no máximo 3 músicas, com pelo menos uma música original (autoral) escrita majoritariamente em português ou instrumental.
               </p>
             </div>
             <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 hover:border-[#E3B552]/30 rounded-2xl p-6 space-y-4 shadow-lg transition-colors">
               <span className="font-display font-black text-5xl text-[#F0C265] block select-none">02</span>
-              <h3 className="font-display font-bold text-lg text-white uppercase">Estúdio Ativo</h3>
+              <h3 className="font-display font-bold text-lg text-white uppercase">Alinhamento de Lineup</h3>
               <p className="text-sm text-gray-300">
-                Sua banda se apresenta ao vivo e grava áudio e vídeo de alta fidelidade de graça, recebendo a matriz original para seu portfólio de carreira.
+                As apresentações e gravações devem ser compostas por grupos contendo no mínimo 2 e no máximo 7 integrantes por projeto.
               </p>
             </div>
             <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 hover:border-[#E3B552]/30 rounded-2xl p-6 space-y-4 shadow-lg transition-colors">
               <span className="font-display font-black text-5xl text-[#F0C265] block select-none">03</span>
-              <h3 className="font-display font-bold text-lg text-white uppercase">Voto Qualificado</h3>
+              <h3 className="font-display font-bold text-lg text-white uppercase">Compromisso Solidário</h3>
               <p className="text-sm text-gray-300">
-                Avaliações divididas em três frentes: Notas técnicas dos jurados especialistas (Índio, Naraiane e Matheus T), voto do estúdio e quantidade de votos populares.
+                Entrega física obrigatória de 1kg (um quilo) de alimento não-perecível por integrante na entrada de cada etapa regulamentar.
               </p>
             </div>
           </div>
@@ -352,6 +352,17 @@ export default function Page() {
               <div className="py-4 px-6 rounded-2xl border-2 border-red-500 bg-red-950/20 text-red-500 flex flex-col sm:flex-row justify-between items-center gap-4 animate-pulse">
                 <span className="font-mono text-sm md:text-base font-black tracking-widest uppercase">🔴 TRANSMISSÃO AO VIVO AGORA</span>
                 <button className="bg-red-600 hover:bg-red-500 text-white font-mono text-sm font-bold uppercase px-5 py-2 rounded-xl border border-black shadow">ASSISTIR LIVE</button>
+              </div>
+            )}
+            {lotesConfig.live.status === 'em_breve' && (
+              <div className="py-4 px-6 rounded-2xl border-2 border-[#E3B552] bg-amber-950/10 text-[#F0C265] flex flex-col sm:flex-row justify-between items-center gap-4">
+                <span className="font-mono text-sm md:text-base font-black tracking-widest uppercase">LIVE SESSIONS • LANÇAMENTO OFICIAL AGENDADO PARA 07 DE SETEMBRO ÀS 20:00</span>
+              </div>
+            )}
+            {lotesConfig.live.status === 'encerrada' && (
+              <div className="py-4 px-6 rounded-2xl border-2 border-white/5 bg-[#0B0F19]/60 text-gray-400 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <span className="font-mono text-sm md:text-base font-black tracking-widest uppercase">LIVE SESSIONS FINALIZADA • REPLAYS DISPONÍVEIS</span>
+                <button className="border border-white/10 text-white font-mono text-sm font-bold px-4 py-2 rounded-xl">VER REPLAY</button>
               </div>
             )}
           </div>
@@ -475,7 +486,7 @@ export default function Page() {
             <button onClick={handleOpenAdmin} className="text-[#8B6F47] hover:text-[#F0C265]">
               <Settings className="w-4 h-4" />
             </button>
-            <span>Designed by Senior UI/UX Engineer</span>
+            <span>Sistema criado por <a href="https://instagram.com/ww.wagner" target="_blank" rel="noopener noreferrer" className="text-[#D4A843] hover:text-[#E8C06B] transition-colors font-bold">@ww.wagner</a> • <a href="/termos" className="hover:text-white transition-colors">Termos de Uso</a> • <a href="/privacidade" className="hover:text-white transition-colors">Privacidade</a></span>
           </div>
         </div>
       </footer>
