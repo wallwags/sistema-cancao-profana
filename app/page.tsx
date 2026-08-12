@@ -3,6 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Settings, Music, Video, Camera, Globe, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import Navbar from '../components/Navbar';
+import HeroCard from '../components/HeroCard';
+import FeatureGrid from '../components/FeatureGrid';
 
 interface LoteState {
   status: 'ativo' | 'encerrado' | 'em_breve';
@@ -790,15 +794,15 @@ export default function Page() {
 
               <div className="bg-[#030407] p-4 rounded-xl flex flex-col items-center space-y-4 border border-white/5">
                 <div className="w-48 h-48 bg-white p-3 rounded-xl flex items-center justify-center relative shadow-lg">
-                  <div class="w-full h-full border border-black/10 flex flex-col justify-between p-2">
-                    <div class="flex justify-between">
-                      <div class="w-8 h-8 bg-black"></div>
-                      <div class="w-8 h-8 bg-black"></div>
+                  <div className="w-full h-full border border-black/10 flex flex-col justify-between p-2">
+                    <div className="flex justify-between">
+                      <div className="w-8 h-8 bg-black"></div>
+                      <div className="w-8 h-8 bg-black"></div>
                     </div>
-                    <div class="text-center font-bold text-[8px] text-[#05070B] font-mono uppercase tracking-widest leading-none py-2">Canção Profana</div>
-                    <div class="flex justify-between">
-                      <div class="w-8 h-8 bg-black"></div>
-                      <div class="w-12 h-12 border border-black border-dashed flex items-center justify-center"><div class="w-6 h-6 bg-[#F0C265]"></div></div>
+                    <div className="text-center font-bold text-[8px] text-[#05070B] font-mono uppercase tracking-widest leading-none py-2">Canção Profana</div>
+                    <div className="flex justify-between">
+                      <div className="w-8 h-8 bg-black"></div>
+                      <div className="w-12 h-12 border border-black border-dashed flex items-center justify-center"><div className="w-6 h-6 bg-[#F0C265]"></div></div>
                     </div>
                   </div>
                   {isCheckoutLoading && (
