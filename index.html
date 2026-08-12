@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Canção Profana — Console de Inscrições Oficial 2026</title>
+  <title>Canção Profana — Brutalist Luxury Console</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Google Fonts: Space Grotesk (Display Headers) & Inter (Body Text) -->
+  <!-- Google Fonts: Space Grotesk (Headers) & Inter (Body Text) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;900&display=swap" rel="stylesheet">
 
   <script>
@@ -18,18 +18,14 @@
       theme: {
         extend: {
           colors: {
-            studioBg: '#0F0D0B',       /* Background principal (preto quente) */
-            studioCard: '#1A1612',     /* Background secundário (cards/seções) */
-            studioElevated: '#242019', /* Background elevado (modais, hover) */
-            studioBorder: '#2E2820',   /* Bordas sutis (separadores) */
-            studioMuted: '#5C5248',    /* Texto desabilitado / terciário */
-            studioAccent: '#8B6F47',   /* Marrom accent suave (detalhes, ícones) */
-            studioTextSec: '#A89880',  /* Texto secundário (subtítulos) */
-            studioGold: '#C49A5E',     /* Marrom dourado (destaques médios) */
-            studioCta: '#D4A843',      /* CTA principal / dourado âmbar */
-            studioCtaHover: '#E8C06B', /* Hover de CTA */
-            studioTextPri: '#F0EAE0',  /* Texto principal (off-white) */
-            lime: '#10B981',           /* Success green indicator */
+            vstBg: '#05070B',       /* Dark Navy profundíssimo background */
+            vstPanel: '#0B0F19',    /* Matte-blue/navy glass cards */
+            goldAccent: '#E3B552',  /* Main Dribbble gold accent */
+            goldLight: '#FFF2D4',   /* Shimmer highlighting gold */
+            goldMedium: '#F0C265',  /* Medium core gold */
+            goldDark: '#B88A28',    /* Dark brass gold */
+            lime: '#10B981',        /* Success indicators */
+            coral: '#FF4B2E',       /* Alerts */
           },
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
@@ -41,38 +37,90 @@
   </script>
   
   <style>
-    /* STUDIO WARM DARK STYLING SYSTEM */
+    /* DRIBBBLE / AWWWARDS LUXURY GOLD & NAVY DESIGN SYSTEM */
     body {
-      background-color: #0F0D0B;
+      background-color: #05070B;
       color: #F0EAE0;
       font-family: 'Inter', sans-serif;
+      background-image: radial-gradient(ellipse at top, rgba(227, 181, 82, 0.15) 0%, #05070B 80%);
     }
 
-    /* Prevent mobile horizontal scroll bug under any viewport resizing */
+    /* Metallic Gold Text Gradient */
+    .gold-gradient-text {
+      background: linear-gradient(to bottom, #FFF2D4 0%, #F0C265 50%, #B88A28 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Glassmorphism 2.0 Card with Inset Shadows and blur */
+    .glass-card-2 {
+      background: rgba(11, 15, 25, 0.6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 
+        0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    }
+    
+    .glass-card-2-hover {
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card-2-hover:hover {
+      border-color: rgba(227, 181, 82, 0.3);
+      box-shadow: 
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.15), 
+        0 25px 50px -12px rgba(227, 181, 82, 0.15);
+      transform: translateY(-2px);
+    }
+
+    /* Primary Gold Button with Shimmer and Glowing Shadow */
+    .btn-gold-shimmer {
+      background: linear-gradient(135deg, #FFF2D4 0%, #F0C265 50%, #B88A28 100%);
+      border: 1px solid #000000;
+      box-shadow: 0 0 30px rgba(227, 181, 82, 0.35);
+      color: #000000;
+      font-weight: 900;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-gold-shimmer::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -50%;
+      width: 200%;
+      height: 100%;
+      background: linear-gradient(
+        to right,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0) 100%
+      );
+      transform: skewX(-25deg);
+      transition: 0.75s;
+      animation: shimmer 4s infinite;
+    }
+    @keyframes shimmer {
+      0% { left: -150%; }
+      100% { left: 150%; }
+    }
+    .btn-gold-shimmer:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 40px rgba(227, 181, 82, 0.5);
+    }
+
+    /* Strict viewport confinement */
     .viewport-wrapper {
       overflow-x: hidden;
       width: 100%;
       position: relative;
     }
 
-    /* Custom scrollbars */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #0F0D0B;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #2E2820;
-      border-radius: 9px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #D4A843;
-    }
-
     /* Waveform Divider */
     .vst-waveform-divider {
-      background: repeating-linear-gradient(90deg, #D4A843, #D4A843 4px, transparent 4px, transparent 12px);
+      background: repeating-linear-gradient(90deg, #F0C265, #F0C265 4px, transparent 4px, transparent 12px);
       height: 4px;
       width: 100%;
     }
@@ -83,37 +131,37 @@
   <!-- A. DYNAMIC HEADER & TOP BAR OF URGÊNCIA (Sticky Countdown) -->
   <div class="sticky top-0 z-50 w-full">
     <!-- Countdown top bar -->
-    <div class="bg-[#070504] py-3 px-4 border-b border-studioBorder flex justify-center items-center gap-3 select-none text-center">
-      <span class="font-mono text-sm md:text-base text-studioTextSec tracking-widest uppercase font-bold">FECHAMENTO DO LOTE ATIVO EM:</span>
-      <div class="font-mono text-sm md:text-base text-[#D4A843] font-bold tracking-widest flex items-center gap-1">
-        <span id="header-days">09</span>D : <span id="header-hours">14</span>H : <span id="header-minutes">42</span>M
+    <div class="bg-[#030407] py-3 px-4 border-b border-white/5 flex justify-center items-center gap-3 select-none text-center">
+      <span class="font-mono text-sm md:text-base text-gray-400 tracking-widest uppercase font-bold">FECHAMENTO DO LOTE ATIVO EM:</span>
+      <div class="font-mono text-sm md:text-base text-[#F0C265] font-bold tracking-widest flex items-center gap-1">
+        <span id="header-days">09</span>D : <span id="header-hours">13</span>H : <span id="header-minutes">10</span>M
       </div>
-      <span class="w-1.5 h-1.5 rounded-full bg-[#D4A843] animate-ping"></span>
+      <span class="w-1.5 h-1.5 rounded-full bg-[#F0C265] animate-ping"></span>
     </div>
 
     <!-- Navigation Header -->
-    <header class="bg-studioBg/95 backdrop-blur-md border-b border-studioBorder py-5 px-6">
+    <header class="bg-vstBg/90 backdrop-blur-md border-b border-white/5 py-5 px-6">
       <div class="max-w-6xl mx-auto flex justify-between items-center">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded bg-studioCta flex items-center justify-center font-display font-black text-studioBg text-xl border border-studioBorder shadow-md">
+          <div class="w-10 h-10 rounded bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] flex items-center justify-center font-display font-black text-black text-xl border border-black shadow-[0_0_15px_rgba(240,194,101,0.2)]">
             P
           </div>
           <div>
-            <span class="font-display font-black text-studioTextPri text-md tracking-tight uppercase block leading-none">CANÇÃO PROFANA</span>
-            <span class="font-mono text-sm text-studioTextSec tracking-widest block uppercase mt-0.5">MÚSICA AUTORAL</span>
+            <span class="font-display font-black text-white text-md tracking-tight uppercase block leading-none">CANÇÃO PROFANA</span>
+            <span class="font-mono text-xs text-[#F0C265] tracking-widest block uppercase mt-1">MÚSICA AUTORAL</span>
           </div>
         </div>
 
-        <nav class="hidden md:flex items-center gap-6 text-sm font-mono font-bold tracking-wider text-studioTextSec uppercase">
-          <a href="#principios" class="hover:text-studioTextPri transition-colors">Princípios</a>
-          <a href="#cronograma" class="hover:text-studioTextPri transition-colors">Fases</a>
-          <a href="#lotes" class="hover:text-studioTextPri transition-colors">Lotes</a>
-          <a href="#FAQ" class="hover:text-studioTextPri transition-colors">Dúvidas</a>
+        <nav class="hidden md:flex items-center gap-6 text-sm font-mono font-bold tracking-wider text-gray-400 uppercase">
+          <a href="#principios" class="hover:text-white transition-colors">Princípios</a>
+          <a href="#cronograma" class="hover:text-white transition-colors">Fases</a>
+          <a href="#lotes" class="hover:text-white transition-colors">Lotes</a>
+          <a href="#FAQ" class="hover:text-white transition-colors">Dúvidas</a>
         </nav>
 
         <div>
-          <button type="button" onclick="openQuiz()" class="bg-studioCta hover:bg-studioCtaHover text-studioBg font-mono text-sm font-bold uppercase tracking-wider px-5 py-2.5 rounded transition-all shadow-[0_4px_12px_rgba(212,168,67,0.25)] border border-studioBorder">
-            Inscrever-se
+          <button type="button" onclick="openQuiz()" class="btn-gold-shimmer px-6 py-2.5 rounded-full text-xs uppercase tracking-wider">
+            INSCREVER-SE
           </button>
         </div>
       </div>
@@ -128,20 +176,20 @@
       <div class="lg:col-span-7 space-y-6">
         
         <!-- Context badge with thin border -->
-        <div class="inline-block px-3.5 py-1.5 bg-studioCard border border-studioBorder rounded text-sm font-mono text-studioTextSec uppercase tracking-widest">
+        <div class="inline-block px-3.5 py-1.5 bg-[#0B0F19]/40 border border-white/10 rounded text-sm font-mono text-gray-400 uppercase tracking-widest">
           # ESTÚDIO PEDRA PROFANA CONCURSO MUSICAL
         </div>
 
-        <h1 class="font-display font-black text-3xl md:text-5xl lg:text-6xl text-studioTextPri leading-none uppercase tracking-tight">
-          Grave seu som. Concorra à produção da sua <span class="text-studioCta">carreira</span>.
+        <h1 class="font-display font-black text-4xl md:text-5xl lg:text-6xl text-white leading-none uppercase tracking-tight">
+          Grave seu som. Concorra à produção da sua <span class="gold-gradient-text">carreira</span>.
         </h1>
 
-        <p class="text-base md:text-lg text-studioTextSec leading-relaxed max-w-xl font-normal">
-          Esqueça taxas abusivas que não retornam nada. No Canção Profana, **cada banda inscrita ganha a gravação profissional de áudio e vídeo de sua live**. Entregamos estrutura técnica de alto nível e portf Portfolio imediato.
+        <p class="text-base md:text-lg text-gray-300 leading-relaxed max-w-xl font-normal">
+          Esqueça taxas abusivas que não retornam nada. No Canção Profana, **cada banda inscrita ganha a gravação profissional de áudio e vídeo de sua live**. Entregamos estrutura técnica de alto nível e portfólio imediato.
         </p>
 
         <!-- Institutional metadata -->
-        <div class="flex flex-wrap gap-4 pt-2 text-sm font-mono text-studioMuted uppercase tracking-wider">
+        <div class="flex flex-wrap gap-4 pt-2 text-sm font-mono text-gray-400 uppercase tracking-wider">
           <span>• AUTORAL PORTUGUÊS</span>
           <span>• TRANSMISSÃO DIGITAL</span>
           <span>• GRAVAÇÃO INCLUÍDA</span>
@@ -149,11 +197,11 @@
 
         <!-- CTA ACTIONS -->
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4">
-          <button type="button" onclick="openQuiz()" class="bg-studioCta hover:bg-studioCtaHover text-studioBg font-mono text-sm font-bold uppercase tracking-widest px-8 py-4 rounded transition-all shadow-lg hover:translate-y-[-1px] active:translate-y-[1px]">
-            Inscrever-se
+          <button type="button" onclick="openQuiz()" class="btn-gold-shimmer px-8 py-4 rounded-full text-sm uppercase tracking-widest">
+            INSCREVER-SE
           </button>
           
-          <a href="#premios" class="border border-studioBorder hover:border-studioTextSec text-studioTextPri font-mono text-sm font-bold uppercase tracking-widest px-8 py-4 rounded transition-colors text-center">
+          <a href="#premios" class="border border-white/10 hover:border-white/35 text-white font-mono text-sm font-bold uppercase tracking-widest px-8 py-4 rounded-full transition-colors text-center">
             Conhecer prêmios
           </a>
         </div>
@@ -161,17 +209,17 @@
 
       <!-- HERO VISUAL MEDIA (Skeuomorphic studio rack card) -->
       <div class="lg:col-span-5 relative flex justify-center">
-        <div class="bg-studioCard border border-studioBorder rounded-3xl p-5 w-full max-w-sm space-y-5 shadow-2xl">
+        <div class="glass-card-2 rounded-[32px] p-6 w-full max-w-sm space-y-6 relative overflow-hidden shadow-2xl">
           <!-- Grayscale high-contrast music photo -->
-          <div class="w-full aspect-square rounded-2xl overflow-hidden border border-studioBorder relative">
+          <div class="w-full aspect-square rounded-2xl overflow-hidden border border-white/10 relative">
             <img src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=600&q=80" alt="Gravação ao vivo no estúdio" class="w-full h-full object-cover grayscale brightness-90">
-            <span class="absolute top-3 left-3 bg-studioCta text-studioBg font-mono text-sm uppercase tracking-widest px-3.5 py-1.5 rounded border border-studioBorder font-bold">STUDIO LIVE</span>
+            <span class="absolute top-3 left-3 bg-[#F0C265] text-black font-mono text-sm uppercase tracking-widest px-3.5 py-1.5 rounded border border-black font-bold">STUDIO LIVE</span>
           </div>
 
           <div class="space-y-2">
-            <span class="font-mono text-studioCta text-sm tracking-wider uppercase block font-bold">OPORTUNIDADE ÚNICA (1º LUGAR)</span>
-            <h3 class="font-display font-bold text-lg text-studioTextPri leading-relaxed uppercase">EP de 5 Faixas no Bolso</h3>
-            <p class="text-sm text-studioTextSec leading-relaxed font-normal">
+            <span class="font-mono text-[#F0C265] text-sm tracking-wider uppercase block font-bold">OPORTUNIDADE ÚNICA (1º LUGAR)</span>
+            <h3 class="font-display font-bold text-lg text-white leading-relaxed uppercase">EP de 5 Faixas no Bolso</h3>
+            <p class="text-sm text-gray-300 leading-relaxed font-normal">
               Produção completa de EP (5 músicas autorais), mixagem/masterização profissional, gravação de webclipe de estúdio, fotos artísticas e distribuição fonográfica garantida.
             </p>
           </div>
@@ -181,33 +229,33 @@
 
     <!-- B. GRID ASSIMÉTRICO DE PRINCÍPIOS (3 Columns) -->
     <section id="principios" class="space-y-12">
-      <div class="space-y-2 border-b border-studioBorder pb-4">
-        <span class="font-mono text-sm md:text-base text-studioCta font-bold uppercase tracking-widest"># PRINCÍPIOS REGULAMENTARES</span>
-        <h2 class="font-display font-black text-2xl md:text-3xl text-studioTextPri uppercase tracking-tight">O QUE VOCÊ PRECISA SABER</h2>
+      <div class="space-y-2 border-b border-white/5 pb-4">
+        <span class="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest"># PRINCÍPIOS REGULAMENTARES</span>
+        <h2 class="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">O QUE VOCÊ PRECISA SABER</h2>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         
-        <div class="bg-studioCard border border-studioBorder p-6 rounded-2xl space-y-4 shadow-lg hover:border-studioAccent transition-all">
-          <span class="font-display font-black text-5xl text-studioCta block select-none">01</span>
-          <h3 class="font-display font-bold text-lg text-studioTextPri uppercase tracking-tight">Inscrição Simples</h3>
-          <p class="text-sm text-studioTextSec leading-relaxed">
+        <div class="glass-card-2 glass-card-2-hover p-6 rounded-2xl space-y-4">
+          <span class="font-display font-black text-5xl text-[#F0C265] block select-none">01</span>
+          <h3 class="font-display font-bold text-lg text-white uppercase tracking-tight">Inscrição Simples</h3>
+          <p class="text-sm text-gray-300 leading-relaxed">
             Configure seu projeto de 2 a 7 integrantes através de nosso quiz e preencha as credenciais. Toda a banda é validada no processo.
           </p>
         </div>
 
-        <div class="bg-studioCard border border-studioBorder p-6 rounded-2xl space-y-4 shadow-lg hover:border-studioAccent transition-all">
-          <span class="font-display font-black text-5xl text-studioCta block select-none">02</span>
-          <h3 class="font-display font-bold text-lg text-studioTextPri uppercase tracking-tight">Estúdio Ativo</h3>
-          <p class="text-sm text-studioTextSec leading-relaxed">
+        <div class="glass-card-2 glass-card-2-hover p-6 rounded-2xl space-y-4">
+          <span class="font-display font-black text-5xl text-[#F0C265] block select-none">02</span>
+          <h3 class="font-display font-bold text-lg text-white uppercase tracking-tight">Estúdio Ativo</h3>
+          <p class="text-sm text-gray-300 leading-relaxed">
             Sua banda se apresenta ao vivo e grava áudio e vídeo de alta fidelidade de graça, recebendo a matriz original para seu portfólio de carreira.
           </p>
         </div>
 
-        <div class="bg-studioCard border border-studioBorder p-6 rounded-2xl space-y-4 shadow-lg hover:border-studioAccent transition-all">
-          <span class="font-display font-black text-5xl text-studioCta block select-none">03</span>
-          <h3 class="font-display font-bold text-lg text-studioTextPri uppercase tracking-tight">Voto Qualificado</h3>
-          <p class="text-sm text-studioTextSec leading-relaxed">
+        <div class="glass-card-2 glass-card-2-hover p-6 rounded-2xl space-y-4">
+          <span class="font-display font-black text-5xl text-[#F0C265] block select-none">03</span>
+          <h3 class="font-display font-bold text-lg text-white uppercase tracking-tight">Voto Qualificado</h3>
+          <p class="text-sm text-gray-300 leading-relaxed">
             Avaliações divididas em três frentes: Notas técnicas dos jurados especialistas (Índio, Naraiane e Matheus T), voto do estúdio e quantidade de votos populares.
           </p>
         </div>
@@ -217,62 +265,62 @@
 
     <!-- C. LINHA DO TEMPO VISUAL (Fases do concurso) -->
     <section id="cronograma" class="space-y-12">
-      <div class="space-y-2 border-b border-studioBorder pb-4">
-        <span class="font-mono text-sm md:text-base text-studioCta font-bold uppercase tracking-widest"># FLUXO DO PROCESSO</span>
-        <h2 class="font-display font-black text-2xl md:text-3xl text-studioTextPri uppercase tracking-tight">FASES DE EXECUÇÃO DO CONCURSO</h2>
+      <div class="space-y-2 border-b border-white/5 pb-4">
+        <span class="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest"># FLUXO DO PROCESSO</span>
+        <h2 class="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">FASES DE EXECUÇÃO DO CONCURSO</h2>
       </div>
 
       <!-- Timeline path connection -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
-        <div class="hidden md:block absolute top-1/2 left-0 right-0 h-[1.5px] bg-studioBorder -translate-y-1/2 z-0"></div>
+        <div class="hidden md:block absolute top-1/2 left-0 right-0 h-[1.5px] bg-white/5 -translate-y-1/2 z-0"></div>
 
         <!-- Phase 1 -->
-        <div class="bg-[#120F0D] border border-studioBorder p-5 rounded-xl space-y-3 relative z-10 hover:border-studioAccent transition-colors">
+        <div class="bg-vstBg border border-white/5 p-5 rounded-xl space-y-3 relative z-10 hover:border-[#333333] transition-colors">
           <div class="flex justify-between items-center">
-            <span class="bg-[#242019] text-studioTextPri font-mono text-sm uppercase tracking-widest px-2.5 py-1 rounded font-bold border border-studioBorder">F1</span>
-            <span class="font-mono text-sm md:text-base text-studioTextSec uppercase tracking-wider">Lote 1</span>
+            <span class="bg-[#121215] text-white font-mono text-sm uppercase tracking-widest px-2.5 py-1 rounded font-bold border border-white/10">F1</span>
+            <span class="font-mono text-sm md:text-base text-gray-400 uppercase tracking-wider">Lote 1</span>
           </div>
-          <h4 class="font-display font-bold text-md text-studioTextPri uppercase">Inscrição Expressa</h4>
-          <p class="text-sm text-studioTextSec leading-relaxed font-normal">Matrícula no Quiz, definição de integrantes da banda e upload da foto de divulgação.</p>
+          <h4 class="font-display font-bold text-md text-white uppercase">Inscrição Expressa</h4>
+          <p class="text-sm text-gray-300 leading-relaxed font-normal">Matrícula no Quiz, definição de integrantes da banda e upload da foto de divulgação.</p>
         </div>
 
         <!-- Phase 2 -->
-        <div class="bg-[#120F0D] border border-studioBorder p-5 rounded-xl space-y-3 relative z-10 hover:border-studioAccent transition-colors">
+        <div class="bg-vstBg border border-white/5 p-5 rounded-xl space-y-3 relative z-10 hover:border-[#333333] transition-colors">
           <div class="flex justify-between items-center">
-            <span class="bg-[#242019] text-studioTextPri font-mono text-sm uppercase tracking-widest px-2.5 py-1 rounded font-bold border border-studioBorder">F2</span>
-            <span class="font-mono text-sm md:text-base text-studioTextSec uppercase tracking-wider">Gravação Live</span>
+            <span class="bg-[#121215] text-white font-mono text-sm uppercase tracking-widest px-2.5 py-1 rounded font-bold border border-white/10">F2</span>
+            <span class="font-mono text-sm md:text-base text-gray-400 uppercase tracking-wider">Gravação Live</span>
           </div>
-          <h4 class="font-display font-bold text-md text-studioTextPri uppercase">Transmissão ao Vivo</h4>
-          <p class="text-sm text-studioTextSec leading-relaxed font-normal">Sua banda grava no estúdio e a live é transmitida com QR Code de arrecadação direta para o grupo.</p>
+          <h4 class="font-display font-bold text-md text-white uppercase">Transmissão ao Vivo</h4>
+          <p class="text-sm text-gray-300 leading-relaxed font-normal">Sua banda grava no estúdio e a live é transmitida com QR Code de arrecadação direta para o grupo.</p>
         </div>
 
         <!-- Phase 3 -->
-        <div class="bg-[#120F0D] border border-studioBorder p-5 rounded-xl space-y-3 relative z-10 hover:border-studioAccent transition-colors">
+        <div class="bg-vstBg border border-white/5 p-5 rounded-xl space-y-3 relative z-10 hover:border-[#333333] transition-colors">
           <div class="flex justify-between items-center">
-            <span class="bg-[#242019] text-studioTextPri font-mono text-sm uppercase tracking-widest px-2.5 py-1 rounded font-bold border border-studioBorder">F3</span>
-            <span class="font-mono text-sm md:text-base text-studioTextSec uppercase tracking-wider">Mídias Ativas</span>
+            <span class="bg-[#121215] text-white font-mono text-sm uppercase tracking-widest px-2.5 py-1 rounded font-bold border border-white/10">F3</span>
+            <span class="font-mono text-sm md:text-base text-gray-400 uppercase tracking-wider">Mídias Ativas</span>
           </div>
-          <h4 class="font-display font-bold text-md text-studioTextPri uppercase">Podcast & Voto</h4>
-          <p class="text-sm text-studioTextSec leading-relaxed font-normal">Podcast especial apresentando as bandas selecionadas e abertura de votações públicas.</p>
+          <h4 class="font-display font-bold text-md text-white uppercase">Podcast & Voto</h4>
+          <p class="text-sm text-gray-300 leading-relaxed font-normal">Podcast especial apresentando as bandas selecionadas e abertura de votações públicas.</p>
         </div>
 
         <!-- Phase 4 -->
-        <div class="bg-[#120F0D] border border-studioBorder p-5 rounded-xl space-y-3 relative z-10 hover:border-studioAccent transition-colors">
+        <div class="bg-vstBg border border-white/5 p-5 rounded-xl space-y-3 relative z-10 hover:border-[#333333] transition-colors">
           <div class="flex justify-between items-center">
-            <span class="bg-[#242019] text-studioTextPri font-mono text-sm uppercase tracking-widest px-2.5 py-1 rounded font-bold border border-studioBorder">F4</span>
-            <span class="font-mono text-sm md:text-base text-studioTextSec uppercase tracking-wider">Grande Final</span>
+            <span class="bg-[#121215] text-white font-mono text-sm uppercase tracking-widest px-2.5 py-1 rounded font-bold border border-white/10">F4</span>
+            <span class="font-mono text-sm md:text-base text-gray-400 uppercase tracking-wider">Grande Final</span>
           </div>
-          <h4 class="font-display font-bold text-md text-studioTextPri uppercase">Show ao Vivo</h4>
-          <p class="text-sm text-studioTextSec leading-relaxed font-normal">Apresentação final ao vivo em local especial, com a revelação e premiação das bandas vencedoras.</p>
+          <h4 class="font-display font-bold text-md text-white uppercase">Show ao Vivo</h4>
+          <p class="text-sm text-gray-300 leading-relaxed font-normal">Apresentação final ao vivo em local especial, com a revelação e premiação das bandas vencedoras.</p>
         </div>
       </div>
     </section>
 
     <!-- D. TABELA PROGRESSIVA DE LOTES (Pricing) -->
     <section id="lotes" class="space-y-12">
-      <div class="space-y-4 border-b border-studioBorder pb-4">
-        <span class="font-mono text-sm md:text-base text-studioCta font-bold uppercase tracking-widest"># INVESTIMENTO E CRONOGRAMA DE PREÇOS</span>
-        <h2 class="font-display font-black text-2xl md:text-3xl text-studioTextPri uppercase tracking-tight">TABELA PROGRESSIVA DE LOTES</h2>
+      <div class="space-y-4 border-b border-white/5 pb-4">
+        <span class="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest"># INVESTIMENTO E CRONOGRAMA DE PREÇOS</span>
+        <h2 class="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">TABELA PROGRESSIVA DE LOTES</h2>
         
         <!-- Live status banner -->
         <div id="live-status-banner" class="hidden py-4 px-6 rounded-2xl border-2 flex flex-col sm:flex-row justify-between items-center gap-4 transition-all duration-300">
@@ -288,19 +336,19 @@
 
     <!-- E. VITRINE DE ENTREGÁVEIS E PRÊMIOS -->
     <section id="premios" class="space-y-12">
-      <div class="space-y-2 border-b border-studioBorder pb-4">
-        <span class="font-mono text-sm md:text-base text-studioCta font-bold uppercase tracking-widest"># VITRINE DE ENTREGÁVEIS</span>
-        <h2 class="font-display font-black text-2xl md:text-3xl text-studioTextPri uppercase tracking-tight">O QUE ESTÁ EM JOGO</h2>
+      <div class="space-y-2 border-b border-white/5 pb-4">
+        <span class="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest"># VITRINE DE ENTREGÁVEIS</span>
+        <h2 class="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">O QUE ESTÁ EM JOGO</h2>
       </div>
 
       <!-- Central featured banner with giant macro value -->
-      <div class="bg-studioCard border-2 border-studioCta p-8 rounded-3xl text-center relative overflow-hidden shadow-2xl space-y-3">
-        <div class="absolute -right-16 -top-16 w-36 h-36 bg-studioCta/10 rounded-full blur-xl"></div>
-        <span class="font-mono text-sm md:text-base text-studioCta font-bold uppercase tracking-widest block">VALOR TOTAL ESTIMADO DE CARREIRA (1º LUGAR)</span>
-        <div class="font-display font-black text-4xl md:text-6xl text-studioTextPri tracking-tight py-2 uppercase">
+      <div class="glass-card-2 border-2 border-[#E3B552]/40 p-8 rounded-3xl text-center relative overflow-hidden shadow-2xl space-y-3">
+        <div class="absolute -right-16 -top-16 w-36 h-36 bg-[#E3B552]/10 rounded-full blur-xl"></div>
+        <span class="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest block">VALOR TOTAL ESTIMADO DE CARREIRA (1º LUGAR)</span>
+        <div class="gold-gradient-text font-display font-black text-4xl md:text-6xl tracking-tight py-2 uppercase select-none">
           R$ 20.000,00
         </div>
-        <p class="text-sm text-studioTextSec max-w-md mx-auto">
+        <p class="text-sm text-gray-300 max-w-md mx-auto">
           Um pacote completo de estúdio físico e lançamentos digitais garantidos, entregues diretamente pela equipe Pedra Profana.
         </p>
       </div>
@@ -309,57 +357,57 @@
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         
         <!-- Deliverable 1 -->
-        <div class="bg-studioCard border border-studioBorder p-5 rounded-2xl relative space-y-4 flex flex-col justify-between shadow-lg hover:border-studioAccent transition-colors">
-          <span class="absolute top-3 right-3 font-mono text-sm md:text-base text-studioCta font-bold tracking-widest uppercase bg-studioBg border border-studioBorder px-3 py-1 rounded-full shadow">~~R$ 12k~~</span>
+        <div class="glass-card-2 glass-card-2-hover p-5 rounded-2xl relative space-y-4 flex flex-col justify-between shadow-lg">
+          <span class="absolute top-3 right-3 font-mono text-sm md:text-base text-[#F0C265] font-bold tracking-widest uppercase bg-black border border-white/5 px-3 py-1 rounded-full shadow">~~R$ 12k~~</span>
           
           <div class="space-y-3 pt-6">
             <!-- Icon EP -->
-            <svg class="w-8 h-8 text-studioCta" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
-            <div class="border-t border-studioBorder pt-2">
-              <h4 class="font-display font-bold text-md text-studioTextPri uppercase tracking-tight">Gravação de EP</h4>
-              <p class="text-sm text-studioTextSec leading-relaxed mt-1">Produção completa de 5 faixas autorais inéditas, mixagem e masterização de estúdio.</p>
+            <svg class="w-8 h-8 text-[#F0C265]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+            <div class="border-t border-white/5 pt-2">
+              <h4 class="font-display font-bold text-md text-white uppercase tracking-tight">Gravação de EP</h4>
+              <p class="text-sm text-gray-300 leading-relaxed mt-1">Produção completa de 5 faixas autorais inéditas, mixagem e masterização de estúdio.</p>
             </div>
           </div>
         </div>
 
         <!-- Deliverable 2 -->
-        <div class="bg-studioCard border border-studioBorder p-5 rounded-2xl relative space-y-4 flex flex-col justify-between shadow-lg hover:border-studioAccent transition-colors">
-          <span class="absolute top-3 right-3 font-mono text-sm md:text-base text-studioCta font-bold tracking-widest uppercase bg-studioBg border border-studioBorder px-3 py-1 rounded-full shadow">~~R$ 5k~~</span>
+        <div class="glass-card-2 glass-card-2-hover p-5 rounded-2xl relative space-y-4 flex flex-col justify-between shadow-lg">
+          <span class="absolute top-3 right-3 font-mono text-sm md:text-base text-[#F0C265] font-bold tracking-widest uppercase bg-black border border-white/5 px-3 py-1 rounded-full shadow">~~R$ 5k~~</span>
           
           <div class="space-y-3 pt-6">
             <!-- Icon Video camera -->
-            <svg class="w-8 h-8 text-studioCta" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-            <div class="border-t border-studioBorder pt-2">
-              <h4 class="font-display font-bold text-md text-studioTextPri uppercase tracking-tight">Webclipe Oficial</h4>
-              <p class="text-sm text-studioTextSec leading-relaxed mt-1">Captação profissional em alta resolução de um webclipe de divulgação da faixa foco.</p>
+            <svg class="w-8 h-8 text-[#F0C265]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <div class="border-t border-white/5 pt-2">
+              <h4 class="font-display font-bold text-md text-white uppercase tracking-tight">Webclipe Oficial</h4>
+              <p class="text-sm text-gray-300 leading-relaxed mt-1">Captação profissional em alta resolução de um webclipe de divulgação da faixa foco.</p>
             </div>
           </div>
         </div>
 
         <!-- Deliverable 3 -->
-        <div class="bg-studioCard border border-studioBorder p-5 rounded-2xl relative space-y-4 flex flex-col justify-between shadow-lg hover:border-studioAccent transition-colors">
-          <span class="absolute top-3 right-3 font-mono text-sm md:text-base text-studioCta font-bold tracking-widest uppercase bg-studioBg border border-studioBorder px-3 py-1 rounded-full shadow">~~R$ 1.5k~~</span>
+        <div class="glass-card-2 glass-card-2-hover p-5 rounded-2xl relative space-y-4 flex flex-col justify-between shadow-lg">
+          <span class="absolute top-3 right-3 font-mono text-sm md:text-base text-[#F0C265] font-bold tracking-widest uppercase bg-black border border-white/5 px-3 py-1 rounded-full shadow">~~R$ 1.5k~~</span>
           
           <div class="space-y-3 pt-6">
             <!-- Icon Photo camera -->
-            <svg class="w-8 h-8 text-studioCta" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2"/></svg>
-            <div class="border-t border-studioBorder pt-2">
-              <h4 class="font-display font-bold text-md text-studioTextPri uppercase tracking-tight">Sessão de Fotos</h4>
-              <p class="text-sm text-studioTextSec leading-relaxed mt-1">Fotos oficiais de divulgação com fotógrafo veterano de estúdio e direção artística.</p>
+            <svg class="w-8 h-8 text-[#F0C265]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2"/></svg>
+            <div class="border-t border-white/5 pt-2">
+              <h4 class="font-display font-bold text-md text-white uppercase tracking-tight">Sessão de Fotos</h4>
+              <p class="text-sm text-gray-300 leading-relaxed mt-1">Fotos oficiais de divulgação com fotógrafo veterano de estúdio e direção artística.</p>
             </div>
           </div>
         </div>
 
         <!-- Deliverable 4 -->
-        <div class="bg-studioCard border border-studioBorder p-5 rounded-2xl relative space-y-4 flex flex-col justify-between shadow-lg hover:border-studioAccent transition-colors">
-          <span class="absolute top-3 right-3 font-mono text-sm md:text-base text-studioCta font-bold tracking-widest uppercase bg-studioBg border border-studioBorder px-3 py-1 rounded-full shadow">~~R$ 1.5k~~</span>
+        <div class="glass-card-2 glass-card-2-hover p-5 rounded-2xl relative space-y-4 flex flex-col justify-between shadow-lg">
+          <span class="absolute top-3 right-3 font-mono text-sm md:text-base text-[#F0C265] font-bold tracking-widest uppercase bg-black border border-white/5 px-3 py-1 rounded-full shadow">~~R$ 1.5k~~</span>
           
           <div class="space-y-3 pt-6">
             <!-- Icon Globe -->
-            <svg class="w-8 h-8 text-studioCta" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
-            <div class="border-t border-studioBorder pt-2">
-              <h4 class="font-display font-bold text-md text-studioTextPri uppercase tracking-tight">Distribuição Digital</h4>
-              <p class="text-sm text-studioTextSec leading-relaxed mt-1">Lançamento de carreira fonográfica do EP oficial em todas as plataformas de streaming.</p>
+            <svg class="w-8 h-8 text-[#F0C265]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+            <div class="border-t border-white/5 pt-2">
+              <h4 class="font-display font-bold text-md text-white uppercase tracking-tight">Distribuição Digital</h4>
+              <p class="text-sm text-gray-300 leading-relaxed mt-1">Lançamento de carreira fonográfica do EP oficial em todas as plataformas de streaming.</p>
             </div>
           </div>
         </div>
@@ -369,119 +417,119 @@
 
     <!-- F. SEÇÃO INTERATIVA DE DÚVIDAS (FAQ Accordion) -->
     <section id="FAQ" class="space-y-12">
-      <div class="space-y-2 border-b border-studioBorder pb-4">
-        <span class="font-mono text-sm md:text-base text-studioCta font-bold uppercase tracking-widest"># PERGUNTAS FREQUENTES</span>
-        <h2 class="font-display font-black text-2xl md:text-3xl text-studioTextPri uppercase tracking-tight">DÚVIDAS FREQUENTES</h2>
+      <div class="space-y-2 border-b border-white/5 pb-4">
+        <span class="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest"># PERGUNTAS FREQUENTES</span>
+        <h2 class="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">DÚVIDAS FREQUENTES</h2>
       </div>
 
       <div class="space-y-4 max-w-4xl mx-auto">
         
         <!-- Accordion 1 -->
-        <div class="bg-studioCard border border-studioBorder rounded-xl p-5 cursor-pointer hover:border-studioAccent transition-colors" onclick="toggleAccordion(this)">
+        <div class="glass-card-2 p-5 rounded-xl cursor-pointer hover:border-[#E3B552]/40 transition-colors" onclick="toggleAccordion(this)">
           <div class="flex justify-between items-center">
-            <h3 class="font-display font-bold text-studioTextPri text-sm md:text-md uppercase tracking-wide">Como é calculada a taxa de inscrição?</h3>
-            <span class="text-studioCta font-bold text-md leading-none">+</span>
+            <h3 class="font-display font-bold text-white text-sm md:text-md uppercase tracking-wide">Como é calculada a taxa de inscrição?</h3>
+            <span class="text-[#F0C265] font-bold text-md leading-none">+</span>
           </div>
-          <p class="hidden text-sm text-studioTextSec mt-3 leading-relaxed border-t border-studioBorder pt-3">
+          <p class="hidden text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3">
             O valor de R$ 60 (do Lote 1 ativo) é cobrado **por integrante** cadastrado no grupo musical (mínimo 2, máximo 7). Ao preencher o quiz e definir o lineup final, o sistema calcula o valor total. Essa taxa garante toda a infraestrutura e a gravação de estúdio da live.
           </p>
         </div>
 
         <!-- Accordion 2: Quem pode participar -->
-        <div class="bg-studioCard border border-studioBorder rounded-xl p-5 cursor-pointer hover:border-studioAccent transition-colors" onclick="toggleAccordion(this)">
+        <div class="glass-card-2 p-5 rounded-xl cursor-pointer hover:border-[#E3B552]/40 transition-colors" onclick="toggleAccordion(this)">
           <div class="flex justify-between items-center">
-            <h3 class="font-display font-bold text-studioTextPri text-sm md:text-md uppercase tracking-wide">Quem pode participar do concurso?</h3>
-            <span class="text-studioCta font-bold text-md leading-none">+</span>
+            <h3 class="font-display font-bold text-white text-sm md:text-md uppercase tracking-wide">Quem pode participar do concurso?</h3>
+            <span class="text-[#F0C265] font-bold text-md leading-none">+</span>
           </div>
-          <p class="hidden text-sm text-studioTextSec mt-3 leading-relaxed border-t border-studioBorder pt-3">
+          <p class="hidden text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3">
             O concurso é aberto a qualquer artista independente ou banda que apresente um repertório autoral (com pelo menos uma música escrita majoritariamente em português ou instrumental). A banda precisa ter no mínimo 2 e no máximo 7 integrantes ativos.
           </p>
         </div>
 
         <!-- Accordion 3: Como funciona o sistema de votação -->
-        <div class="bg-studioCard border border-studioBorder rounded-xl p-5 cursor-pointer hover:border-studioAccent transition-colors" onclick="toggleAccordion(this)">
+        <div class="glass-card-2 p-5 rounded-xl cursor-pointer hover:border-[#E3B552]/40 transition-colors" onclick="toggleAccordion(this)">
           <div class="flex justify-between items-center">
-            <h3 class="font-display font-bold text-studioTextPri text-sm md:text-md uppercase tracking-wide">Como funciona o sistema de votação durante a live?</h3>
-            <span class="text-studioCta font-bold text-md leading-none">+</span>
+            <h3 class="font-display font-bold text-white text-sm md:text-md uppercase tracking-wide">Como funciona o sistema de votação durante a live?</h3>
+            <span class="text-[#F0C265] font-bold text-md leading-none">+</span>
           </div>
-          <p class="hidden text-sm text-studioTextSec mt-3 leading-relaxed border-t border-studioBorder pt-3">
+          <p class="hidden text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3">
             A votação possui três canais complementares de avaliação: 1. **Voto dos Jurados** (Índio, Naraiane e Matheus T dão notas de 0 a 10 nos critérios de Apresentação, Composição e Estética); 2. **Voto da Equipe do Estúdio** (Nota baseada no envolvimento); 3. **Voto Popular** (Computado logo após cada live sessions, onde o volume absoluto de votos destrava as vagas de avanço).
           </p>
         </div>
 
         <!-- Accordion 4: Quantas musicas posso inscrever -->
-        <div class="bg-studioCard border border-studioBorder rounded-xl p-5 cursor-pointer hover:border-studioAccent transition-colors" onclick="toggleAccordion(this)">
+        <div class="glass-card-2 p-5 rounded-xl cursor-pointer hover:border-[#E3B552]/40 transition-colors" onclick="toggleAccordion(this)">
           <div class="flex justify-between items-center">
-            <h3 class="font-display font-bold text-studioTextPri text-sm md:text-md uppercase tracking-wide">Quantas músicas posso inscrever no concurso?</h3>
-            <span class="text-studioCta font-bold text-md leading-none">+</span>
+            <h3 class="font-display font-bold text-white text-sm md:text-md uppercase tracking-wide">Quantas músicas posso inscrever no concurso?</h3>
+            <span class="text-[#F0C265] font-bold text-md leading-none">+</span>
           </div>
-          <p class="hidden text-sm text-studioTextSec mt-3 leading-relaxed border-t border-studioBorder pt-3">
+          <p class="hidden text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3">
             Cada grupo pode inscrever um repertório de **no máximo 3 músicas** para se apresentar e gravar nas transmissões oficiais.
           </p>
         </div>
 
         <!-- Accordion 5: Prazo final -->
-        <div class="bg-studioCard border border-studioBorder rounded-xl p-5 cursor-pointer hover:border-studioAccent transition-colors" onclick="toggleAccordion(this)">
+        <div class="glass-card-2 p-5 rounded-xl cursor-pointer hover:border-[#E3B552]/40 transition-colors" onclick="toggleAccordion(this)">
           <div class="flex justify-between items-center">
-            <h3 class="font-display font-bold text-studioTextPri text-sm md:text-md uppercase tracking-wide">Qual é o prazo final para inscrição?</h3>
-            <span class="text-studioCta font-bold text-md leading-none">+</span>
+            <h3 class="font-display font-bold text-white text-sm md:text-md uppercase tracking-wide">Qual é o prazo final para inscrição?</h3>
+            <span class="text-[#F0C265] font-bold text-md leading-none">+</span>
           </div>
-          <p class="hidden text-sm text-studioTextSec mt-3 leading-relaxed border-t border-studioBorder pt-3">
-            A campanha completa de captação dura no máximo 28 dias. O Lote 1 vigora nos primeiros 10 dias de abertura; o Lote 2 nos dias 11 a 20; e o Lote 3 estende-se do dia 21 até o encerramento do prazo regulamentar (Dia 28, às 23:59, Horário de Brasília).
+          <p class="hidden text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3">
+            A campanha completa de captação dura no máximo 28 dias. O Lote 1 vigora nos primeiros 10 dias de abertura; o Lote 2 nos dias 11 a 20; e o Lote 3 estende-se do dia 21 até o encerramento do prazo regulamentar.
           </p>
         </div>
 
         <!-- Accordion 6: Confirmacao de inscricao -->
-        <div class="bg-studioCard border border-studioBorder rounded-xl p-5 cursor-pointer hover:border-studioAccent transition-colors" onclick="toggleAccordion(this)">
+        <div class="glass-card-2 p-5 rounded-xl cursor-pointer hover:border-[#E3B552]/40 transition-colors" onclick="toggleAccordion(this)">
           <div class="flex justify-between items-center">
-            <h3 class="font-display font-bold text-studioTextPri text-sm md:text-md uppercase tracking-wide">Como recebo a confirmação da minha inscrição?</h3>
-            <span class="text-studioCta font-bold text-md leading-none">+</span>
+            <h3 class="font-display font-bold text-white text-sm md:text-md uppercase tracking-wide">Como recebo a confirmação da minha inscrição?</h3>
+            <span class="text-[#F0C265] font-bold text-md leading-none">+</span>
           </div>
-          <p class="hidden text-sm text-studioTextSec mt-3 leading-relaxed border-t border-studioBorder pt-3">
+          <p class="hidden text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3">
             Logo após a validação segura do pagamento PIX por nosso sistema de webhook, você receberá um e-mail transacional de confirmação com os detalhes da sua inscrição e as diretrizes completas de estúdio.
           </p>
         </div>
 
         <!-- Accordion 7: Nao puder participar -->
-        <div class="bg-studioCard border border-studioBorder rounded-xl p-5 cursor-pointer hover:border-studioAccent transition-colors" onclick="toggleAccordion(this)">
+        <div class="glass-card-2 p-5 rounded-xl cursor-pointer hover:border-[#E3B552]/40 transition-colors" onclick="toggleAccordion(this)">
           <div class="flex justify-between items-center">
-            <h3 class="font-display font-bold text-studioTextPri text-sm md:text-md uppercase tracking-wide">O que acontece se eu me inscrever e não puder participar?</h3>
-            <span class="text-studioCta font-bold text-md leading-none">+</span>
+            <h3 class="font-display font-bold text-white text-sm md:text-md uppercase tracking-wide">O que acontece se eu me inscrever e não puder participar?</h3>
+            <span class="text-[#F0C265] font-bold text-md leading-none">+</span>
           </div>
-          <p class="hidden text-sm text-studioTextSec mt-3 leading-relaxed border-t border-studioBorder pt-3">
+          <p class="hidden text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3">
             Caso ocorram imprevistos justificáveis, o grupo deve notificar a equipe de estúdio com no mínimo 5 dias de antecedência para realocação em novas datas sob disponibilidade. Em casos extremos, a inscrição pode ser transferida para outro projeto parceiro sob análise técnica.
           </p>
         </div>
 
         <!-- Accordion 8: Parceria/Coautoria -->
-        <div class="bg-studioCard border border-studioBorder rounded-xl p-5 cursor-pointer hover:border-studioAccent transition-colors" onclick="toggleAccordion(this)">
+        <div class="glass-card-2 p-5 rounded-xl cursor-pointer hover:border-[#E3B552]/40 transition-colors" onclick="toggleAccordion(this)">
           <div class="flex justify-between items-center">
-            <h3 class="font-display font-bold text-studioTextPri text-sm md:text-md uppercase tracking-wide">Posso inscrever uma música em parceria ou coautoria?</h3>
-            <span class="text-studioCta font-bold text-md leading-none">+</span>
+            <h3 class="font-display font-bold text-white text-sm md:text-md uppercase tracking-wide">Posso inscrever uma música em parceria ou coautoria?</h3>
+            <span class="text-[#F0C265] font-bold text-md leading-none">+</span>
           </div>
-          <p class="hidden text-sm text-studioTextSec mt-3 leading-relaxed border-t border-studioBorder pt-3">
+          <p class="hidden text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3">
             Sim! Com certeza. Desde que a banda detranque os direitos autorais para as transmissões oficiais da gravação e pelo menos uma das faixas do repertório de 3 músicas seja de autoria e em língua portuguesa.
           </p>
         </div>
 
         <!-- Accordion 9: Como funciona cada fase -->
-        <div class="bg-studioCard border border-studioBorder rounded-xl p-5 cursor-pointer hover:border-studioAccent transition-colors" onclick="toggleAccordion(this)">
+        <div class="glass-card-2 p-5 rounded-xl cursor-pointer hover:border-[#E3B552]/40 transition-colors" onclick="toggleAccordion(this)">
           <div class="flex justify-between items-center">
-            <h3 class="font-display font-bold text-studioTextPri text-sm md:text-md uppercase tracking-wide">Como funciona cada fase do concurso?</h3>
-            <span class="text-studioCta font-bold text-md leading-none">+</span>
+            <h3 class="font-display font-bold text-white text-sm md:text-md uppercase tracking-wide">Como funciona cada fase do concurso?</h3>
+            <span class="text-[#F0C265] font-bold text-md leading-none">+</span>
           </div>
-          <p class="hidden text-sm text-studioTextSec mt-3 leading-relaxed border-t border-studioBorder pt-3">
+          <p class="hidden text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3">
             O concurso possui 3 fases ativas: **Etapa 1 (Transmissão ao Vivo):** as bandas gravam ao vivo no estúdio e transmitem com arrecadação direta na tela. **Etapa 2 (Podcast especial):** as bandas selecionadas participam de um podcast de divulgação. **Etapa 3 (Grande Final):** Apresentação presencial ao vivo para o público e revelação dos vencedores pela média final de notas.
           </p>
         </div>
 
         <!-- Accordion 10: Quando anunciado -->
-        <div class="bg-studioCard border border-studioBorder rounded-xl p-5 cursor-pointer hover:border-studioAccent transition-colors" onclick="toggleAccordion(this)">
+        <div class="glass-card-2 p-5 rounded-xl cursor-pointer hover:border-[#E3B552]/40 transition-colors" onclick="toggleAccordion(this)">
           <div class="flex justify-between items-center">
-            <h3 class="font-display font-bold text-studioTextPri text-sm md:text-md uppercase tracking-wide">Quando e como os vencedores serão anunciados?</h3>
-            <span class="text-studioCta font-bold text-md leading-none">+</span>
+            <h3 class="font-display font-bold text-white text-sm md:text-md uppercase tracking-wide">Quando e como os vencedores serão anunciados?</h3>
+            <span class="text-[#F0C265] font-bold text-md leading-none">+</span>
           </div>
-          <p class="hidden text-sm text-studioTextSec mt-3 leading-relaxed border-t border-studioBorder pt-3">
+          <p class="hidden text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3">
             Os vencedores das primeiras posições do pódio serão coroados no show da Grande Final presencial ao vivo, com transmissão integrada e divulgação instantânea nas redes sociais do Estúdio Pedra Profana.
           </p>
         </div>
@@ -492,14 +540,14 @@
   </div>
 
   <!-- G. RODAPÉ TÉCNICO MINIMALISTA (Footer Space-Between) -->
-  <footer class="bg-[#070504] border-t border-studioBorder py-8 px-6 mt-16 text-center text-sm font-mono text-studioTextSec uppercase tracking-widest">
+  <footer class="bg-[#030407] border-t border-white/5 py-8 px-6 mt-16 text-center text-sm font-mono text-gray-400 uppercase tracking-widest">
     <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
       <div>
         © 2026 Canção Profana. Estúdio Pedra Profana. Todos os Direitos Reservados.
       </div>
       <div class="flex items-center gap-3">
         <!-- Subtle cog settings icon for Admin Panel -->
-        <button type="button" onclick="promptAdminPassword()" class="text-studioAccent hover:text-studioCta transition-colors" title="Painel Admin">
+        <button type="button" onclick="promptAdminPassword()" class="text-[#8B6F47] hover:text-[#F0C265] transition-colors" title="Painel Admin">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2.5"/></svg>
         </button>
         <span>Designed by Senior UI/UX Engineer</span>
@@ -509,7 +557,7 @@
 
   <!-- 3. MOBILE PERSISTENT FLOATING CTA WIDGET -->
   <div class="md:hidden fixed bottom-4 right-4 z-40">
-    <button type="button" onclick="openQuiz()" class="w-14 h-14 rounded-full bg-studioCta text-studioBg flex items-center justify-center shadow-lg shadow-studioCta/40 animate-pulse border-2 border-studioBorder font-black text-xl hover:scale-105 active:scale-95 transition-all">
+    <button type="button" onclick="openQuiz()" class="btn-gold-shimmer w-14 h-14 rounded-full flex items-center justify-center font-black text-xl hover:scale-105 active:scale-95 transition-all">
       +
     </button>
   </div>
@@ -517,21 +565,21 @@
   <!-- ========================================================= -->
   <!-- GAMIFIED POPUP QUIZ OVERLAY (MOBILE-FIRST HIGH CONTRAST) -->
   <!-- ========================================================= -->
-  <div id="quiz-modal" class="fixed inset-0 z-50 quiz-overlay hidden items-center justify-center p-4 bg-studioBg/90 backdrop-blur-md">
-    <div class="bg-studioCard border-2 border-studioCta w-full max-w-xl rounded-3xl p-6 md:p-8 relative space-y-6 shadow-2xl flex flex-col justify-between max-h-[90vh] overflow-y-auto">
+  <div id="quiz-modal" class="fixed inset-0 z-50 quiz-overlay hidden items-center justify-center p-4 bg-[#05070B]/90 backdrop-blur-md">
+    <div class="glass-card-2 border-2 border-[#E3B552] w-full max-w-xl rounded-3xl p-6 md:p-8 relative space-y-6 shadow-2xl flex flex-col justify-between max-h-[90vh] overflow-y-auto">
       
       <!-- Close trigger -->
-      <button type="button" onclick="closeQuiz()" class="absolute right-5 top-5 text-studioTextSec hover:text-studioTextPri font-mono text-2xl font-bold">&times;</button>
+      <button type="button" onclick="closeQuiz()" class="absolute right-5 top-5 text-gray-400 hover:text-white font-mono text-2xl font-bold">&times;</button>
       
       <!-- GAMIFIED PROGRESS BAR -->
       <div class="space-y-2 shrink-0">
         <div class="flex justify-between items-baseline">
-          <span class="font-mono text-sm md:text-base text-studioCta font-black uppercase tracking-widest" id="quiz-step-label">Passo 1 de 5</span>
-          <span class="font-mono text-sm md:text-base text-studioTextSec font-bold" id="quiz-progress-pct">Progresso: 20%</span>
+          <span class="font-mono text-sm md:text-base text-[#F0C265] font-black uppercase tracking-widest" id="quiz-step-label">Passo 1 de 5</span>
+          <span class="font-mono text-sm md:text-base text-gray-400 font-bold" id="quiz-progress-pct">Progresso: 20%</span>
         </div>
         
-        <div class="w-full h-2 bg-studioBg rounded-full overflow-hidden flex items-center">
-          <div class="h-full bg-studioCta rounded-full shadow-[0_0_10px_#D4A843] transition-all duration-300" id="quiz-progress-fill" style="width: 20%;"></div>
+        <div class="w-full h-2 bg-black rounded-full overflow-hidden flex items-center">
+          <div class="h-full bg-gradient-to-r from-[#FFF2D4] via-[#F0C265] to-[#B88A28] rounded-full shadow-[0_0_10px_#F0C265] transition-all duration-300" id="quiz-progress-fill" style="width: 20%;"></div>
         </div>
       </div>
 
@@ -540,21 +588,21 @@
         
         <!-- STEP 1: PROJECT DATA -->
         <div id="q-step-1" class="space-y-4">
-          <h3 class="font-display font-black text-2xl text-studioTextPri uppercase tracking-tight">Dados do Projeto</h3>
-          <p class="text-sm text-studioTextSec">Forneça os metadados do projeto musical que subirá ao palco.</p>
+          <h3 class="font-display font-black text-2xl text-white uppercase tracking-tight">Dados do Projeto</h3>
+          <p class="text-sm text-gray-300">Forneça os metadados do projeto musical que subirá ao palco.</p>
           
           <div class="space-y-4 pt-2">
             <div class="space-y-1.5">
-              <label class="block font-mono text-sm md:text-base text-studioTextPri font-bold uppercase tracking-wider">Nome da Banda / Artista *</label>
-              <div class="vst-input-groove p-1.5">
-                <input type="text" id="quiz-project-name" class="w-full bg-transparent border-none outline-none px-4 py-3 text-studioTextPri text-sm font-medium" placeholder="Nome oficial" required>
+              <label class="block font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-wider">Nome da Banda / Artista *</label>
+              <div class="bg-black/50 border border-white/10 rounded-xl p-1.5">
+                <input type="text" id="quiz-project-name" class="w-full bg-transparent border-none outline-none px-4 py-3 text-white text-sm font-medium" placeholder="Nome oficial" required>
               </div>
             </div>
             
             <div class="space-y-1.5">
-              <label class="block font-mono text-sm md:text-base text-studioTextPri font-bold uppercase tracking-wider">Estilo / Gênero Musical *</label>
-              <div class="vst-input-groove p-1.5">
-                <input type="text" id="quiz-project-style" class="w-full bg-transparent border-none outline-none px-4 py-3 text-studioTextPri text-sm font-medium" placeholder="Ex: Indie Rock, Metal, MPB" required>
+              <label class="block font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-wider">Estilo / Gênero Musical *</label>
+              <div class="bg-black/50 border border-white/10 rounded-xl p-1.5">
+                <input type="text" id="quiz-project-style" class="w-full bg-transparent border-none outline-none px-4 py-3 text-white text-sm font-medium" placeholder="Ex: Indie Rock, Metal, MPB" required>
               </div>
             </div>
           </div>
@@ -562,28 +610,28 @@
 
         <!-- STEP 2: MEDIA AND BIO -->
         <div id="q-step-2" class="space-y-4 hidden">
-          <h3 class="font-display font-black text-2xl text-studioTextPri uppercase tracking-tight">Conte sua História</h3>
-          <p class="text-sm text-studioTextSec">Estas informações serão exibidas ao corpo de jurados técnicos.</p>
+          <h3 class="font-display font-black text-2xl text-white uppercase tracking-tight">Conte sua História</h3>
+          <p class="text-sm text-gray-300">Estas informações serão exibidas ao corpo de jurados técnicos.</p>
           
           <div class="space-y-4 pt-2">
             <div class="space-y-1.5">
-              <label class="block font-mono text-sm md:text-base text-studioTextPri font-bold uppercase tracking-wider">Mini Biografia *</label>
-              <div class="vst-input-groove p-1.5">
-                <textarea id="quiz-project-bio" rows="3" class="w-full bg-transparent border-none outline-none px-4 py-3 text-studioTextPri text-sm font-medium resize-none" placeholder="Fale brevemente sobre o projeto..." required></textarea>
+              <label class="block font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-wider">Mini Biografia *</label>
+              <div class="bg-black/50 border border-white/10 rounded-xl p-1.5">
+                <textarea id="quiz-project-bio" rows="3" class="w-full bg-transparent border-none outline-none px-4 py-3 text-white text-sm font-medium resize-none" placeholder="Fale brevemente sobre o projeto..." required></textarea>
               </div>
             </div>
 
             <div class="space-y-1.5">
-              <label class="block font-mono text-sm md:text-base text-studioTextPri font-bold uppercase tracking-wider">Foto Oficial de Divulgação *</label>
-              <div class="border border-dashed border-studioBorder hover:border-studioCta rounded-xl p-5 text-center cursor-pointer bg-studioBg transition-all group relative">
+              <label class="block font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-wider">Foto Oficial de Divulgação *</label>
+              <div class="border border-dashed border-white/10 hover:border-[#E3B552] rounded-xl p-5 text-center cursor-pointer bg-black/40 transition-all group relative">
                 <input type="file" id="quiz-project-photo" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" required onchange="handleFileSelected(this)">
                 <div class="space-y-1 pointer-events-none" id="q-upload-placeholder">
-                  <p class="text-sm text-studioTextPri font-bold">Enviar foto oficial (Capacidade Max: 5MB)</p>
-                  <p class="text-sm text-studioTextSec font-mono uppercase tracking-wider">JPEG ou PNG</p>
+                  <p class="text-sm text-gray-300 font-bold">Enviar foto oficial (Capacidade Max: 5MB)</p>
+                  <p class="text-sm text-gray-400 font-mono uppercase tracking-wider">JPEG ou PNG</p>
                 </div>
                 <div class="hidden space-y-0.5 text-xs text-lime" id="q-upload-success">
                   <p class="font-bold">✓ Arquivo Acoplado!</p>
-                  <p class="text-sm text-studioTextPri font-mono" id="q-file-name-text">foto.jpg</p>
+                  <p class="text-sm text-white font-mono" id="q-file-name-text">foto.jpg</p>
                 </div>
               </div>
             </div>
@@ -592,32 +640,32 @@
 
         <!-- STEP 3: RESPONSIBLE LEADER -->
         <div id="q-step-3" class="space-y-4 hidden">
-          <h3 class="font-display font-black text-2xl text-studioTextPri uppercase tracking-tight">Líder Responsável</h3>
-          <p class="text-sm text-studioTextSec">Preencha as credenciais do integrante responsável legal do projeto.</p>
+          <h3 class="font-display font-black text-2xl text-white uppercase tracking-tight">Líder Responsável</h3>
+          <p class="text-sm text-gray-300">Preencha as credenciais do integrante responsável legal do projeto.</p>
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
             <div class="space-y-1.5">
-              <label class="block font-mono text-sm md:text-base text-studioTextPri font-bold uppercase tracking-wider">Nome Completo *</label>
-              <div class="vst-input-groove p-1.5">
-                <input type="text" id="quiz-resp-name" class="w-full bg-transparent border-none outline-none px-4 py-3 text-studioTextPri text-sm font-medium" placeholder="Seu nome" required>
+              <label class="block font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-wider">Nome Completo *</label>
+              <div class="bg-black/50 border border-white/10 rounded-xl p-1.5">
+                <input type="text" id="quiz-resp-name" class="w-full bg-transparent border-none outline-none px-4 py-3 text-white text-sm font-medium" placeholder="Seu nome" required>
               </div>
             </div>
             <div class="space-y-1.5">
-              <label class="block font-mono text-sm md:text-base text-studioTextPri font-bold uppercase tracking-wider">CPF *</label>
-              <div class="vst-input-groove p-1.5">
-                <input type="text" id="quiz-resp-cpf" class="w-full bg-transparent border-none outline-none px-4 py-3 text-studioTextPri text-sm font-medium" placeholder="000.000.000-00" oninput="applyCpfMask(this)" maxlength="14" required>
+              <label class="block font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-wider">CPF *</label>
+              <div class="bg-black/50 border border-white/10 rounded-xl p-1.5">
+                <input type="text" id="quiz-resp-cpf" class="w-full bg-transparent border-none outline-none px-4 py-3 text-white text-sm font-medium" placeholder="000.000.000-00" oninput="applyCpfMask(this)" maxlength="14" required>
               </div>
             </div>
             <div class="space-y-1.5">
-              <label class="block font-mono text-sm md:text-base text-studioTextPri font-bold uppercase tracking-wider">Data de Nascimento *</label>
-              <div class="vst-input-groove p-1.5">
-                <input type="text" id="quiz-resp-birth" class="w-full bg-transparent border-none outline-none px-4 py-3 text-studioTextPri text-sm font-medium" placeholder="DD/MM/AAAA" oninput="applyDateMask(this)" maxlength="10" required>
+              <label class="block font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-wider">Data de Nascimento *</label>
+              <div class="bg-black/50 border border-white/10 rounded-xl p-1.5">
+                <input type="text" id="quiz-resp-birth" class="w-full bg-transparent border-none outline-none px-4 py-3 text-white text-sm font-medium" placeholder="DD/MM/AAAA" oninput="applyDateMask(this)" maxlength="10" required>
               </div>
             </div>
             <div class="space-y-1.5">
-              <label class="block font-mono text-sm md:text-base text-studioTextPri font-bold uppercase tracking-wider">WhatsApp *</label>
-              <div class="vst-input-groove p-1.5">
-                <input type="tel" id="quiz-resp-phone" class="w-full bg-transparent border-none outline-none px-4 py-3 text-studioTextPri text-sm font-medium" placeholder="(00) 90000-0000" oninput="applyPhoneMask(this)" maxlength="15" required>
+              <label class="block font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-wider">WhatsApp *</label>
+              <div class="bg-black/50 border border-white/10 rounded-xl p-1.5">
+                <input type="tel" id="quiz-resp-phone" class="w-full bg-transparent border-none outline-none px-4 py-3 text-white text-sm font-medium" placeholder="(00) 90000-0000" oninput="applyPhoneMask(this)" maxlength="15" required>
               </div>
             </div>
           </div>
@@ -625,13 +673,13 @@
 
         <!-- STEP 4: BAND ROSTER (GAMIFIED QUEUE) -->
         <div id="q-step-4" class="space-y-4 hidden">
-          <div class="flex justify-between items-center border-b border-studioBorder pb-2">
+          <div class="flex justify-between items-center border-b border-[#2C2C2C] pb-2">
             <div>
-              <h3 class="font-display font-black text-2xl text-studioTextPri uppercase tracking-tight font-bold">Escalar Integrantes</h3>
-              <p class="text-sm text-studioTextSec font-mono">Tamanho final do grupo (de 2 a 7 músicos no total).</p>
+              <h3 class="font-display font-black text-2xl text-white uppercase tracking-tight font-bold">Escalar Integrantes</h3>
+              <p class="text-sm text-gray-300 font-mono">Tamanho final do grupo (de 2 a 7 músicos no total).</p>
             </div>
             
-            <button type="button" onclick="addQuizMember()" class="font-mono text-sm md:text-base font-bold text-studioCta bg-studioCta/10 border border-studioCta/30 px-3.5 py-2 rounded-xl uppercase tracking-wider hover:bg-studioCta hover:text-studioBg transition-colors">
+            <button type="button" onclick="addQuizMember()" class="font-mono text-sm font-bold text-[#F0C265] bg-[#E3B552]/10 border border-[#E3B552]/30 px-3.5 py-2.5 rounded-xl uppercase hover:bg-[#E3B552] hover:text-black transition-colors">
               + Escalar
             </button>
           </div>
@@ -639,66 +687,66 @@
           <!-- Dynamic queue list -->
           <div id="quiz-members-queue" class="space-y-3 overflow-y-auto max-h-[220px] pr-1 py-1">
             <!-- Leader row -->
-            <div class="bg-studioBg p-3 flex justify-between items-center border border-studioBorder rounded-xl">
+            <div class="bg-black/50 p-3 flex justify-between items-center border border-white/5 rounded-xl">
               <div class="flex items-center gap-3">
-                <span class="w-6 h-6 rounded-full bg-studioCta/15 text-studioCta flex items-center justify-center font-mono text-sm font-bold border border-studioCta/30">1</span>
+                <span class="w-6 h-6 rounded-full bg-[#E3B552]/15 text-[#F0C265] flex items-center justify-center font-mono text-sm font-bold border border-[#E3B552]/30">1</span>
                 <div>
-                  <span id="quiz-summary-resp-name" class="text-sm font-bold text-studioTextPri block">Nome do Responsável</span>
-                  <span class="font-mono text-sm md:text-base text-studioTextSec tracking-wider uppercase block mt-0.5">Integrante 1 (Líder)</span>
+                  <span id="quiz-summary-resp-name" class="text-sm font-bold text-white block">Nome do Responsável</span>
+                  <span class="font-mono text-sm md:text-base text-gray-400 tracking-wider uppercase block mt-0.5">Integrante 1 (Líder)</span>
                 </div>
               </div>
-              <span class="font-mono text-sm md:text-base text-studioTextSec uppercase font-bold tracking-wider">Líder</span>
+              <span class="font-mono text-sm md:text-base text-gray-400 uppercase font-bold tracking-wider">Líder</span>
             </div>
           </div>
         </div>
 
         <!-- STEP 5: RESUMO & ANCORAGEM (PRICE ONLY SHOWN HERE) -->
         <div id="q-step-5" class="space-y-4 hidden">
-          <h3 class="font-display font-black text-xl text-studioTextPri uppercase tracking-tight">Revisar Matrícula</h3>
-          <p class="text-sm text-studioTextSec">Confirme os dados consolidados do sinal.</p>
+          <h3 class="font-display font-black text-xl text-white uppercase tracking-tight">Revisar Matrícula</h3>
+          <p class="text-sm text-gray-300">Confirme os dados consolidados do sinal.</p>
           
-          <div class="bg-studioBg p-5 rounded-2xl border border-studioBorder space-y-4 text-sm font-mono">
+          <div class="bg-black/50 p-5 rounded-2xl border border-white/5 space-y-4 text-xs font-mono">
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <span class="text-studioTextSec block text-sm md:text-base font-bold">PROJETO BANDA:</span>
-                <span id="q-review-project-name" class="font-bold text-studioTextPri text-sm block mt-1">-</span>
+                <span class="text-gray-400 block text-sm md:text-base font-bold">PROJETO BANDA:</span>
+                <span id="q-review-project-name" class="font-bold text-white text-sm block mt-1">-</span>
               </div>
               <div>
-                <span class="text-studioTextSec block text-sm md:text-base font-bold">RESPONSÁVEL LÍDER:</span>
-                <span id="q-review-resp-name" class="font-bold text-studioTextPri text-sm block mt-1">-</span>
+                <span class="text-gray-400 block text-sm md:text-base font-bold">RESPONSÁVEL LÍDER:</span>
+                <span id="q-review-resp-name" class="font-bold text-white text-sm block mt-1">-</span>
               </div>
               <div>
-                <span class="text-studioTextSec block text-sm md:text-base font-bold">LOTE VIGENTE:</span>
-                <span id="q-review-active-lote-text" class="font-bold text-studioCta text-sm block mt-1 uppercase">LOTE 1 (R$ 60 / integrante)</span>
+                <span class="text-gray-400 block text-sm md:text-base font-bold">LOTE VIGENTE:</span>
+                <span id="q-review-active-lote-text" class="font-bold text-[#F0C265] text-sm block mt-1 uppercase">LOTE 1 (R$ 60 / integrante)</span>
               </div>
               <div>
-                <span class="text-studioTextSec block text-sm md:text-base font-bold font-bold">INTEGRANTES CONECTADOS:</span>
-                <span id="q-review-members-count" class="font-bold text-studioTextPri text-sm block mt-1 font-mono">-</span>
+                <span class="text-gray-400 block text-sm md:text-base font-bold font-bold">INTEGRANTES CONECTADOS:</span>
+                <span id="q-review-members-count" class="font-bold text-white text-sm block mt-1 font-mono">-</span>
               </div>
             </div>
 
             <!-- VALUABLE COMPARATIVE ANCHOR -->
-            <div class="border-t border-studioBorder pt-4 flex flex-col sm:flex-row justify-between items-baseline gap-4">
+            <div class="border-t border-white/5 pt-4 flex flex-col sm:flex-row justify-between items-baseline gap-4">
               <div>
-                <span class="font-mono text-sm md:text-base text-studioCta font-bold">GRAVAÇÃO LIVE INCLUÍDA:</span>
+                <span class="font-mono text-sm md:text-base text-[#F0C265] font-bold">GRAVAÇÃO LIVE INCLUÍDA:</span>
                 <div class="flex items-center gap-2 mt-1">
-                  <span class="text-sm md:text-base text-studioTextSec line-through block font-mono">R$ 1.500,00</span>
-                  <span class="text-sm md:text-base text-lime font-bold uppercase tracking-wider">CUSTO R$ 0</span>
+                  <span class="text-sm md:text-base text-gray-400 line-through block font-mono">R$ 1.500,00</span>
+                  <span class="text-xs text-lime font-bold uppercase tracking-wider">CUSTO R$ 0</span>
                 </div>
               </div>
               
               <div class="text-right">
-                <span class="font-mono text-sm md:text-base text-studioTextSec block font-bold">TAXA TOTAL DO GRUPO:</span>
-                <span id="q-review-total-price" class="text-3xl font-display font-black text-studioCta block mt-1">R$ 120,00</span>
-                <span class="text-sm text-studioTextSec font-mono block mt-1 uppercase">E mais <span id="q-review-food-weight">2</span>kg de alimento no dia do show</span>
+                <span class="font-mono text-sm md:text-base text-gray-400 block font-bold">TAXA TOTAL DO GRUPO:</span>
+                <span id="q-review-total-price" class="text-3xl font-display font-black text-[#F0C265] block mt-1">R$ 120,00</span>
+                <span class="text-sm text-gray-400 font-mono block mt-1 uppercase">E mais <span id="q-review-food-weight">2</span>kg de alimento no dia do show</span>
               </div>
             </div>
           </div>
 
           <div class="p-1">
             <label class="flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" id="quiz-accept-rules" class="mt-1 w-4 h-4 text-studioCta bg-studioBg border-studioBorder rounded focus:ring-studioCta" required>
-              <span class="text-sm text-studioTextSec leading-relaxed font-normal">
+              <input type="checkbox" id="quiz-accept-rules" class="mt-1 w-4 h-4 text-[#F0C265] bg-black border-white/10 rounded focus:ring-[#F0C265]" required>
+              <span class="text-xs text-gray-300 leading-relaxed font-normal">
                 Declaramos ler e anuir integralmente com o regulamento do concurso, concordando com as etapas, a doação obrigatória de alimentos e as políticas de direitos autorais para as transmissões ao vivo.
               </span>
             </label>
@@ -706,20 +754,21 @@
         </div>
 
         <!-- CONTROLS ROW -->
-        <div class="border-t border-studioBorder pt-4 flex justify-between items-center gap-4 shrink-0">
+        <div class="border-t border-white/5 pt-4 flex justify-between items-center gap-4 shrink-0">
           <div class="flex flex-col">
-            <span class="text-sm md:text-base text-studioTextSec font-mono uppercase tracking-widest block font-bold">PASSO ATIVO</span>
-            <span class="text-sm md:text-base text-studioTextPri font-bold font-mono" id="quiz-display-active-step">01/05</span>
+            <span class="text-sm md:text-base text-gray-400 font-mono uppercase tracking-widest block font-bold">PASSO ATIVO</span>
+            <span class="text-sm md:text-base text-white font-bold font-mono" id="quiz-display-active-step">01/05</span>
           </div>
 
           <div class="flex gap-2.5">
-            <button type="button" id="q-prev-btn" onclick="prevQuizStep()" class="font-mono text-sm md:text-base font-bold text-studioTextPri border border-studioBorder bg-white/5 hover:bg-white/10 px-5 py-2.5 rounded uppercase tracking-wider hidden">
+            <button type="button" id="q-bypass-btn" onclick="clearForm()" class="font-mono text-sm font-bold text-red-500 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-xl uppercase">Bypass</button>
+            <button type="button" id="q-prev-btn" onclick="prevQuizStep()" class="font-mono text-sm md:text-base font-bold text-white border border-white/10 bg-white/5 hover:bg-white/10 px-5 py-2.5 rounded uppercase tracking-wider hidden">
               Voltar
             </button>
-            <button type="button" id="q-next-btn" onclick="nextQuizStep()" class="font-mono text-sm md:text-base font-bold text-studioBg bg-studioCta hover:bg-studioCtaHover px-7 py-2.5 rounded uppercase tracking-wider transition-all border-none">
+            <button type="button" id="q-next-btn" onclick="nextQuizStep()" class="btn-gold-shimmer px-7 py-2.5 rounded uppercase border-none text-black">
               Continuar
             </button>
-            <button type="button" id="q-submit-btn" onclick="submitQuizCheckout()" class="font-mono text-sm md:text-base font-bold text-studioTextPri bg-lime px-7 py-2.5 rounded uppercase tracking-wider transition-all border-none hidden shadow-lg shadow-lime/20">
+            <button type="button" id="q-submit-btn" onclick="submitQuizCheckout()" class="font-mono text-sm md:text-base font-bold text-white bg-lime px-7 py-2.5 rounded uppercase transition-all border-none hidden shadow-lg shadow-lime/20">
               Gerar Pix
             </button>
           </div>
@@ -729,49 +778,49 @@
     </div>
   </div>
 
-  <!-- POPUP PIX CHECKOUT CONSOLE (Acrylic light/Molded design) -->
-  <div id="checkout-modal" class="fixed inset-0 bg-studioBg/85 backdrop-blur-md hidden items-center justify-center z-50 p-4">
-    <div class="bg-studioCard border-2 border-studioCta max-w-sm w-full p-6 rounded-[32px] relative space-y-6">
-      <button type="button" onclick="closeCheckoutModal()" class="absolute right-4 top-4 text-studioTextSec hover:text-studioTextPri font-mono text-xl">&times;</button>
+  <!-- POPUP PIX CHECKOUT CONSOLE -->
+  <div id="checkout-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden items-center justify-center z-50 p-4">
+    <div class="glass-card-2 border-2 border-[#E3B552] max-w-sm w-full p-6 rounded-[32px] relative space-y-6">
+      <button type="button" onclick="closeCheckoutModal()" class="absolute right-4 top-4 text-gray-400 hover:text-white font-mono text-xl">&times;</button>
       
       <div class="text-center space-y-2 pt-2">
         <span class="font-mono text-sm md:text-base text-lime font-bold bg-lime/10 border border-lime/20 px-3 py-1 rounded-full w-max mx-auto block uppercase">● Servidor Autenticado</span>
-        <h3 class="font-display font-bold text-xl text-studioTextPri uppercase tracking-tight">PIX DE INSCRIÇÃO</h3>
-        <p class="text-sm text-studioTextSec">Sua vaga será confirmada após compensação do Pix.</p>
+        <h3 class="font-display font-bold text-xl text-white uppercase tracking-tight">PIX DE INSCRIÇÃO</h3>
+        <p class="text-xs text-gray-400">Sua vaga será confirmada após compensação do Pix.</p>
       </div>
 
-      <div class="bg-studioBg p-4 rounded-xl flex flex-col items-center space-y-4 border border-studioBorder">
+      <div class="bg-[#030407] p-4 rounded-xl flex flex-col items-center space-y-4 border border-white/5">
         <div class="w-48 h-48 bg-white p-3 rounded-xl flex items-center justify-center relative shadow-lg">
           <div class="w-full h-full border border-black/10 flex flex-col justify-between p-2">
             <div class="flex justify-between">
               <div class="w-8 h-8 bg-black"></div>
               <div class="w-8 h-8 bg-black"></div>
             </div>
-            <div class="text-center font-bold text-[8px] text-studioBg font-mono uppercase tracking-widest leading-none py-2">Canção Profana</div>
+            <div class="text-center font-bold text-[8px] text-black font-mono uppercase tracking-widest leading-none py-2">Canção Profana</div>
             <div class="flex justify-between">
               <div class="w-8 h-8 bg-black"></div>
-              <div class="w-12 h-12 border border-black border-dashed flex items-center justify-center"><div class="w-6 h-6 bg-studioCta"></div></div>
+              <div class="w-12 h-12 border border-black border-dashed flex items-center justify-center"><div class="w-6 h-6 bg-[#F0C265]"></div></div>
             </div>
           </div>
           <!-- Webhook indicator radar -->
-          <div id="pix-loading-overlay" class="absolute inset-0 bg-studioBg/95 flex flex-col items-center justify-center text-center p-3 rounded-xl hidden">
-            <span class="w-8 h-8 rounded-full border-2 border-studioCta border-t-transparent animate-spin mb-3"></span>
-            <span class="font-mono text-sm md:text-base text-studioCta uppercase tracking-widest font-bold">AGUARDANDO WEBHOOK...</span>
-            <span class="text-sm text-studioTextSec mt-1 font-mono">Processamento seguro ativo</span>
+          <div id="pix-loading-overlay" class="absolute inset-0 bg-[#05070B]/95 flex flex-col items-center justify-center text-center p-3 rounded-xl hidden">
+            <span class="w-8 h-8 rounded-full border-2 border-[#F0C265] border-t-transparent animate-spin mb-3"></span>
+            <span class="font-mono text-sm md:text-base text-[#F0C265] uppercase tracking-widest font-bold">AGUARDANDO WEBHOOK...</span>
+            <span class="text-sm text-gray-400 mt-1 font-mono">Processamento seguro ativo</span>
           </div>
         </div>
 
         <div class="text-center">
-          <span class="font-mono text-sm md:text-base text-studioTextSec block uppercase">TOTAL CONVERSÃO:</span>
+          <span class="font-mono text-sm md:text-base text-gray-400 block uppercase">TOTAL CONVERSÃO:</span>
           <span id="checkout-total-price" class="text-2xl font-mono font-black text-lime block mt-1">R$ 120,00</span>
         </div>
       </div>
 
       <div class="space-y-3">
-        <button type="button" onclick="copyPixCode()" class="font-mono text-sm md:text-base font-bold text-studioTextPri bg-white/5 border border-studioBorder py-3 rounded-xl w-full hover:bg-white/10 transition-colors uppercase tracking-wider">
+        <button type="button" onclick="copyPixCode()" class="font-mono text-sm md:text-base font-bold text-white bg-white/5 border border-white/10 py-3 rounded-xl w-full hover:bg-white/10 transition-colors uppercase">
           Copiar Código Pix
         </button>
-        <button type="button" onclick="simulatePaymentSuccess()" class="font-mono text-sm md:text-base font-bold text-studioBg bg-lime py-3 rounded-xl w-full hover:bg-lime/90 transition-colors uppercase tracking-wider block text-center border-none shadow-lg shadow-lime/20">
+        <button type="button" onclick="simulatePaymentSuccess()" class="font-mono text-sm md:text-base font-bold text-black bg-lime py-3 rounded-xl w-full hover:bg-lime/90 transition-colors uppercase border-none shadow-lg shadow-lime/20">
           Confirmar Pagamento (Webhook)
         </button>
       </div>
@@ -779,108 +828,94 @@
   </div>
 
   <!-- SUCCESS STATE -->
-  <div id="success-modal" class="fixed inset-0 bg-[#000000]/95 backdrop-blur-md hidden items-center justify-center z-50 p-4">
-    <div class="bg-studioCard border-2 border-studioCta max-w-lg w-full p-8 rounded-[32px] text-center space-y-6">
+  <div id="success-modal" class="fixed inset-0 bg-black/95 backdrop-blur-md hidden items-center justify-center z-50 p-4">
+    <div class="glass-card-2 border-2 border-[#E3B552] max-w-lg w-full p-8 rounded-[32px] text-center space-y-6">
       <div class="w-16 h-16 rounded-full bg-lime/10 text-lime border-2 border-lime flex items-center justify-center mx-auto text-3xl shadow font-bold">
         ✓
       </div>
 
       <div class="space-y-2">
         <span class="font-mono text-sm md:text-base text-lime uppercase tracking-widest font-bold">● Matrícula Concluída</span>
-        <h3 class="font-display font-black text-3xl text-studioTextPri uppercase tracking-tight">BANDA MATRICULADA!</h3>
-        <p class="text-sm text-studioTextSec leading-relaxed max-w-sm mx-auto">
+        <h3 class="font-display font-black text-3xl text-white uppercase tracking-tight">BANDA MATRICULADA!</h3>
+        <p class="text-sm text-gray-300 leading-relaxed max-w-sm mx-auto">
           O webhook do servidor processou o Pix de forma segura. O recibo regulamentar foi transmitido ao e-mail cadastrado.
         </p>
       </div>
 
-      <div class="bg-studioBg p-5 max-w-xs mx-auto grid grid-cols-2 gap-4 text-left border border-studioBorder">
+      <div class="bg-black/50 p-5 max-w-xs mx-auto grid grid-cols-2 gap-4 text-left border border-white/5">
         <div>
-          <span class="font-mono text-sm md:text-base text-studioTextSec uppercase">CÓDIGO ID BANDA:</span>
-          <span class="text-xs font-bold text-studioTextPri font-mono block mt-1">CP-2026-X7Y9</span>
+          <span class="font-mono text-sm md:text-base text-gray-400 uppercase">CÓDIGO ID BANDA:</span>
+          <span class="text-xs font-bold text-white font-mono block mt-1">CP-2026-X7Y9</span>
         </div>
         <div>
-          <span class="font-mono text-sm md:text-base text-studioTextSec uppercase">FILA CANAL:</span>
-          <span id="success-members-count" class="text-xs font-bold text-studioTextPri font-mono block mt-1">2 MEMBROS</span>
+          <span class="font-mono text-sm md:text-base text-gray-400 uppercase">FILA CANAL:</span>
+          <span id="success-members-count" class="text-xs font-bold text-white font-mono block mt-1">2 MEMBROS</span>
         </div>
-        <div class="col-span-2 border-t border-studioBorder pt-3">
+        <div class="col-span-2 border-t border-white/5 pt-3">
           <span class="font-mono text-sm md:text-base text-lime uppercase font-bold">Condição Solidária:</span>
-          <p class="text-xs text-studioTextSec mt-1 leading-relaxed font-mono">
+          <p class="text-xs text-gray-300 mt-1 leading-relaxed font-mono">
             Trazer 1kg de alimento por integrante na Etapa 1.
           </p>
         </div>
       </div>
 
       <div class="space-y-3 pt-2">
-        <button type="button" onclick="window.location.reload();" class="bg-studioCta hover:bg-studioCtaHover text-studioBg font-mono text-sm font-bold uppercase tracking-wider block w-full max-w-xs mx-auto border-none">
+        <button type="button" onclick="window.location.reload();" class="btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-wider block w-full max-w-xs mx-auto">
           Voltar para Home Player
         </button>
       </div>
     </div>
   </div>
 
-  <!-- INTERACTIVE ADMIN PANEL MODAL (Protected by Password profana2026) -->
+  <!-- INTERACTIVE ADMIN PANEL MODAL -->
   <div id="admin-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden items-center justify-center z-50 p-4">
-    <div class="bg-studioCard border-2 border-studioCta rounded-3xl p-6 w-full max-w-md space-y-6 shadow-2xl relative">
-      <button type="button" onclick="closeAdminModal()" class="absolute right-4 top-4 text-studioTextSec hover:text-studioTextPri font-mono text-xl">&times;</button>
+    <div class="glass-card-2 border-2 border-[#E3B552] rounded-3xl p-6 w-full max-w-md space-y-6 shadow-2xl relative">
+      <button type="button" onclick="closeAdminModal()" class="absolute right-4 top-4 text-gray-400 hover:text-white font-mono text-xl">&times;</button>
       
-      <div class="text-center border-b border-studioBorder pb-3">
-        <span class="font-mono text-sm md:text-base text-studioCta font-bold uppercase block tracking-wider">PAINEL DE CONTROLE DE LOTES</span>
-        <span class="text-xs text-studioTextSec block mt-1">Configure o lote ativo, vagas e o status da transmissão live</span>
+      <div class="text-center border-b border-white/5 pb-3">
+        <span class="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase block tracking-wider">PAINEL DE CONTROLE DE LOTES</span>
+        <span class="text-xs text-gray-400 block mt-1">Configure o lote ativo, vagas e status da transmissão live</span>
       </div>
-
-      <div class="space-y-4">
-        <!-- Lote 1 status -->
-        <div class="flex justify-between items-center bg-studioBg p-3 rounded-lg border border-studioBorder">
-          <span class="font-mono text-sm text-studioTextPri uppercase">Lote 1 Status:</span>
-          <select id="adm-lote1-status" onchange="updateAdminConfig()" class="bg-studioCard border border-studioBorder text-studioTextPri text-sm rounded px-2.5 py-1.5 outline-none">
+      
+      <form onSubmit="event.preventDefault(); saveAdminConfig();" class="space-y-4">
+        <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
+          <span class="font-mono text-sm text-white uppercase">Lote 1 Status:</span>
+          <select id="adm-lote1-status" class="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none">
             <option value="ativo">Ativo</option>
             <option value="encerrado">Encerrado</option>
             <option value="em_breve">Em Breve</option>
           </select>
         </div>
-
-        <!-- Lote 2 status -->
-        <div class="flex justify-between items-center bg-studioBg p-3 rounded-lg border border-studioBorder">
-          <span class="font-mono text-sm text-studioTextPri uppercase">Lote 2 Status:</span>
-          <select id="adm-lote2-status" onchange="updateAdminConfig()" class="bg-studioCard border border-studioBorder text-studioTextPri text-sm rounded px-2.5 py-1.5 outline-none">
-            <option value="em_breve" selected>Em Breve</option>
+        <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
+          <span class="font-mono text-sm text-white uppercase">Lote 2 Status:</span>
+          <select id="adm-lote2-status" class="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none">
+            <option value="em_breve">Em Breve</option>
             <option value="ativo">Ativo</option>
             <option value="encerrado">Encerrado</option>
           </select>
         </div>
-
-        <!-- Lote 3 status -->
-        <div class="flex justify-between items-center bg-studioBg p-3 rounded-lg border border-studioBorder">
-          <span class="font-mono text-sm text-studioTextPri uppercase">Lote 3 Status:</span>
-          <select id="adm-lote3-status" onchange="updateAdminConfig()" class="bg-studioCard border border-studioBorder text-studioTextPri text-sm rounded px-2.5 py-1.5 outline-none">
-            <option value="em_breve" selected>Em Breve</option>
+        <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
+          <span class="font-mono text-sm text-white uppercase">Lote 3 Status:</span>
+          <select id="adm-lote3-status" class="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none">
+            <option value="em_breve">Em Breve</option>
             <option value="ativo">Ativo</option>
             <option value="encerrado">Encerrado</option>
           </select>
         </div>
-
-        <!-- Live Status -->
-        <div class="flex justify-between items-center bg-studioBg p-3 rounded-lg border border-studioBorder">
-          <span class="font-mono text-sm text-studioTextPri uppercase">Live Transmissão:</span>
-          <select id="adm-live-status" onchange="updateAdminConfig()" class="bg-studioCard border border-studioBorder text-studioTextPri text-sm rounded px-2.5 py-1.5 outline-none">
-            <option value="em_breve">Em Breve (Contador)</option>
+        <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
+          <span class="font-mono text-sm text-white uppercase">Live Transmissão:</span>
+          <select id="adm-live-status" class="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none">
+            <option value="em_breve">Em Breve</option>
             <option value="ao_vivo">🔴 Ao Vivo Agora</option>
-            <option value="encerrada">Encerrada (Replay)</option>
+            <option value="encerrada">Encerrada</option>
           </select>
         </div>
-
-        <!-- Remaining spots -->
-        <div class="flex justify-between items-center bg-studioBg p-3 rounded-lg border border-studioBorder">
-          <span class="font-mono text-sm text-studioTextPri uppercase">Vagas Restantes:</span>
-          <input type="number" id="adm-vagas-count" oninput="updateAdminConfig()" value="12" class="w-20 bg-studioCard border border-studioBorder text-studioTextPri text-sm rounded px-2.5 py-1.5 text-center outline-none">
+        <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
+          <span class="font-mono text-sm text-white uppercase">Vagas Restantes:</span>
+          <input type="number" id="adm-vagas-count" class="w-20 bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 text-center outline-none" />
         </div>
-      </div>
-
-      <div class="pt-2 text-center">
-        <button type="button" onclick="closeAdminModal()" class="bg-studioCta hover:bg-studioCtaHover text-studioBg font-mono text-sm font-bold uppercase tracking-widest px-6 py-2.5 rounded shadow w-full">
-          Confirmar e Aplicar
-        </button>
-      </div>
+        <button type="submit" class="btn-gold-shimmer py-2.5 rounded w-full border-none text-black uppercase">SALVAR CONFIGURAÇÃO</button>
+      </form>
     </div>
   </div>
 
@@ -891,7 +926,7 @@
       lote1: { status: "ativo", vagasRestantes: 12, valor: 60 },
       lote2: { status: "em_breve", vagasRestantes: 25, valor: 80 },
       lote3: { status: "em_breve", vagasRestantes: 30, valor: 100 },
-      live:  { status: "em_breve", horario: "2026-08-20T20:00:00" } // Future relative to Aug 2026
+      live:  { status: "em_breve", horario: "2026-08-20T20:00:00" }
     };
 
     let currentQuizStep = 1;
@@ -981,11 +1016,11 @@
       membersList.forEach((member, index) => {
         const itemIndex = index + 2;
         const div = document.createElement('div');
-        div.className = 'dynamic-quiz-row bg-studioBg p-4 rounded-xl space-y-4 border border-studioBorder';
+        div.className = 'dynamic-quiz-row bg-black/50 p-4 rounded-xl space-y-4 border border-white/5';
         div.innerHTML = `
-          <div class="flex justify-between items-center border-b border-studioBorder pb-2">
+          <div class="flex justify-between items-center border-b border-white/5 pb-2">
             <div class="flex items-center gap-3">
-              <span class="w-6 h-6 rounded-full bg-studioCta/15 text-studioCta flex items-center justify-center font-mono text-sm font-bold border border-[#D4A843]/30">${itemIndex}</span>
+              <span class="w-6 h-6 rounded-full bg-[#E3B552]/15 text-[#F0C265] flex items-center justify-center font-mono text-sm font-bold border border-[#E3B552]/35">${itemIndex}</span>
               <span class="font-mono text-sm md:text-base text-white uppercase tracking-wider">Integrante ${itemIndex}</span>
             </div>
             <button type="button" onclick="removeQuizMember(${index})" class="text-sm font-mono text-coral hover:text-white uppercase tracking-wider bg-coral/10 hover:bg-coral px-2.5 py-1 rounded transition-colors border border-coral/20">Remover</button>
@@ -993,16 +1028,16 @@
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="space-y-1">
-              <label class="block font-mono text-sm md:text-base text-studioTextSec uppercase">Nome Completo *</label>
-              <input type="text" class="w-full bg-[#121214] border border-studioBorder rounded-lg px-3 py-2.5 text-white text-xs outline-none focus:border-studioCta font-medium" placeholder="Nome do integrante" required oninput="updateMemberData(${index}, 'name', this.value)" value="${member.name || ''}">
+              <label class="block font-mono text-sm md:text-base text-gray-400 uppercase">Nome Completo *</label>
+              <input type="text" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-xs outline-none focus:border-[#E3B552] font-medium" placeholder="Nome do integrante" required oninput="updateMemberData(${index}, 'name', this.value)" value="${member.name || ''}">
             </div>
             <div class="space-y-1">
-              <label class="block font-mono text-sm md:text-base text-studioTextSec uppercase">CPF *</label>
-              <input type="text" class="w-full bg-[#121214] border border-studioBorder rounded-lg px-3 py-2.5 text-white text-xs outline-none focus:border-studioCta font-medium" placeholder="000.000.000-00" required oninput="applyCpfMask(this); updateMemberData(${index}, 'cpf', this.value)" maxlength="14" value="${member.cpf || ''}">
+              <label class="block font-mono text-sm md:text-base text-gray-400 uppercase">CPF *</label>
+              <input type="text" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-xs outline-none focus:border-[#E3B552] font-medium" placeholder="000.000.000-00" required oninput="applyCpfMask(this); updateMemberData(${index}, 'cpf', this.value)" maxlength="14" value="${member.cpf || ''}">
             </div>
             <div class="space-y-1 md:col-span-2">
-              <label class="block font-mono text-sm md:text-base text-studioTextSec uppercase">Data de Nascimento *</label>
-              <input type="text" class="w-full bg-[#121214] border border-studioBorder rounded-lg px-3 py-2.5 text-white text-xs outline-none focus:border-studioCta font-medium" placeholder="DD/MM/AAAA" required oninput="applyDateMask(this); updateMemberData(${index}, 'birth', this.value)" maxlength="10" value="${member.birth || ''}">
+              <label class="block font-mono text-sm md:text-base text-gray-400 uppercase">Data de Nascimento *</label>
+              <input type="text" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-xs outline-none focus:border-[#E3B552] font-medium" placeholder="DD/MM/AAAA" required oninput="applyDateMask(this); updateMemberData(${index}, 'birth', this.value)" maxlength="10" value="${member.birth || ''}">
             </div>
           </div>
         `;
@@ -1034,6 +1069,8 @@
       // Update inline displays
       document.getElementById('q-display-members').innerText = selectedMembers;
       document.getElementById('q-display-price').innerText = `R$ ${totalCost}`;
+      document.getElementById('lcd-members').innerText = selectedMembers;
+      document.getElementById('lcd-price').innerText = `R$ ${totalCost},00`;
 
       // Update Step 5 calculations
       document.getElementById('q-review-active-lote-text').innerText = `${getActiveLoteName()} (R$ ${activePrice} / integrante)`;
@@ -1224,23 +1261,23 @@
         `;
         banner.classList.remove('hidden');
       } else if (LOTES_CONFIG.live.status === "em_breve") {
-        banner.className = "py-4 px-6 rounded-2xl border-2 border-[#D4A843] bg-amber-950/10 text-[#D4A843] flex flex-col sm:flex-row justify-between items-center gap-4 shrink-0";
+        banner.className = "py-4 px-6 rounded-2xl border-2 border-[#E3B552] bg-amber-950/10 text-[#F0C265] flex flex-col sm:flex-row justify-between items-center gap-4 shrink-0";
         banner.innerHTML = `
           <div class="flex items-center gap-3">
-            <span class="w-2.5 h-2.5 rounded-full bg-[#D4A843]"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-[#F0C265]"></span>
             <span class="font-mono text-sm md:text-base font-black tracking-widest uppercase">LIVE EM BREVE • AGENDADA PARA 20/08 ÀS 20:00</span>
           </div>
           <span class="font-mono text-sm md:text-base font-bold">Countdown Ativo</span>
         `;
         banner.classList.remove('hidden');
       } else if (LOTES_CONFIG.live.status === "encerrada") {
-        banner.className = "py-4 px-6 rounded-2xl border-2 border-studioBorder bg-studioCard text-studioTextSec flex flex-col sm:flex-row justify-between items-center gap-4 shrink-0";
+        banner.className = "py-4 px-6 rounded-2xl border-2 border-white/5 bg-vstPanel text-gray-400 flex flex-col sm:flex-row justify-between items-center gap-4 shrink-0";
         banner.innerHTML = `
           <div class="flex items-center gap-3">
-            <span class="w-2.5 h-2.5 rounded-full bg-studioMuted"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-gray-600"></span>
             <span class="font-mono text-sm md:text-base font-black tracking-widest uppercase">LIVE SESSIONS FINALIZADA • REPLAYS DISPONÍVEIS</span>
           </div>
-          <button type="button" onclick="alert('Carregando galeria de replays!')" class="border border-studioBorder text-studioTextPri font-mono text-sm font-bold px-4 py-2 rounded-xl">VER REPLAY</button>
+          <button type="button" onclick="alert('Carregando galeria de replays!')" class="border border-white/10 text-white font-mono text-sm font-bold px-4 py-2 rounded-xl">VER REPLAY</button>
         `;
         banner.classList.remove('hidden');
       } else {
@@ -1260,71 +1297,71 @@
         
         if (item.status === "encerrado") {
           // Encerrado styling: grayed out, line-through
-          card.className = "bg-studioCard border-2 border-studioBorder rounded-[24px] p-5 opacity-50 relative flex flex-col justify-between shadow select-none cursor-not-allowed";
+          card.className = "bg-vstPanel border-2 border-white/5 rounded-[24px] p-5 opacity-50 relative flex flex-col justify-between shadow select-none cursor-not-allowed";
           
           card.innerHTML = `
             <div class="space-y-2">
-              <div class="flex justify-between items-baseline border-b border-studioBorder pb-2">
-                <h4 class="font-display font-black text-sm md:text-base text-studioMuted uppercase">${item.title}</h4>
-                <span class="font-mono text-sm md:text-base text-studioMuted font-bold uppercase">ENCERRADO</span>
+              <div class="flex justify-between items-baseline border-b border-white/5 pb-2">
+                <h4 class="font-display font-black text-sm md:text-base text-gray-500 uppercase">${item.title}</h4>
+                <span class="font-mono text-sm md:text-base text-gray-500 font-bold uppercase">ENCERRADO</span>
               </div>
-              <p class="text-sm text-studioMuted leading-normal font-normal">${item.desc}</p>
+              <p class="text-sm text-gray-500 leading-normal font-normal">${item.desc}</p>
             </div>
-            <div class="border-t border-studioBorder pt-3 flex justify-between items-baseline">
-              <span class="text-sm font-mono text-studioMuted font-bold uppercase">Taxa</span>
-              <span class="text-lg font-display font-black text-studioMuted line-through">R$ ${item.valor},00</span>
+            <div class="border-t border-white/5 pt-3 flex justify-between items-baseline">
+              <span class="text-sm font-mono text-gray-500 font-bold uppercase">Taxa</span>
+              <span class="text-lg font-display font-black text-gray-500 line-through">R$ ${item.valor},00</span>
             </div>
           `;
         } else if (item.status === "ativo") {
           // Ativo styling: highlighted gold border, pulsing neon indicators, dynamic progress bar for vagas
-          card.className = "bg-studioCard border-2 border-studioCta rounded-[24px] p-5 relative flex flex-col justify-between shadow-2xl scale-[1.02] transition-all";
+          card.className = "bg-vstPanel border-2 border-[#E3B552] rounded-[24px] p-5 relative flex flex-col justify-between shadow-2xl scale-[1.02] transition-all";
           
           // Calculate spots progress
           const pct = Math.round((item.vagas / item.cap) * 100);
 
           card.innerHTML = `
-            <span class="absolute top-2 right-2 bg-studioCta text-studioBg font-display font-black text-sm uppercase tracking-widest px-2.5 py-1 rounded border border-studioBorder animate-pulse">VIGENTE</span>
+            <span class="absolute top-2 right-2 bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black font-display font-black text-xs uppercase tracking-widest px-2.5 py-1 rounded border border-black animate-pulse">VIGENTE</span>
             <div class="space-y-4">
-              <div class="space-y-1.5 border-b border-studioBorder pb-2">
-                <span class="font-mono text-sm text-studioCta font-bold block uppercase tracking-widest">LOTE DISPONÍVEL AGORA</span>
-                <h4 class="font-display font-black text-sm md:text-base text-studioTextPri uppercase">${item.title}</h4>
-                <p class="text-sm text-studioTextSec leading-relaxed font-normal">${item.desc}</p>
+              <div class="space-y-1.5 border-b border-white/5 pb-2">
+                <span class="font-mono text-sm text-[#F0C265] font-bold block uppercase tracking-widest">LOTE DISPONÍVEL AGORA</span>
+                <h4 class="font-display font-black text-sm md:text-base text-white uppercase">${item.title}</h4>
+                <p class="text-sm text-gray-300 leading-relaxed font-normal">${item.desc}</p>
               </div>
 
               <!-- Compact spots progress bar (Graphic added without breaking card structure) -->
-              <div class="space-y-1 bg-studioBg/40 p-2.5 rounded-xl border border-studioBorder">
-                <div class="flex justify-between text-sm font-mono text-studioTextSec">
+              <div class="space-y-1 bg-black/40 p-2.5 rounded-xl border border-white/5">
+                <div class="flex justify-between text-sm font-mono text-gray-300">
                   <span>VAGAS DISPONÍVEIS:</span>
-                  <span class="text-studioCta font-bold">${item.vagas} restam</span>
+                  <span class="text-[#F0C265] font-bold">${item.vagas} restam</span>
                 </div>
-                <div class="w-full h-1.5 bg-studioBorder rounded-full overflow-hidden flex items-center">
-                  <div class="h-full bg-studioCta" style="width: ${pct}%;"></div>
+                <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden flex items-center">
+                  <div class="h-full bg-gradient-to-r from-[#FFF2D4] via-[#F0C265] to-[#B88A28]" style="width: ${pct}%;"></div>
                 </div>
               </div>
             </div>
             
-            <div class="border-t border-studioBorder pt-4 flex justify-between items-baseline mt-4">
+            <div class="border-t border-white/5 pt-4 flex justify-between items-baseline mt-4">
               <span class="text-sm font-mono text-[#10B981] font-bold uppercase tracking-wider">+ 1kg Alimento</span>
               <div class="text-right">
-                <span class="text-xs text-studioTextSec font-mono block">VALOR UNITÁRIO</span>
-                <span class="text-2xl font-display font-black text-studioCta">R$ ${item.valor},00</span>
+                <span class="text-xs text-gray-300 font-mono block">VALOR UNITÁRIO</span>
+                <span class="text-2xl font-display font-black text-[#F0C265]">R$ ${item.valor},00</span>
               </div>
             </div>
           `;
         } else {
           // Em breve styling
-          card.className = "bg-studioCard border border-studioBorder rounded-[24px] p-5 opacity-70 relative flex flex-col justify-between shadow select-none";
+          card.className = "bg-vstPanel border border-white/5 rounded-[24px] p-5 opacity-70 relative flex flex-col justify-between shadow select-none";
           card.innerHTML = `
             <div class="space-y-2">
-              <div class="flex justify-between items-baseline border-b border-studioBorder pb-2">
-                <h4 class="font-display font-black text-sm md:text-base text-studioTextSec uppercase">${item.title}</h4>
-                <span class="font-mono text-sm md:text-base text-studioGold font-bold uppercase">EM BREVE</span>
+              <div class="flex justify-between items-baseline border-b border-white/5 pb-2">
+                <h4 class="font-display font-black text-sm md:text-base text-gray-300 uppercase">${item.title}</h4>
+                <span class="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase">EM BREVE</span>
               </div>
-              <p class="text-sm text-studioTextSec leading-normal font-normal">${item.desc}</p>
+              <p class="text-sm text-gray-300 leading-normal font-normal">${item.desc}</p>
             </div>
-            <div class="border-t border-studioBorder pt-3 flex justify-between items-baseline">
-              <span class="text-sm font-mono text-studioTextSec font-bold uppercase">Taxa Estimada</span>
-              <span class="text-lg font-display font-black text-studioTextPri">R$ ${item.valor},00</span>
+            <div class="border-t border-white/5 pt-3 flex justify-between items-baseline">
+              <span class="text-sm font-mono text-gray-400 font-bold uppercase">Taxa Estimada</span>
+              <span class="text-lg font-display font-black text-white">R$ ${item.valor},00</span>
             </div>
           `;
         }
@@ -1334,7 +1371,6 @@
       
       // Update global active lote text on navbar or top banner
       document.getElementById('lote-indicator').innerText = `${getActiveLoteName()} ATIVO`;
-      document.getElementById('display-lote-tag').innerText = `${getActiveLoteName()} ATIVO`;
     }
 
     // Admin password check prompt
@@ -1367,7 +1403,7 @@
       document.getElementById('admin-modal').style.display = 'none';
     }
 
-    function updateAdminConfig() {
+    function saveAdminConfig() {
       LOTES_CONFIG.lote1.status = document.getElementById('adm-lote1-status').value;
       LOTES_CONFIG.lote2.status = document.getElementById('adm-lote2-status').value;
       LOTES_CONFIG.lote3.status = document.getElementById('adm-lote3-status').value;
@@ -1381,6 +1417,19 @@
       // Re-trigger layout calculations
       updateCalculations();
       renderLotesAndLiveBanner();
+      closeAdminModal();
+    }
+
+    function clearForm() {
+      if (confirm("Deseja redefinir todo o chassi e limpar o formulário?")) {
+        document.getElementById('quiz-form').reset();
+        document.getElementById('q-upload-placeholder').classList.remove('hidden');
+        document.getElementById('q-upload-success').classList.add('hidden');
+        selectedMembers = 2;
+        syncMembersArray();
+        currentQuizStep = 1;
+        showQuizStep(1);
+      }
     }
 
     // Countdown clock simulator (Aug 2026)
