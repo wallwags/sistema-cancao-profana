@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #05070B;
+    color: #F0EAE0;
+    font-family: 'Inter', sans-serif;
+  }
+}
