@@ -57,6 +57,8 @@ export default function Page() {
   // Admin states
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [admVagas, setAdmVagas] = useState(12);
+  const [adminRole, setAdminRole] = useState<'DEV' | 'ADMIN' | 'MOD'>('DEV');
+  const [adminTab, setAdminTab] = useState<'lotes' | 'inscritos' | 'integracoes'>('lotes');
 
   const activeLotePrice = lotesConfig.lote1.status === 'ativo' ? lotesConfig.lote1.valor : (lotesConfig.lote2.status === 'ativo' ? lotesConfig.lote2.valor : lotesConfig.lote3.valor);
   const activeLoteName = lotesConfig.lote1.status === 'ativo' ? 'LOTE 1' : (lotesConfig.lote2.status === 'ativo' ? 'LOTE 2' : 'LOTE 3');
@@ -219,7 +221,7 @@ export default function Page() {
               Grave seu som. Concorra à produção da sua <span className="bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(240,194,101,0.45)]">carreira</span>.
             </h1>
             <p className="text-base md:text-lg text-gray-300 leading-relaxed max-w-xl">
-              Esqueça taxas abusivas que não retornam nada. No Canção Profana, **cada banda inscrita ganha a gravação profissional de áudio e vídeo de sua live**. Entregamos estrutura técnica de alto nível e portfólio imediato.
+              A maior vitrine de revelação musical autoral. Grave sua apresentação ao vivo com áudio e vídeo de alta fidelidade de graça e dispute uma produção completa de carreira que mudará sua história.
             </p>
             <div className="flex flex-wrap gap-4 pt-2 text-sm font-mono text-gray-400 uppercase tracking-wider">
               <span>• AUTORAL PORTUGUÊS</span>
@@ -833,7 +835,7 @@ export default function Page() {
         )}
       </AnimatePresence>
 
-      {/* ADMIN CONTROL MODAL */}
+      {/* ADMIN CONTROL MODAL (UNIFIED PORTAL with Dev, Admin, Mod RBAC) */}
       <AnimatePresence>
         {isAdminOpen && (
           <motion.div
@@ -846,52 +848,228 @@ export default function Page() {
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
-              className="bg-[#0B0F19]/90 backdrop-blur-xl border-2 border-[#E3B552] rounded-3xl p-6 w-full max-w-md space-y-6 shadow-2xl"
+              className="bg-[#0B0F19] border-2 border-[#E3B552] rounded-3xl p-6 w-full max-w-2xl space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto"
             >
-              <button onClick={() => setIsAdminOpen(false)} className="absolute right-4 top-4 text-[#B3B3B3] hover:text-white font-mono text-xl">&times;</button>
-              <div class="text-center border-b border-white/5 pb-3">
-                <span class="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase block tracking-wider">PAINEL DE CONTROLE DE LOTES</span>
-                <span class="text-xs text-gray-400 block mt-1">Configure o lote ativo, vagas e status da transmissão live</span>
+              <button onClick={() => setIsAdminOpen(false)} className="absolute right-5 top-5 text-[#B3B3B3] hover:text-white font-mono text-2xl font-bold">&times;</button>
+              
+              <div className="text-center border-b border-white/5 pb-3 space-y-2">
+                <span className="font-mono text-sm text-[#F0C265] font-bold uppercase block tracking-wider">MÓDULO CENTRAL DE ADMINISTRAÇÃO UNIFICADA</span>
+                
+                {/* Role selector button group */}
+                <div className="flex justify-center gap-1.5 mt-2 bg-black/50 p-1 rounded-xl w-max mx-auto border border-white/5">
+                  {(['DEV', 'ADMIN', 'MOD'] as const).map((r) => {
+                    const isActive = adminRole === r;
+                    return (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => {
+                          setAdminRole(r);
+                          if (r === 'MOD' && adminTab === 'integracoes') setAdminTab('lotes');
+                          if (r === 'ADMIN' && adminTab === 'integracoes') setAdminTab('lotes');
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase tracking-wider transition-all ${
+                          isActive
+                            ? 'bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black font-black'
+                            : 'text-[#A89880] hover:text-white font-bold'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <form onSubmit={handleSaveAdminConfig} className="space-y-4">
-                <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
-                  <span className="font-mono text-sm text-white uppercase">Lote 1 Status:</span>
-                  <select value={lotesConfig.lote1.status} onChange={(e) => setLotesConfig({ ...lotesConfig, lote1: { ...lotesConfig.lote1, status: e.target.value as any } })} className="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none">
-                    <option value="ativo">Ativo</option>
-                    <option value="encerrado">Encerrado</option>
-                    <option value="em_breve">Em Breve</option>
-                  </select>
+
+              {/* Tab selectors */}
+              <div className="flex gap-2 border-b border-white/5 pb-2">
+                <button
+                  type="button"
+                  onClick={() => setAdminTab('lotes')}
+                  className={`px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-wider ${
+                    adminTab === 'lotes'
+                      ? 'bg-white/10 text-white rounded-lg border border-white/10'
+                      : 'text-[#A89880] hover:text-white transition-colors border border-transparent'
+                  }`}
+                >
+                  Lotes & Live
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAdminTab('inscritos')}
+                  className={`px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-wider ${
+                    adminTab === 'inscritos'
+                      ? 'bg-white/10 text-white rounded-lg border border-white/10'
+                      : 'text-[#A89880] hover:text-white transition-colors border border-transparent'
+                  }`}
+                >
+                  Inscritos (Tabela)
+                </button>
+                <button
+                  type="button"
+                  disabled={adminRole !== 'DEV'}
+                  onClick={() => setAdminTab('integracoes')}
+                  className={`px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed ${
+                    adminTab === 'integracoes'
+                      ? 'bg-white/10 text-white rounded-lg border border-white/10'
+                      : 'text-[#A89880] hover:text-white transition-colors border border-transparent'
+                  }`}
+                >
+                  Integrações {adminRole !== 'DEV' && '🔒'}
+                </button>
+              </div>
+
+              {/* TAB 1: LOTES & LIVE */}
+              {adminTab === 'lotes' && (
+                <form onSubmit={handleSaveAdminConfig} className="space-y-4">
+                  <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
+                    <span className="font-mono text-sm text-white uppercase">Lote 1 Status:</span>
+                    <select
+                      disabled={adminRole === 'MOD'}
+                      value={lotesConfig.lote1.status}
+                      onChange={(e) => setLotesConfig({ ...lotesConfig, lote1: { ...lotesConfig.lote1, status: e.target.value as any } })}
+                      className="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none disabled:opacity-50"
+                    >
+                      <option value="ativo">Ativo</option>
+                      <option value="encerrado">Encerrado</option>
+                      <option value="em_breve">Em Breve</option>
+                    </select>
+                  </div>
+                  <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
+                    <span class="font-mono text-sm text-white uppercase">Lote 2 Status:</span>
+                    <select
+                      disabled={adminRole === 'MOD'}
+                      value={lotesConfig.lote2.status}
+                      onChange={(e) => setLotesConfig({ ...lotesConfig, lote2: { ...lotesConfig.lote2, status: e.target.value as any } })}
+                      className="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none disabled:opacity-50"
+                    >
+                      <option value="em_breve">Em Breve</option>
+                      <option value="ativo">Ativo</option>
+                      <option value="encerrado">Encerrado</option>
+                    </select>
+                  </div>
+                  <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
+                    <span class="font-mono text-sm text-white uppercase">Lote 3 Status:</span>
+                    <select
+                      disabled={adminRole === 'MOD'}
+                      value={lotesConfig.lote3.status}
+                      onChange={(e) => setLotesConfig({ ...lotesConfig, lote3: { ...lotesConfig.lote3, status: e.target.value as any } })}
+                      className="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none disabled:opacity-50"
+                    >
+                      <option value="em_breve">Em Breve</option>
+                      <option value="ativo">Ativo</option>
+                      <option value="encerrado">Encerrado</option>
+                    </select>
+                  </div>
+                  <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
+                    <span class="font-mono text-sm text-white uppercase">Live Transmissão:</span>
+                    <select
+                      disabled={adminRole === 'MOD'}
+                      value={lotesConfig.live.status}
+                      onChange={(e) => setLotesConfig({ ...lotesConfig, live: { ...lotesConfig.live, status: e.target.value as any } })}
+                      className="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none disabled:opacity-50"
+                    >
+                      <option value="em_breve">Em Breve</option>
+                      <option value="ao_vivo">🔴 Ao Vivo Agora</option>
+                      <option value="encerrada">Encerrada</option>
+                    </select>
+                  </div>
+                  <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
+                    <span class="font-mono text-sm text-white uppercase">Vagas Restantes:</span>
+                    <input
+                      disabled={adminRole === 'MOD'}
+                      type="number"
+                      value={admVagas}
+                      onChange={(e) => setAdmVagas(parseInt(e.target.value) || 0)}
+                      className="w-20 bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 text-center outline-none disabled:opacity-50"
+                    />
+                  </div>
+                  <button
+                    disabled={adminRole === 'MOD'}
+                    type="submit"
+                    className="btn-gold-shimmer py-2.5 rounded w-full border-none text-black uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    SALVAR CONFIGURAÇÃO
+                  </button>
+                </form>
+              )}
+
+              {/* TAB 2: INSCRITOS (DATA TABLE) */}
+              {adminTab === 'inscritos' && (
+                <div className="space-y-4">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs md:text-sm">
+                      <thead>
+                        <tr className="border-b border-[#2C2C2C] text-gray-400 font-mono">
+                          <th className="py-3 px-2 uppercase tracking-widest text-[9px]">ID</th>
+                          <th className="py-3 px-2 uppercase tracking-widest text-[9px]">Projeto / Banda</th>
+                          <th className="py-3 px-2 uppercase tracking-widest text-[9px]">Gênero</th>
+                          <th className="py-3 px-2 uppercase tracking-widest text-[9px]">Lineup</th>
+                          <th className="py-3 px-2 uppercase tracking-widest text-[9px]">Status</th>
+                          {adminRole !== 'MOD' && <th className="py-3 px-2 uppercase tracking-widest text-[9px] text-right">Ações</th>}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        <tr>
+                          <td className="py-3 px-2 font-mono text-gray-400">#001</td>
+                          <td className="py-3 px-2 font-bold text-white">Os Profanos do Ritmo</td>
+                          <td className="py-3 px-2 text-gray-300">Rock Autoral</td>
+                          <td className="py-3 px-2 font-mono text-gray-300">4 Membros</td>
+                          <td className="py-3 px-2">
+                            <span className="bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 text-[9px] font-bold px-2 py-0.5 rounded font-mono">PAGO</span>
+                          </td>
+                          {adminRole !== 'MOD' && (
+                            <td className="py-3 px-2 text-right">
+                              <button type="button" onClick={() => alert('Matrícula homologada.')} className="bg-white/5 border border-white/10 text-white font-mono text-[9px] font-bold px-2.5 py-1 rounded">Ver Recibo</button>
+                            </td>
+                          )}
+                        </tr>
+                        <tr>
+                          <td className="py-3 px-2 font-mono text-gray-400">#002</td>
+                          <td className="py-3 px-2 font-bold text-white">Daily Chaos</td>
+                          <td className="py-3 px-2 text-gray-300">Metal Core</td>
+                          <td className="py-3 px-2 font-mono text-gray-300">3 Membros</td>
+                          <td className="py-3 px-2">
+                            <span className="bg-amber-500/15 text-amber-500 border border-amber-500/30 text-[9px] font-bold px-2 py-0.5 rounded font-mono">PENDENTE</span>
+                          </td>
+                          {adminRole !== 'MOD' && (
+                            <td className="py-3 px-2 text-right space-x-1">
+                              <button type="button" onClick={() => alert('Inscrição aprovada manualmente!')} className="bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-[9px] font-bold px-2 py-1 rounded border border-black shadow">Aprovar</button>
+                              <button type="button" onClick={() => alert('Inscrição rejeitada!')} className="bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white font-mono text-[9px] font-bold px-2 py-1 rounded border border-red-500/20">Rejeitar</button>
+                            </td>
+                          )}
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
-                  <span className="font-mono text-sm text-white uppercase">Lote 2 Status:</span>
-                  <select value={lotesConfig.lote2.status} onChange={(e) => setLotesConfig({ ...lotesConfig, lote2: { ...lotesConfig.lote2, status: e.target.value as any } })} className="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none">
-                    <option value="em_breve">Em Breve</option>
-                    <option value="ativo">Ativo</option>
-                    <option value="encerrado">Encerrado</option>
-                  </select>
+              )}
+
+              {/* TAB 3: INTEGRAÇÕES (GATEWAYS) */}
+              {adminTab === 'integracoes' && adminRole === 'DEV' && (
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="block font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-wider">Gateway de Pagamento Ativo *</label>
+                    <select className="w-full bg-[#0B0F19] border border-white/10 rounded-xl px-4 py-3 text-white text-xs outline-none">
+                      <option value="asaas">Asaas (PIX Transparente)</option>
+                      <option value="mercadopago">Mercado Pago (PIX + Cartão Bricks)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block font-mono text-[9px] text-gray-400 uppercase tracking-wider">Asaas API Production Token *</label>
+                    <div className="bg-black/50 border border-white/5 rounded-xl p-1.5">
+                      <input type="password" value="****************************************" readOnly className="w-full bg-transparent border-none outline-none px-4 py-2 text-white text-xs" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block font-mono text-[9px] text-gray-400 uppercase tracking-wider">Mercado Pago Access Token *</label>
+                    <div className="bg-black/50 border border-white/5 rounded-xl p-1.5">
+                      <input type="password" value="****************************************" readOnly className="w-full bg-transparent border-none outline-none px-4 py-2 text-white text-xs" />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
-                  <span className="font-mono text-sm text-white uppercase">Lote 3 Status:</span>
-                  <select value={lotesConfig.lote3.status} onChange={(e) => setLotesConfig({ ...lotesConfig, lote3: { ...lotesConfig.lote3, status: e.target.value as any } })} className="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none">
-                    <option value="em_breve">Em Breve</option>
-                    <option value="ativo">Ativo</option>
-                    <option value="encerrado">Encerrado</option>
-                  </select>
-                </div>
-                <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
-                  <span className="font-mono text-sm text-white uppercase">Live Transmissão:</span>
-                  <select value={lotesConfig.live.status} onChange={(e) => setLotesConfig({ ...lotesConfig, live: { ...lotesConfig.live, status: e.target.value as any } })} className="bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 outline-none">
-                    <option value="em_breve">Em Breve</option>
-                    <option value="ao_vivo">🔴 Ao Vivo Agora</option>
-                    <option value="encerrada">Encerrada</option>
-                  </select>
-                </div>
-                <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
-                  <span className="font-mono text-sm text-white uppercase">Vagas Restantes:</span>
-                  <input type="number" value={admVagas} onChange={(e) => setAdmVagas(parseInt(e.target.value) || 0)} className="w-20 bg-[#0B0F19] border border-white/5 text-white text-sm rounded px-2.5 py-1.5 text-center outline-none" />
-                </div>
-                <button type="submit" className="btn-gold-shimmer py-2.5 rounded w-full border-none text-black uppercase">SALVAR CONFIGURAÇÃO</button>
-              </form>
+              )}
+
             </motion.div>
           </motion.div>
         )}
