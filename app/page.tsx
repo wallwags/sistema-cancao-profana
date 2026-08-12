@@ -1,14 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Settings, Music, Video, Camera, Globe, Trash2 } from 'lucide-react';
-import Navbar from '../components/Navbar';
-import HeroCard from '../components/HeroCard';
-import FeatureGrid from '../components/FeatureGrid';
 
-// LOTES CONFIGURATION (Matches PDF and DB Seeding exactly)
 interface LoteState {
   status: 'ativo' | 'encerrado' | 'em_breve';
   vagasRestantes: number;
@@ -56,7 +51,7 @@ export default function Page() {
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
 
-  // Dynamic ticking countdown timer (counts to Sep 14, 2026 23:59:00 Lote 1 close)
+  // Ticking countdown (Sep 14, 2026 23:59:00 Lote 1 close)
   const [timeLeft, setTimeLeft] = useState({ days: '33', hours: '13', minutes: '10', seconds: '00' });
 
   useEffect(() => {
@@ -87,7 +82,7 @@ export default function Page() {
     return () => clearInterval(timer);
   }, []);
 
-  // Sync members lineup array based on selected count
+  // Sync additional members lists based on selection
   useEffect(() => {
     const additionalCount = selectedMembers - 1;
     if (membersList.length < additionalCount) {
@@ -130,6 +125,12 @@ export default function Page() {
     setQuizStep(quizStep + 1);
   };
 
+  const handleMemberFieldChange = (index: number, field: string, value: string) => {
+    const copy = [...membersList];
+    copy[index] = { ...copy[index], [field]: value };
+    setMembersList(copy);
+  };
+
   const addQuizMember = () => {
     if (selectedMembers >= 7) {
       alert("O limite máximo do regulamento é de 7 integrantes por projeto.");
@@ -146,12 +147,6 @@ export default function Page() {
     setSelectedMembers(selectedMembers - 1);
     const copy = [...membersList];
     copy.splice(index, 1);
-    setMembersList(copy);
-  };
-
-  const handleMemberFieldChange = (index: number, field: string, value: string) => {
-    const copy = [...membersList];
-    copy[index] = { ...copy[index], [field]: value };
     setMembersList(copy);
   };
 
@@ -188,7 +183,6 @@ export default function Page() {
     }
   };
 
-  // Input masks formatting
   const applyCpfMask = (val: string) => {
     let value = val.replace(/\D/g, "");
     if (value.length > 11) value = value.substring(0, 11);
@@ -237,13 +231,13 @@ export default function Page() {
   return (
     <div className="bg-[#05070B] text-[#F0EAE0] min-h-screen relative font-sans antialiased">
       
-      {/* A. DYNAMIC COUNTDOWN TOP BAR (Full-width & Red-Neon styled) */}
+      {/* A. DYNAMIC COUNTDOWN TOP BAR */}
       <div className="sticky top-0 z-50 w-full bg-[#8B1E1E] py-2 px-4 flex justify-center items-center gap-2 md:gap-3 select-none text-center text-xs md:text-sm leading-none border-b border-white/5 shadow-md">
         <span className="w-1.5 h-1.5 rounded-full bg-red-400 shadow-[0_0_8px_#FF4B2E] animate-ping shrink-0"></span>
         <span className="font-mono text-[#F0EAE0] font-bold uppercase tracking-wider">Lote 1 ativo até:</span>
         
         {/* Dynamic ticking countdown capsule */}
-        <div className="bg-[#05070B] px-3.5 py-1.5 rounded-full font-mono font-black text-[#8B1E1E] tracking-widest flex items-center gap-1 shadow-inner border border-white/5">
+        <div className="bg-[#0F0D0B] px-3.5 py-1.5 rounded-full font-mono font-black text-[#8B1E1E] tracking-widest flex items-center gap-1 shadow-inner border border-white/5">
           <span className="text-[#8B1E1E] font-bold">{timeLeft.days}</span><span className="text-[#8B1E1E]/50 text-[10px]">D</span> : 
           <span className="text-[#8B1E1E] font-bold">{timeLeft.hours}</span><span className="text-[#8B1E1E]/50 text-[10px]">H</span> : 
           <span className="text-[#8B1E1E] font-bold">{timeLeft.minutes}</span><span className="text-[#8B1E1E]/50 text-[10px]">M</span> : 
@@ -315,7 +309,7 @@ export default function Page() {
           </div>
         </section>
 
-        {/* B. AS 3 REGRAS DE MATRÍCULA (Principles) */}
+        {/* B. AS 3 REGRAS DE MATRÍCULA */}
         <section id="principios" className="space-y-12">
           <div className="space-y-2 border-b border-white/5 pb-4">
             <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
@@ -760,7 +754,7 @@ export default function Page() {
                     {quizStep < 5 ? (
                       <button type="button" onClick={handleQuizNext} className="btn-gold-shimmer px-7 py-2.5 rounded uppercase border-none text-black">Continuar</button>
                     ) : (
-                      <button type="button" onClick={handleLaunchCheckout} className="font-mono text-sm font-bold text-[#F0C265] bg-lime px-7 py-2.5 rounded-xl uppercase border-none">Gerar Pix</button>
+                      <button type="button" onClick={handleLaunchCheckout} className="font-mono text-sm font-bold text-black bg-lime px-7 py-2.5 rounded-xl uppercase border-none">Gerar Pix</button>
                     )}
                   </div>
                 </div>
@@ -796,15 +790,15 @@ export default function Page() {
 
               <div className="bg-[#030407] p-4 rounded-xl flex flex-col items-center space-y-4 border border-white/5">
                 <div className="w-48 h-48 bg-white p-3 rounded-xl flex items-center justify-center relative shadow-lg">
-                  <div className="w-full h-full border border-black/10 flex flex-col justify-between p-2">
-                    <div className="flex justify-between">
-                      <div className="w-8 h-8 bg-black"></div>
-                      <div className="w-8 h-8 bg-black"></div>
+                  <div class="w-full h-full border border-black/10 flex flex-col justify-between p-2">
+                    <div class="flex justify-between">
+                      <div class="w-8 h-8 bg-black"></div>
+                      <div class="w-8 h-8 bg-black"></div>
                     </div>
-                    <div className="text-center font-bold text-[8px] text-[#05070B] font-mono uppercase tracking-widest leading-none py-2">Canção Profana</div>
-                    <div className="flex justify-between">
-                      <div className="w-8 h-8 bg-black"></div>
-                      <div className="w-12 h-12 border border-black border-dashed flex items-center justify-center"><div className="w-6 h-6 bg-[#F0C265]"></div></div>
+                    <div class="text-center font-bold text-[8px] text-[#05070B] font-mono uppercase tracking-widest leading-none py-2">Canção Profana</div>
+                    <div class="flex justify-between">
+                      <div class="w-8 h-8 bg-black"></div>
+                      <div class="w-12 h-12 border border-black border-dashed flex items-center justify-center"><div class="w-6 h-6 bg-[#F0C265]"></div></div>
                     </div>
                   </div>
                   {isCheckoutLoading && (
@@ -823,7 +817,7 @@ export default function Page() {
 
               <div className="space-y-3">
                 <button onClick={copyPixCode} className="font-mono text-sm font-bold text-white bg-white/5 border border-[#2E2820] py-3 rounded-xl w-full hover:bg-white/10 transition-colors uppercase">Copiar Código Pix</button>
-                <button onClick={handleSimulateWebhook} className="font-mono text-sm font-bold text-black bg-lime py-3 rounded-xl w-full hover:bg-lime/90 transition-colors uppercase border-none shadow-lg shadow-lime/20">Confirmar Webhook</button>
+                <button onClick={handleSimulateWebhook} className="font-mono text-sm font-bold text-black bg-lime py-3 rounded-xl w-full hover:bg-lime/90 transition-colors uppercase border-none shadow-lg shadow-lime/20">Confirmar Pagamento (Webhook)</button>
               </div>
             </motion.div>
           </motion.div>
@@ -863,7 +857,7 @@ export default function Page() {
                 </div>
                 <div className="col-span-2 border-t border-white/5 pt-3">
                   <span className="font-mono text-sm text-lime uppercase font-bold">Condição Solidária:</span>
-                  <p className="text-xs text-gray-300 mt-1 leading-relaxed font-mono font-mono">Trazer {selectedMembers}kg de alimento no dia do show.</p>
+                  <p className="text-xs text-gray-300 mt-1 leading-relaxed font-mono">Trazer {selectedMembers}kg de alimento no dia do show.</p>
                 </div>
               </div>
 
