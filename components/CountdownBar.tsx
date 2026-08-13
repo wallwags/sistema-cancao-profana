@@ -4,22 +4,19 @@ import React, { useState, useEffect } from 'react';
 
 export default function CountdownBar() {
   const [timeLeft, setTimeLeft] = useState({
-    days: '09',
-    hours: '13',
-    minutes: '10',
+    days: '31',
+    hours: '12',
+    minutes: '45',
     seconds: '00'
   });
 
   useEffect(() => {
-    // Simulator countdown target (10 days in the future relative to render)
-    const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() + 9);
-    targetDate.setHours(targetDate.getHours() + 13);
-    targetDate.setMinutes(targetDate.getMinutes() + 10);
+    // Set target date for Lote 1 close: September 14, 2026 at 23:59:00
+    const targetDate = new Date("2026-09-14T23:59:00").getTime();
 
     const timer = setInterval(() => {
       const now = new Date().getTime();
-      const difference = targetDate.getTime() - now;
+      const difference = targetDate - now;
 
       if (difference <= 0) {
         clearInterval(timer);
@@ -44,13 +41,27 @@ export default function CountdownBar() {
   }, []);
 
   return (
-    <div className="w-full bg-[#8B1E1E] py-2.5 px-4 flex justify-center items-center gap-2 md:gap-3 select-none text-center relative z-50 text-xs md:text-sm">
-      <span className="w-1.5 h-1.5 rounded-full bg-red-400 shadow-[0_0_8px_#FF4B2E] animate-ping shrink-0"></span>
-      <span className="font-mono text-[#F0EAE0] font-bold uppercase tracking-wider">
+    <div className="w-full bg-[#8B1E1E] py-2 px-4 flex justify-center items-center gap-2.5 md:gap-3.5 select-none text-center relative z-50 text-xs md:text-sm border-b border-white/5 shadow-md">
+      {/* High-visibility golden/yellow pulsating indicator */}
+      <span className="relative flex h-2 w-2 shrink-0">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F0C265] opacity-75"></span>
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#F0C265]"></span>
+      </span>
+      
+      <span className="font-mono text-[#F0EAE0] font-black uppercase tracking-wider text-[11px] md:text-xs">
         Lote 1 ativo até:
       </span>
-      <div className="bg-[#05070B] px-3.5 py-1 rounded-full font-mono font-black text-[#8B1E1E] tracking-widest flex items-center gap-1 shadow-inner">
-        <span className="text-[#8B1E1E]">14 de Setembro</span>
+      
+      {/* Elegantly styled countdown ticking digits */}
+      <div className="bg-[#05070B] px-3.5 py-1 rounded-full font-mono font-black text-[#F0C265] tracking-widest flex items-center gap-1 shadow-inner border border-white/5 text-[10px] md:text-xs">
+        <span className="text-[#F0C265] font-extrabold">{timeLeft.days}</span>
+        <span className="text-gray-500 text-[9px] font-bold mr-0.5">D</span>:
+        <span className="text-[#F0C265] font-extrabold">{timeLeft.hours}</span>
+        <span className="text-gray-500 text-[9px] font-bold mr-0.5">H</span>:
+        <span className="text-[#F0C265] font-extrabold">{timeLeft.minutes}</span>
+        <span className="text-gray-500 text-[9px] font-bold mr-0.5">M</span>:
+        <span className="text-[#F0C265] font-extrabold text-[#FFF2D4]">{timeLeft.seconds}</span>
+        <span className="text-gray-500 text-[9px] font-bold">S</span>
       </div>
     </div>
   );

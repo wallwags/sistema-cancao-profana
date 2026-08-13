@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Settings, Music, Video, Camera, Globe, Trash2 } from 'lucide-react';
+import { Shield, Settings, Music, Video, Camera, Globe, Trash2, Users, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import Navbar from '../components/Navbar';
 import HeroCard from '../components/HeroCard';
 import FeatureGrid from '../components/FeatureGrid';
+import CountdownBar from '../components/CountdownBar';
+import { supabase } from '../lib/supabase';
 
 interface LoteState {
   status: 'ativo' | 'encerrado' | 'em_breve';
@@ -36,55 +38,96 @@ export default function Page() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [quizStep, setQuizStep] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Quiz form states
   const [projectName, setProjectName] = useState('');
   const [projectStyle, setProjectStyle] = useState('');
   const [projectBio, setProjectBio] = useState('');
   const [projectPhotoName, setProjectPhotoName] = useState<string | null>(null);
+  const [projectInstagram, setProjectInstagram] = useState('');
+  const [projectVideoLink, setProjectVideoLink] = useState('');
+  
   const [respName, setRespName] = useState('');
   const [respCpf, setRespCpf] = useState('');
   const [respBirth, setRespBirth] = useState('');
   const [respPhone, setRespPhone] = useState('');
+  
   const [selectedMembers, setSelectedMembers] = useState(2);
   const [membersList, setMembersList] = useState<Array<{ name: string; cpf: string; birth: string }>>([]);
   const [acceptRules, setAcceptRules] = useState(false);
+
+  // Database saved states
+  const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
 
   // Popups states
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+  
+  // Checkout Simulated Timer (10m countdown)
+  const [checkoutTimeLeft, setCheckoutTimeLeft] = useState(600);
 
-  // Ticking countdown (Sep 14, 2026 23:59:00 Lote 1 close)
-  const [timeLeft, setTimeLeft] = useState({ days: '33', hours: '13', minutes: '10', seconds: '00' });
-
+  // Sync pricing configurations from Supabase on mount
   useEffect(() => {
-    const targetDate = new Date("2026-09-14T23:59:00").getTime();
-    const timer = setInterval(() => {
-      const now = new Date().getTime();
-      const difference = targetDate - now;
+    const fetchSupabaseConfig = async () => {
+      try {
+        const { data: batches, error: bError } = await supabase
+          .from('batches')
+          .select('*')
+          .order('created_at', { ascending: true });
 
-      if (difference <= 0) {
-        clearInterval(timer);
-        setTimeLeft({ days: '00', hours: '00', minutes: '00', seconds: '00' });
-        return;
+        const { data: liveData, error: lError } = await supabase
+          .from('live_broadcast')
+          .select('*')
+          .eq('id', 1)
+          .maybeSingle();
+
+        if (batches && batches.length >= 3) {
+          const b1 = batches[0];
+          const b2 = batches[1];
+          const b3 = batches[2];
+          
+          setLotesConfig({
+            lote1: { status: b1.status, vagasRestantes: b1.vagas_restantes, valor: Number(b1.price_per_member), desc: 'Primeiras inscrições. Menor preço histórico.' },
+            lote2: { status: b2.status, vagasRestantes: b2.vagas_restantes, valor: Number(b2.price_per_member), desc: 'Disponível na fase intermediária.' },
+            lote3: { status: b3.status, vagasRestantes: b3.vagas_restantes, valor: Number(b3.price_per_member), desc: 'Reta final de inscrições regulamentares.' },
+            live: { status: liveData ? liveData.status : 'em_breve', horario: '2026-09-07T20:00:00' }
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching batches from Supabase:", err);
       }
+    };
 
-      const d = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const h = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const m = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-      const s = Math.floor((difference % (1000 * 60)) / 1000);
-
-      setTimeLeft({
-        days: d < 10 ? `0${d}` : d.toString(),
-        hours: h < 10 ? `0${h}` : h.toString(),
-        minutes: m < 10 ? `0${m}` : m.toString(),
-        seconds: s < 10 ? `0${s}` : s.toString()
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
+    fetchSupabaseConfig();
   }, []);
+
+  // Checkout ticking down timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isCheckoutOpen) {
+      setCheckoutTimeLeft(600); // Reset timer to 10 mins
+      interval = setInterval(() => {
+        setCheckoutTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setIsCheckoutOpen(false);
+            alert("⏰ O prazo de 10 minutos para reserva expirou. Reinicie sua inscrição para garantir sua vaga.");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isCheckoutOpen]);
+
+  const formatCheckoutTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
 
   // Sync additional members lists based on selection
   useEffect(() => {
@@ -104,6 +147,46 @@ export default function Page() {
   const activeLoteName = lotesConfig.lote1.status === 'ativo' ? 'LOTE 1' : (lotesConfig.lote2.status === 'ativo' ? 'LOTE 2' : 'LOTE 3');
   const totalCost = selectedMembers * activePrice;
 
+  // Active Mask/Validations
+  const isValidCPF = (cpf: string) => {
+    const raw = cpf.replace(/[^\d]+/g, '');
+    if (raw.length !== 11 || /^(\d)\1{10}$/.test(raw)) return false;
+    let sum = 0, rest;
+    for (let i = 1; i <= 9; i++) sum += parseInt(raw.substring(i - 1, i)) * (11 - i);
+    rest = (sum * 10) % 11;
+    if (rest === 10 || rest === 11) rest = 0;
+    if (rest !== parseInt(raw.substring(9, 10))) return false;
+    sum = 0;
+    for (let i = 1; i <= 10; i++) sum += parseInt(raw.substring(i - 1, i)) * (12 - i);
+    rest = (sum * 10) % 11;
+    if (rest === 10 || rest === 11) rest = 0;
+    if (rest !== parseInt(raw.substring(10, 11))) return false;
+    return true;
+  };
+
+  const isValidBirthDate = (dateStr: string) => {
+    const parts = dateStr.split("/");
+    if (parts.length !== 3) return false;
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const year = parseInt(parts[2], 10);
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return false;
+    if (month < 1 || month > 12) return false;
+    if (year < 1920 || year > 2016) return false; 
+    const daysInMonth = new Date(year, month, 0).getDate();
+    if (day < 1 || day > daysInMonth) return false;
+    return true;
+  };
+
+  const isValidWhatsApp = (phoneStr: string) => {
+    const raw = phoneStr.replace(/[^\d]+/g, '');
+    if (raw.length !== 11) return false;
+    if (raw[2] !== '9') return false; 
+    const ddd = parseInt(raw.substring(0, 2), 10);
+    if (ddd < 11 || ddd > 99) return false;
+    return true;
+  };
+
   const handleOpenQuiz = () => {
     setIsQuizOpen(true);
     setQuizStep(1);
@@ -116,13 +199,31 @@ export default function Page() {
     if (quizStep === 2 && (!projectBio || !projectPhotoName)) {
       alert('Por favor, complete a biografia e envie a foto oficial.'); return;
     }
-    if (quizStep === 3 && (!respName || respCpf.length < 14 || respBirth.length < 10 || respPhone.length < 14)) {
-      alert('Por favor, complete as credenciais do responsável de forma válida.'); return;
+    if (quizStep === 3) {
+      if (!respName || respCpf.length < 14 || respBirth.length < 10 || respPhone.length < 14) {
+        alert('Por favor, preencha todos os campos do responsável.'); return;
+      }
+      if (!isValidCPF(respCpf)) {
+        alert('⚠️ CPF do responsável inválido!'); return;
+      }
+      if (!isValidBirthDate(respBirth)) {
+        alert('⚠️ Data de nascimento do responsável inválida (deve ser entre 1920 e 2016).'); return;
+      }
+      if (!isValidWhatsApp(respPhone)) {
+        alert('⚠️ Número do WhatsApp inválido! Deve ser celular brasileiro existente.'); return;
+      }
     }
     if (quizStep === 4) {
       for (let i = 0; i < membersList.length; i++) {
-        if (!membersList[i].name || membersList[i].cpf.length < 14 || membersList[i].birth.length < 10) {
+        const m = membersList[i];
+        if (!m.name || m.cpf.length < 14 || m.birth.length < 10) {
           alert(`Por favor, preencha todos os dados obrigatórios do Integrante ${i+2}.`); return;
+        }
+        if (!isValidCPF(m.cpf)) {
+          alert(`⚠️ CPF do Integrante ${i+2} inválido!`); return;
+        }
+        if (!isValidBirthDate(m.birth)) {
+          alert(`⚠️ Data de nascimento do Integrante ${i+2} inválida!`); return;
         }
       }
     }
@@ -154,21 +255,160 @@ export default function Page() {
     setMembersList(copy);
   };
 
-  const handleLaunchCheckout = () => {
+  // Insert candidate registration records directly into Supabase tables
+  const saveRegistrationToSupabase = async () => {
+    try {
+      // 1. Fetch active batch id from the database
+      const { data: activeBatch } = await supabase
+        .from('batches')
+        .select('*')
+        .eq('status', 'ativo')
+        .single();
+      
+      const batchId = activeBatch?.id || 'f68532e8-68c9-4cc4-bd38-976f4083e628';
+      const batchPrice = activeBatch ? Number(activeBatch.price_per_member) : 35;
+      
+      // 2. Insert into projects
+      const { data: project, error: pError } = await supabase
+        .from('projects')
+        .insert({
+          name: projectName,
+          style: projectStyle,
+          bio: projectBio,
+          photo_url: projectPhotoName || 'default_photo.png',
+          instagram: projectInstagram || null,
+          video_link: projectVideoLink || null,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (pError || !project) {
+        throw new Error(pError?.message || "Não foi possível criar o projeto no banco de dados.");
+      }
+
+      // 3. Insert responsible leader into members
+      const { error: leaderError } = await supabase
+        .from('members')
+        .insert({
+          project_id: project.id,
+          name: respName,
+          cpf: respCpf,
+          birth_date: respBirth,
+          phone: respPhone,
+          is_responsible: true
+        });
+
+      if (leaderError) throw leaderError;
+
+      // 4. Insert other members
+      if (membersList && membersList.length > 0) {
+        const otherMembers = membersList
+          .filter(m => m.name.trim() !== '')
+          .map((m) => ({
+            project_id: project.id,
+            name: m.name,
+            cpf: m.cpf,
+            birth_date: m.birth,
+            phone: '',
+            is_responsible: false
+          }));
+
+        if (otherMembers.length > 0) {
+          const { error: membersError } = await supabase
+            .from('members')
+            .insert(otherMembers);
+
+          if (membersError) throw membersError;
+        }
+      }
+
+      // 5. Insert pending subscription
+      const { error: subError } = await supabase
+        .from('subscriptions')
+        .insert({
+          project_id: project.id,
+          batch_id: batchId,
+          amount_paid: batchPrice * selectedMembers,
+          status: 'pending',
+          charge_id: 'pix_simulation_' + Math.random().toString(36).substring(2, 9)
+        });
+
+      if (subError) throw subError;
+
+      // 6. Save project id
+      setCreatedProjectId(project.id);
+      localStorage.setItem('current_project_id', project.id);
+      return project.id;
+    } catch (err: any) {
+      console.error("Error saving registration to Supabase:", err);
+      alert("⚠️ Erro ao registrar inscrição: " + (err.message || err));
+      return null;
+    }
+  };
+
+  const handleLaunchCheckout = async () => {
     if (!acceptRules) {
       alert('Declare concordar com as regras regulamentares para prosseguir.'); return;
     }
-    setIsQuizOpen(false);
-    setIsCheckoutOpen(true);
+    setIsSaving(true);
+    const pId = await saveRegistrationToSupabase();
+    setIsSaving(false);
+    if (pId) {
+      setIsQuizOpen(false);
+      setIsCheckoutOpen(true);
+    }
   };
 
-  const handleSimulateWebhook = () => {
+  const handleSimulateWebhook = async () => {
     setIsCheckoutLoading(true);
-    setTimeout(() => {
-      setIsCheckoutOpen(false);
+    try {
+      if (createdProjectId) {
+        // 1. Update project status to 'paid' (active)
+        await supabase
+          .from('projects')
+          .update({ status: 'paid' })
+          .eq('id', createdProjectId);
+
+        // 2. Update subscription status to 'paid' and set paid_at
+        await supabase
+          .from('subscriptions')
+          .update({ status: 'paid', paid_at: new Date().toISOString() })
+          .eq('project_id', createdProjectId);
+
+        // 3. Decrement active batch seats
+        const { data: activeBatch } = await supabase
+          .from('batches')
+          .select('*')
+          .eq('status', 'ativo')
+          .single();
+
+        if (activeBatch) {
+          await supabase
+            .from('batches')
+            .update({ vagas_restantes: Math.max(0, activeBatch.vagas_restantes - 1) })
+            .eq('id', activeBatch.id);
+            
+          // Reflect locally in our state immediately
+          setLotesConfig(prev => ({
+            ...prev,
+            lote1: {
+              ...prev.lote1,
+              vagasRestantes: Math.max(0, prev.lote1.vagasRestantes - 1)
+            }
+          }));
+        }
+      }
+      setTimeout(() => {
+        setIsCheckoutOpen(false);
+        setIsCheckoutLoading(false);
+        setIsSuccessOpen(true);
+      }, 1500);
+    } catch (err) {
+      console.error(err);
       setIsCheckoutLoading(false);
-      setIsSuccessOpen(true);
-    }, 2000);
+      alert("Erro ao processar confirmação de pagamento.");
+    }
   };
 
   const handleBypassClear = () => {
@@ -177,6 +417,8 @@ export default function Page() {
       setProjectStyle('');
       setProjectBio('');
       setProjectPhotoName(null);
+      setProjectInstagram('');
+      setProjectVideoLink('');
       setRespName('');
       setRespCpf('');
       setRespBirth('');
@@ -184,6 +426,7 @@ export default function Page() {
       setSelectedMembers(2);
       setAcceptRules(false);
       setQuizStep(1);
+      setCreatedProjectId(null);
     }
   };
 
@@ -235,25 +478,14 @@ export default function Page() {
   return (
     <div className="bg-[#05070B] text-[#F0EAE0] min-h-screen relative font-sans antialiased">
       
-      {/* A. DYNAMIC COUNTDOWN TOP BAR */}
-      <div className="sticky top-0 z-50 w-full bg-[#8B1E1E] py-2 px-4 flex justify-center items-center gap-2 md:gap-3 select-none text-center text-xs md:text-sm leading-none border-b border-white/5 shadow-md">
-        <span className="w-1.5 h-1.5 rounded-full bg-red-400 shadow-[0_0_8px_#FF4B2E] animate-ping shrink-0"></span>
-        <span className="font-mono text-[#F0EAE0] font-bold uppercase tracking-wider">Lote 1 ativo até:</span>
-        
-        {/* Dynamic ticking countdown capsule */}
-        <div className="bg-[#0F0D0B] px-3.5 py-1.5 rounded-full font-mono font-black text-[#8B1E1E] tracking-widest flex items-center gap-1 shadow-inner border border-white/5">
-          <span className="text-[#8B1E1E] font-bold">{timeLeft.days}</span><span className="text-[#8B1E1E]/50 text-[10px]">D</span> : 
-          <span className="text-[#8B1E1E] font-bold">{timeLeft.hours}</span><span className="text-[#8B1E1E]/50 text-[10px]">H</span> : 
-          <span className="text-[#8B1E1E] font-bold">{timeLeft.minutes}</span><span className="text-[#8B1E1E]/50 text-[10px]">M</span> : 
-          <span className="text-[#8B1E1E] font-bold">{timeLeft.seconds}</span><span className="text-[#8B1E1E]/50 text-[10px]">S</span>
-        </div>
+      {/* UNIFIED FIXED CONTAINER FOR COUNTDOWN AND NAVBAR (Resolves overlap bug!) */}
+      <div className="fixed top-0 left-0 right-0 z-50 w-full bg-[#05070B]/95 backdrop-blur-md">
+        <CountdownBar />
+        <Navbar onOpenQuiz={handleOpenQuiz} />
       </div>
 
-      {/* HEADER NAVBAR */}
-      <Navbar onOpenQuiz={handleOpenQuiz} />
-
-      {/* MAIN CONTAINER */}
-      <main className="max-w-6xl mx-auto px-6 py-10 grow space-y-24 relative z-10">
+      {/* MAIN CONTAINER WITH FIXED NAVBAR ADJUSTMENT PT */}
+      <main className="max-w-6xl mx-auto px-6 pt-32 sm:pt-40 pb-10 grow space-y-24 relative z-10">
         
         {/* HERO SECTION */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -348,6 +580,61 @@ export default function Page() {
           </div>
         </section>
 
+        {/* NEW INFOGRAPHIC SECTION: REGRA DE FORMAÇÃO DO GRUPO (Roster Rule) */}
+        <section id="formacao" className="space-y-12">
+          <div className="space-y-2 border-b border-white/5 pb-4">
+            <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest"># REGRA DE FORMAÇÃO DE GRUPO</span>
+            <h2 className="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">COMO DEVE SER SUA FORMAÇÃO?</h2>
+          </div>
+
+          {/* Premium Infographic Banner Box */}
+          <div className="bg-gradient-to-r from-[#8B1E1E]/20 via-[#0B0F19]/80 to-[#8B1E1E]/20 border border-white/10 py-6 px-8 rounded-3xl text-center space-y-3 shadow-lg">
+            <h3 className="font-mono text-xs text-[#F0C265] font-black uppercase tracking-widest">DIRETRIZ DE INTEGRANTES DO PALCO</h3>
+            <div className="flex flex-wrap justify-center items-center gap-4 text-white font-display font-black text-xl sm:text-2xl md:text-3xl">
+              <span>MÍNIMO DE 2 INTEGRANTES</span>
+              <span className="text-[#F0C265]">•</span>
+              <span>MÁXIMO DE 7 INTEGRANTES</span>
+            </div>
+            <p className="text-xs text-gray-300 max-w-2xl mx-auto leading-relaxed">
+              Para garantir a segurança física, qualidade acústica e colaboração mútua nas apresentações gravadas nos estúdios da Pedra Profana, as regras abaixo de lineup são estritas. Não são permitidos projetos solo sem acompanhantes.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#F0C265]/40 transition-all duration-300">
+              <div className="w-10 h-10 rounded bg-[#E3B552]/10 border border-[#E3B552]/30 flex items-center justify-center text-[#F0C265]">
+                <Music className="w-5 h-5 stroke-[2.2]" />
+              </div>
+              <h4 className="font-display font-bold text-md text-white uppercase">Duplas de Rap / Hip-Hop</h4>
+              <p className="text-xs text-gray-300 leading-relaxed">
+                Se você é um <strong>MC de Rap</strong>, deve se juntar obrigatoriamente a um <strong>beatmaker/DJ</strong> e vice-versa. O festival fomenta a união criativa e a produção colaborativa real.
+              </p>
+            </div>
+
+            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#F0C265]/40 transition-all duration-300">
+              <div className="w-10 h-10 rounded bg-[#E3B552]/10 border border-[#E3B552]/30 flex items-center justify-center text-[#F0C265]">
+                <Users className="w-5 h-5 stroke-[2.2]" />
+              </div>
+              <h4 className="font-display font-bold text-md text-white uppercase">Cantores Solo & Duos</h4>
+              <p className="text-xs text-gray-300 leading-relaxed">
+                Se você é <strong>cantor(a) solo</strong>, deve se unir a alguém que <strong>toque algum instrumento</strong> (violão, teclado, guitarra, etc.). Não são aceitas apresentações solo puramente acapela.
+              </p>
+            </div>
+
+            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#F0C265]/40 transition-all duration-300">
+              <div className="w-10 h-10 rounded bg-[#E3B552]/10 border border-[#E3B552]/30 flex items-center justify-center text-[#F0C265]">
+                <Shield className="w-5 h-5 stroke-[2.2]" />
+              </div>
+              <h4 className="font-display font-bold text-md text-white uppercase">Bandas & Coletivos</h4>
+              <p className="text-xs text-gray-300 leading-relaxed">
+                Bandas completas de rock, metal, pop ou coletivos diversos possuem limite regulamentar de palco estabelecido em no <strong>máximo 7 integrantes</strong> por apresentação.
+              </p>
+            </div>
+
+          </div>
+        </section>
+
         {/* C. FASES DO CONCURSO (Timeline) */}
         <section id="cronograma" className="space-y-12">
           <div className="space-y-2 border-b border-white/5 pb-4">
@@ -378,6 +665,24 @@ export default function Page() {
           </div>
         </section>
 
+        {/* E. DELIVERABLES GRAPH FEATURE GRID - PLACED ABOVE PRICING */}
+        <section id="premios" className="space-y-12">
+          <div className="space-y-2 border-b border-white/5 pb-4">
+            <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
+              # VITRINE DE ENTREGÁVEIS
+            </span>
+            <h2 className="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">
+              O QUE ESTÁ EM JOGO
+            </h2>
+          </div>
+          
+          {/* Staggered Grid Deliverables */}
+          <FeatureGrid />
+
+          {/* Hero Premium Card - Rendered below items as requested */}
+          <HeroCard />
+        </section>
+
         {/* D. LOTES TABLE WITH CONFIG STATES */}
         <section id="lotes" className="space-y-12">
           <div className="space-y-4 border-b border-white/5 pb-4">
@@ -395,11 +700,21 @@ export default function Page() {
                 <button className="bg-red-600 hover:bg-red-500 text-white font-mono text-sm font-bold uppercase px-5 py-2 rounded-xl border border-black shadow">ASSISTIR LIVE</button>
               </div>
             )}
+            
+            {/* Swapped yellow banner for red-crimson with pulsating dot */}
             {lotesConfig.live.status === 'em_breve' && (
-              <div className="py-4 px-6 rounded-2xl border-2 border-[#E3B552] bg-amber-950/10 text-[#F0C265] flex flex-col sm:flex-row justify-between items-center gap-4">
-                <span className="font-mono text-sm md:text-base font-black tracking-widest uppercase">LIVE SESSIONS • LANÇAMENTO OFICIAL AGENDADO PARA 07 DE SETEMBRO ÀS 20:00</span>
+              <div className="py-4 px-6 rounded-2xl border-2 border-[#8B1E1E] bg-[#8B1E1E]/10 text-[#FF4B2E] flex items-center justify-center sm:justify-start gap-3 w-full shadow-[0_0_15px_rgba(139,30,30,0.15)]">
+                {/* Yellow pulsating dot from countdown */}
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F0C265] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#F0C265]"></span>
+                </span>
+                <span className="font-mono text-xs sm:text-sm md:text-base font-black tracking-widest uppercase text-[#FF4B2E]">
+                  Lançamento oficial: 07 de setembro às 20:00
+                </span>
               </div>
             )}
+            
             {lotesConfig.live.status === 'encerrada' && (
               <div className="py-4 px-6 rounded-2xl border-2 border-white/5 bg-[#0B0F19]/60 text-gray-400 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <span className="font-mono text-sm md:text-base font-black tracking-widest uppercase">LIVE SESSIONS FINALIZADA • REPLAYS DISPONÍVEIS</span>
@@ -417,34 +732,73 @@ export default function Page() {
             ].map((l, i) => {
               const isActive = l.status === 'ativo';
               const isClosed = l.status === 'encerrado';
+              const isComing = l.status === 'em_breve';
               return (
                 <div
                   key={i}
-                  className={`bg-[#0B0F19]/60 backdrop-blur-xl border-2 rounded-[24px] p-5 flex flex-col justify-between shadow ${
-                    isActive ? 'border-[#E3B552] scale-[1.02]' : 'border-white/5 opacity-60'
+                  className={`bg-[#0B0F19]/60 backdrop-blur-xl border-2 rounded-[24px] p-5 flex flex-col justify-between shadow transition-all duration-300 ${
+                    isActive 
+                      ? 'border-[#10B981] scale-[1.02] shadow-[0_0_20px_rgba(16,185,129,0.15)] bg-[#0B0F19]/90' 
+                      : 'border-white/5 opacity-50 bg-[#0B0F19]/30'
                   }`}
                 >
                   <div className="space-y-4">
                     <div className="flex justify-between items-center border-b border-white/5 pb-2">
                       <h4 className="font-display font-bold text-md text-white uppercase">{l.title}</h4>
-                      {isActive && <span className="bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black text-[10px] font-bold px-2.5 py-1 rounded font-mono border border-black">VIGENTE</span>}
-                      {isClosed && <span className="bg-[#121215] text-gray-500 text-[10px] font-bold px-2.5 py-1 rounded font-mono border border-white/5">ENCERRADO</span>}
+                      {isActive && (
+                        <span className="bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 text-[10px] font-bold px-2.5 py-1 rounded font-mono uppercase tracking-wider">
+                          VIGENTE
+                        </span>
+                      )}
+                      {isClosed && (
+                        <span className="bg-[#121215] text-gray-500 text-[10px] font-bold px-2.5 py-1 rounded font-mono border border-white/5">
+                          ENCERRADO
+                        </span>
+                      )}
+                      {isComing && (
+                        <span className="bg-[#121215] text-gray-500 text-[10px] font-bold px-2.5 py-1 rounded font-mono border border-white/5">
+                          EM BREVE
+                        </span>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-300 leading-normal">{l.desc}</p>
+                    {l.key === 'dia0' ? (
+                      <div className="space-y-2 text-left mt-2">
+                        <div className="flex items-center gap-1.5 text-xs text-red-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse shrink-0"></span>
+                          <span>Só para quem assistir ao vivo;</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-gray-600 shrink-0"></span>
+                          <span>Live no YouTube;</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-[#F0C265]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#F0C265] shrink-0"></span>
+                          <span>Preço exclusivo de lançamento;</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-300 leading-normal">{l.desc}</p>
+                    )}
                     
                     {isActive && l.vagas !== undefined && (
                       <div className="space-y-1 bg-black/40 p-2.5 rounded-xl border border-white/5">
                         <span className="font-mono text-sm text-gray-300 block font-bold">VAGAS RESTANTES: {l.vagas}</span>
                         <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden flex items-center">
-                          <div className="h-full bg-gradient-to-r from-[#FFF2D4] via-[#F0C265] to-[#B88A28]" style={{ width: `${(l.vagas / 30) * 100}%` }}></div>
+                          <div className="h-full bg-gradient-to-r from-[#10B981] to-[#34D399]" style={{ width: `${(l.vagas / 30) * 100}%` }}></div>
                         </div>
                       </div>
                     )}
                   </div>
 
                   <div className="border-t border-white/5 pt-4 flex justify-between items-baseline mt-4">
-                    <span className="text-sm font-mono text-[#10B981] font-bold uppercase">+ 1kg Alimento</span>
-                    <span className={`text-2xl font-display font-black ${isActive ? 'text-[#F0C265]' : 'text-white'}`}>
+                    {isActive ? (
+                      <span className="text-xs font-mono text-[#10B981] font-bold uppercase tracking-wider">
+                        + 1kg Alimento
+                      </span>
+                    ) : (
+                      <span className="text-sm"></span>
+                    )}
+                    <span className={`text-2xl font-display font-black ${isActive ? 'text-[#10B981]' : 'text-white'}`}>
                       R$ {l.valor},00
                     </span>
                   </div>
@@ -456,33 +810,15 @@ export default function Page() {
           <div className="pt-6 text-center">
             <button
               onClick={handleOpenQuiz}
-              className="btn-gold-shimmer px-10 py-4 rounded-2xl text-md"
+              className="btn-gold-shimmer px-10 py-4 rounded-2xl text-md shadow-[0_0_30px_rgba(240,194,101,0.3)]"
             >
               Garantir Inscrição Lote 1
             </button>
           </div>
         </section>
 
-        {/* E. DELIVERABLES GRAPH FEATURE GRID */}
-        <section id="premios" className="space-y-12">
-          <div className="space-y-2 border-b border-white/5 pb-4">
-            <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
-              # VITRINE DE ENTREGÁVEIS
-            </span>
-            <h2 className="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">
-              O QUE ESTÁ EM JOGO
-            </h2>
-          </div>
-          
-          {/* Hero Premium Card */}
-          <HeroCard />
-
-          {/* Staggered Grid Deliverables */}
-          <FeatureGrid />
-        </section>
-
         {/* F. FAQ ACCORDION SECTION */}
-        <section id="FAQ" className="space-y-12">
+        <section id="faq" className="space-y-12">
           <div className="space-y-2 border-b border-white/5 pb-4">
             <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
               # PERGUNTAS FREQUENTES
@@ -508,7 +844,7 @@ export default function Page() {
                   </span>
                 </div>
                 {activeFaq === i && (
-                  <p className="text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3">
+                  <p className="text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3 font-normal">
                     {f.a}
                   </p>
                 )}
@@ -520,7 +856,7 @@ export default function Page() {
       </main>
 
       {/* FOOTER */}
-      <footer className="bg-[#030407] border-t border-white/5 py-10 px-6 mt-16 text-center text-sm font-mono text-gray-400 uppercase tracking-widest">
+      <footer className="bg-[#030407] border-t border-white/5 py-10 px-6 mt-16 text-center text-sm font-mono text-gray-400 uppercase tracking-widest relative z-20">
         <div className="max-w-6xl mx-auto flex flex-col items-center gap-4">
           <div>
             Estúdio Pedra Profana © 2026 • Todos os Direitos Reservados.
@@ -579,12 +915,26 @@ export default function Page() {
                     <p className="text-sm text-gray-300">Insira as informações gerais da banda/artista.</p>
                     <div className="space-y-4 pt-2">
                       <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome da Banda *</label>
-                        <input type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552]" required />
+                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome da Banda / Dupla de Rap *</label>
+                        <input 
+                          type="text" 
+                          value={projectName} 
+                          onChange={(e) => setProjectName(e.target.value)} 
+                          placeholder="Ex: The Jackson Five" 
+                          className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552] placeholder-gray-600 text-sm" 
+                          required 
+                        />
                       </div>
                       <div className="space-y-1">
                         <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Estilo / Gênero *</label>
-                        <input type="text" value={projectStyle} onChange={(e) => setProjectStyle(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552]" required />
+                        <input 
+                          type="text" 
+                          value={projectStyle} 
+                          onChange={(e) => setProjectStyle(e.target.value)} 
+                          placeholder="Ex: R&B" 
+                          className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552] placeholder-gray-600 text-sm" 
+                          required 
+                        />
                       </div>
                     </div>
                   </div>
@@ -597,7 +947,15 @@ export default function Page() {
                     <div className="space-y-4 pt-2">
                       <div className="space-y-1">
                         <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Biografia *</label>
-                        <textarea value={projectBio} onChange={(e) => setProjectBio(e.target.value)} rows={3} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552] resize-none" required />
+                        <textarea 
+                          value={projectBio} 
+                          onChange={(e) => setProjectBio(e.target.value.slice(0, 400))} 
+                          rows={3} 
+                          maxLength={400} 
+                          className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] resize-none" 
+                          required 
+                        />
+                        <span className="text-xs text-gray-500 font-mono block text-right mt-1 font-bold">{projectBio.length}/400 caracteres</span>
                       </div>
                       <div className="space-y-1">
                         <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Foto Oficial *</label>
@@ -609,6 +967,31 @@ export default function Page() {
                             <span className="text-sm text-[#B3B3B3]">Arraste ou clique para carregar foto</span>
                           )}
                         </div>
+                        <span className="text-[10px] text-gray-500 font-mono block mt-1">Formatos: JPEG, PNG, WEBP. Max: 5MB. Verificação de segurança ativa contra arquivos maliciosos.</span>
+                      </div>
+                      
+                      {/* Fixed values bound to independent states to resolve over-writing bug! */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Instagram (Opcional)</label>
+                          <input 
+                            type="text" 
+                            value={projectInstagram} 
+                            onChange={(e) => setProjectInstagram(e.target.value)} 
+                            placeholder="Ex: @suabanda" 
+                            className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552] placeholder-gray-600 text-xs" 
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Link do Vídeo (Opcional)</label>
+                          <input 
+                            type="url" 
+                            value={projectVideoLink} 
+                            onChange={(e) => setProjectVideoLink(e.target.value)} 
+                            placeholder="Ex: https://youtube.com/watch?v=..." 
+                            className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552] placeholder-gray-600 text-xs" 
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -617,23 +1000,23 @@ export default function Page() {
                 {quizStep === 3 && (
                   <div className="space-y-4">
                     <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Líder Responsável</h3>
-                    <p className="text-sm text-gray-300">Preencha as credenciais do responsável legal do projeto.</p>
+                    <p className="text-sm text-gray-300">Preencha as credenciais do integrante responsável legal da banda / dupla.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                       <div className="space-y-1">
                         <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome Completo *</label>
-                        <input type="text" value={respName} onChange={(e) => setRespName(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552]" required />
+                        <input type="text" value={respName} onChange={(e) => setRespName(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552]" required />
                       </div>
                       <div className="space-y-1">
                         <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">CPF *</label>
-                        <input type="text" value={respCpf} onChange={(e) => setRespCpf(applyCpfMask(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552]" maxLength={14} required />
+                        <input type="text" value={respCpf} onChange={(e) => setRespCpf(applyCpfMask(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552]" maxLength={14} required />
                       </div>
                       <div className="space-y-1">
                         <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nascimento *</label>
-                        <input type="text" value={respBirth} onChange={(e) => setRespBirth(applyDateMask(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552]" maxLength={10} required />
+                        <input type="text" value={respBirth} onChange={(e) => setRespBirth(applyDateMask(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552]" maxLength={10} required />
                       </div>
                       <div className="space-y-1">
                         <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">WhatsApp *</label>
-                        <input type="tel" value={respPhone} onChange={(e) => setRespPhone(applyPhoneMask(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552]" maxLength={15} required />
+                        <input type="tel" value={respPhone} onChange={(e) => setRespPhone(applyPhoneMask(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552]" maxLength={15} required />
                       </div>
                     </div>
                   </div>
@@ -699,32 +1082,51 @@ export default function Page() {
                     <div className="bg-black/50 p-5 rounded-2xl border border-white/5 space-y-4 text-xs font-mono">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <span className="text-gray-400 block text-sm font-bold">PROJETO BANDA:</span>
+                          <span className="text-gray-400 block text-xs font-bold">PROJETO BANDA:</span>
                           <span className="font-bold text-white text-sm block mt-1">{projectName || '-'}</span>
                         </div>
                         <div>
-                          <span className="text-gray-400 block text-sm font-bold">RESPONSÁVEL LÍDER:</span>
+                          <span className="text-gray-400 block text-xs font-bold">RESPONSÁVEL LÍDER:</span>
                           <span className="font-bold text-white text-sm block mt-1">{respName || '-'}</span>
                         </div>
                         <div>
-                          <span className="text-gray-400 block text-sm font-bold">LOTE VIGENTE:</span>
+                          <span className="text-gray-400 block text-xs font-bold">LOTE VIGENTE:</span>
                           <span className="font-bold text-[#F0C265] text-sm block mt-1 uppercase">{activeLoteName} (R$ {activePrice} / integrante)</span>
                         </div>
                         <div>
-                          <span className="text-gray-400 block text-sm font-bold font-bold">INTEGRANTES CONECTADOS:</span>
+                          <span className="text-gray-400 block text-xs font-bold">INTEGRANTES CONECTADOS:</span>
                           <span className="font-bold text-white text-sm block mt-1">{selectedMembers}</span>
                         </div>
                       </div>
 
                       <div className="border-t border-white/5 pt-4 flex flex-col sm:flex-row justify-between items-baseline gap-4">
-                        <div>
-                          <span className="font-mono text-sm text-[#F0C265] font-bold">GRAVAÇÃO LIVE INCLUÍDA:</span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-sm text-gray-300 line-through block">R$ 1.500,00</span>
-                            <span className="text-xs text-lime font-bold uppercase">CUSTO R$ 0</span>
+                        {/* Amplified value anchoring containing multiple premium items */}
+                        <div className="space-y-2">
+                          <span className="font-mono text-sm text-[#F0C265] font-bold block">RETORNO GARANTIDO INCLUÍDO:</span>
+                          <div className="space-y-1.5 text-[10px] md:text-xs text-gray-400 font-mono">
+                            <div className="flex items-center gap-2">
+                              <span>• Gravação e Transmissão de Live no Estúdio:</span>
+                              <span className="line-through">R$ 1.500,00</span>
+                              <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span>• Mixagem e Masterização Multicanal Profissional:</span>
+                              <span className="line-through">R$ 600,00</span>
+                              <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span>• Direção Artística e Sessão de Fotos:</span>
+                              <span className="line-through">R$ 500,00</span>
+                              <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span>• Assessoria de Imprensa e Kit de Divulgação:</span>
+                              <span className="line-through">R$ 400,00</span>
+                              <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right shrink-0">
                           <span className="font-mono text-sm text-gray-300 block font-bold">TAXA TOTAL DO GRUPO:</span>
                           <span className="text-3xl font-display font-black text-[#F0C265] block mt-1">R$ {totalCost},00</span>
                           <span className="text-xs text-gray-300 font-mono block mt-1 uppercase">E mais {selectedMembers}kg de alimento</span>
@@ -735,8 +1137,8 @@ export default function Page() {
                     <div className="p-1">
                       <label className="flex items-start gap-3 cursor-pointer">
                         <input type="checkbox" checked={acceptRules} onChange={(e) => setAcceptRules(e.target.checked)} className="mt-1 w-4 h-4 text-[#F0C265] bg-black border-[#2E2820] rounded focus:ring-[#F0C265]" />
-                        <span className="text-sm text-gray-300 leading-relaxed font-normal">
-                          Declaramos ler e anuir integralmente com o regulamento do concurso, concordando com as etapas, a doação obrigatória de alimentos e as políticas de direitos autorais para as transmissões ao vivo.
+                        <span className="text-xs text-gray-300 leading-relaxed font-normal">
+                          Declaramos ler e anuir os termos de uso e política de privacidade, concordando com as etapas.
                         </span>
                       </label>
                     </div>
@@ -746,7 +1148,7 @@ export default function Page() {
                 {/* CONTROLS */}
                 <div className="border-t border-[#2C2C2C] pt-4 flex justify-between items-center gap-4 shrink-0">
                   <div className="flex flex-col">
-                    <span className="text-sm text-[#B3B3B3] font-mono uppercase tracking-widest block font-bold">PASSO ATIVO</span>
+                    <span className="text-xs text-[#B3B3B3] font-mono uppercase tracking-widest block font-bold">PASSO ATIVO</span>
                     <span className="text-sm text-[#F0EAE0] font-bold font-mono">0{quizStep}/05</span>
                   </div>
 
@@ -758,7 +1160,9 @@ export default function Page() {
                     {quizStep < 5 ? (
                       <button type="button" onClick={handleQuizNext} className="btn-gold-shimmer px-7 py-2.5 rounded uppercase border-none text-black">Continuar</button>
                     ) : (
-                      <button type="button" onClick={handleLaunchCheckout} className="font-mono text-sm font-bold text-black bg-lime px-7 py-2.5 rounded-xl uppercase border-none">Gerar Pix</button>
+                      <button type="button" disabled={isSaving} onClick={handleLaunchCheckout} className="font-mono text-sm font-bold text-black bg-lime px-7 py-2.5 rounded-xl uppercase border-none">
+                        {isSaving ? "Gravando..." : "Gerar Pix"}
+                      </button>
                     )}
                   </div>
                 </div>
@@ -786,10 +1190,18 @@ export default function Page() {
             >
               <button onClick={() => setIsCheckoutOpen(false)} className="absolute right-4 top-4 text-gray-400 hover:text-white font-mono text-xl">&times;</button>
               
-              <div className="text-center space-y-2 pt-2">
-                <span className="font-mono text-sm text-lime font-bold bg-lime/10 border border-lime/20 px-3 py-1 rounded-full w-max mx-auto block uppercase">● Servidor Autenticado</span>
+              <div className="text-center space-y-3 pt-2">
+                <span className="font-mono text-[10px] text-lime font-bold bg-lime/10 border border-lime/20 px-3 py-1 rounded-full w-max mx-auto block uppercase">● Servidor Autenticado</span>
                 <h3 className="font-display font-bold text-xl text-white uppercase tracking-tight">PIX DE INSCRIÇÃO</h3>
-                <p className="text-sm text-gray-300">Sua vaga será confirmada após compensação do Pix.</p>
+                
+                {/* 10m countdown with yellow pulsating dot */}
+                <div className="flex items-center justify-center gap-2 font-mono text-[11px] text-[#FFF2D4] bg-[#8B1E1E]/20 border border-[#8B1E1E]/40 py-2 px-3 rounded-full w-max mx-auto">
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F0C265] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#F0C265]"></span>
+                  </span>
+                  <span>Vaga reservada por: {formatCheckoutTime(checkoutTimeLeft)}</span>
+                </div>
               </div>
 
               <div className="bg-[#030407] p-4 rounded-xl flex flex-col items-center space-y-4 border border-white/5">
@@ -808,7 +1220,7 @@ export default function Page() {
                   {isCheckoutLoading && (
                     <div className="absolute inset-0 bg-[#05070B]/95 flex flex-col items-center justify-center text-center p-3 rounded-xl">
                       <span className="w-8 h-8 rounded-full border-2 border-[#F0C265] border-t-transparent animate-spin mb-3"></span>
-                      <span className="font-mono text-sm text-[#F0C265] uppercase tracking-widest font-bold">AGUARDANDO WEBHOOK...</span>
+                      <span className="font-mono text-sm text-[#F0C265] uppercase tracking-widest font-bold">Processando seu Pix em tempo real...</span>
                     </div>
                   )}
                 </div>
@@ -821,7 +1233,7 @@ export default function Page() {
 
               <div className="space-y-3">
                 <button onClick={copyPixCode} className="font-mono text-sm font-bold text-white bg-white/5 border border-[#2E2820] py-3 rounded-xl w-full hover:bg-white/10 transition-colors uppercase">Copiar Código Pix</button>
-                <button onClick={handleSimulateWebhook} className="font-mono text-sm font-bold text-black bg-lime py-3 rounded-xl w-full hover:bg-lime/90 transition-colors uppercase border-none shadow-lg shadow-lime/20">Confirmar Pagamento (Webhook)</button>
+                <button onClick={handleSimulateWebhook} className="font-mono text-sm font-bold text-black bg-lime py-3 rounded-xl w-full hover:bg-lime/90 transition-colors uppercase border-none shadow-lg shadow-lime/20">Confirmar Pagamento</button>
               </div>
             </motion.div>
           </motion.div>
@@ -847,26 +1259,26 @@ export default function Page() {
               <div className="space-y-2">
                 <span className="font-mono text-sm text-lime uppercase tracking-widest font-bold">● Matrícula Concluída</span>
                 <h3 className="font-display font-black text-3xl text-white uppercase tracking-tight">BANDA MATRICULADA!</h3>
-                <p className="text-xs text-gray-300 leading-relaxed max-w-sm mx-auto">O webhook do servidor processou o Pix de forma segura. O recibo regulamentar foi transmitido ao e-mail cadastrado.</p>
+                <p className="text-xs text-gray-300 leading-relaxed max-w-sm mx-auto">O servidor do estúdio processou o Pix de forma segura. O recibo regulamentar foi transmitido ao e-mail cadastrado.</p>
               </div>
 
-              <div className="bg-black/50 p-5 max-w-xs mx-auto grid grid-cols-2 gap-4 text-left border border-white/5">
+              <div className="bg-black/50 p-5 max-w-xs mx-auto grid grid-cols-2 gap-4 text-left border border-white/5 rounded-2xl">
                 <div>
-                  <span className="font-mono text-sm text-gray-400 uppercase">CÓDIGO ID BANDA:</span>
+                  <span className="font-mono text-[10px] text-gray-400 uppercase">CÓDIGO ID BANDA:</span>
                   <span className="text-xs font-bold text-white font-mono block mt-1">CP-2026-X7Y9</span>
                 </div>
                 <div>
-                  <span className="font-mono text-sm text-gray-400 uppercase">FILA CANAL:</span>
-                  <span className="text-xs font-bold text-white font-mono block mt-1">{selectedMembers} MEMBROS</span>
+                  <span className="font-mono text-[10px] text-gray-400 uppercase">FILA CANAL:</span>
+                  <span className="text-xs font-bold text-white font-mono block mt-1">{selectedMembers} INTEGRANTES</span>
                 </div>
                 <div className="col-span-2 border-t border-white/5 pt-3">
-                  <span className="font-mono text-sm text-lime uppercase font-bold">Condição Solidária:</span>
+                  <span className="font-mono text-[10px] text-lime uppercase font-bold">Condição Solidária:</span>
                   <p className="text-xs text-gray-300 mt-1 leading-relaxed font-mono">Trazer {selectedMembers}kg de alimento no dia do show.</p>
                 </div>
               </div>
 
               <div className="space-y-3 pt-2">
-                <button onClick={() => window.location.reload()} className="btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-wider block w-full max-w-xs mx-auto border-none">Voltar para Home</button>
+                <Link href="/minha-inscricao" className="btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-wider block w-full max-w-xs mx-auto border-none text-center font-bold">Ver minha inscrição</Link>
               </div>
             </motion.div>
           </motion.div>
@@ -876,9 +1288,6 @@ export default function Page() {
     </div>
   );
 
-  function closeCheckoutModal() {
-    setIsCheckoutOpen(false);
-  }
   function copyPixCode() {
     alert('✓ Código Pix Copiado!');
   }

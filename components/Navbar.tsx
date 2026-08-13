@@ -13,15 +13,29 @@ export default function Navbar({ onOpenQuiz }: NavbarProps) {
 
   const handleScrollToSection = (item: string) => {
     setActiveTab(item);
-    const elementId = item.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const targetElement = document.getElementById(elementId);
+    // Convert e.g. "DÚVIDAS" to "faq" or "PRINCÍPIOS" to "principios"
+    let elementId = item.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (elementId === 'duvidas') {
+      elementId = 'faq'; // Align with id="FAQ"
+    } else if (elementId === 'fases') {
+      elementId = 'cronograma'; // Align with id="cronograma"
+    }
+
+    const targetElement = document.getElementById(elementId) || document.getElementById(elementId.toUpperCase());
     if (targetElement) {
-      targetElement.scrollIntoView({ behavior: 'smooth' });
+      const headerOffset = 130; // height of the fixed CountdownBar + Navbar
+      const elementPosition = targetElement.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
     }
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#05070B]/85 backdrop-blur-md border-b border-white/5 py-4 px-6">
+    <header className="w-full bg-[#05070B]/85 backdrop-blur-md border-b border-white/5 py-4 px-6 relative z-40">
       <div className="max-w-6xl mx-auto flex justify-between items-center">
         
         {/* LOGO ASSEMBLY */}
@@ -70,7 +84,7 @@ export default function Navbar({ onOpenQuiz }: NavbarProps) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
             onClick={onOpenQuiz}
-            className="relative overflow-hidden bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black font-display font-black text-xs uppercase tracking-widest px-6 py-3 rounded-full border border-black shadow-[0_0_20px_rgba(240,194,101,0.35)] transition-all"
+            className="relative overflow-hidden bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black font-display font-black text-xs uppercase tracking-widest px-6 py-3 rounded-full border border-black shadow-[0_0_20px_rgba(240,194,101,0.35)] transition-all animate-none"
           >
             INSCREVER-SE
           </motion.button>
