@@ -488,56 +488,56 @@ export default function Page() {
       <main className="max-w-6xl mx-auto px-6 pt-32 sm:pt-40 pb-10 grow space-y-24 relative z-10">
         
         {/* HERO SECTION */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-7 space-y-6">
-            <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-white leading-[1.08] uppercase tracking-tight">
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-center py-2 md:py-6">
+          <div className="lg:col-span-7 space-y-4">
+            <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-white leading-[1.08] uppercase tracking-tightest">
               Grave seu som. Concorra à produção da sua <span className="bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(240,194,101,0.45)]">carreira</span>.
             </h1>
-            <p className="text-base md:text-lg text-gray-300 leading-relaxed max-w-xl font-normal">
+            <p className="text-xs sm:text-sm md:text-base text-white/75 leading-relaxed max-w-xl font-normal font-[Inter]">
               A maior vitrine de revelação musical autoral. Grave sua apresentação ao vivo com áudio e vídeo de alta fidelidade de graça e dispute uma produção completa de carreira que mudará sua história.
             </p>
-            <div className="flex flex-wrap gap-x-6 gap-y-3 pt-3 text-xs sm:text-sm font-mono text-[#F0C265] uppercase tracking-widest font-bold">
+            <div className="flex flex-wrap gap-x-5 gap-y-2 pt-2 text-[10px] sm:text-xs font-mono text-[#F0C265] uppercase tracking-widest font-black">
               <span>• AUTORAL PORTUGUÊS</span>
               <span>• TRANSMISSÃO DIGITAL</span>
               <span>• GRAVAÇÃO INCLUÍDA</span>
             </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3">
               <button
                 type="button"
                 onClick={handleOpenQuiz}
-                className="btn-gold-shimmer px-8 py-4 rounded-full text-sm uppercase tracking-widest shadow-[0_0_30px_rgba(227,181,82,0.35)]"
+                className="btn-gold-shimmer px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black shadow-[0_0_30px_rgba(227,181,82,0.35)] w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all"
               >
                 INSCREVER-SE
               </button>
               <a
                 href="#premios"
-                className="border border-white/10 hover:border-white/35 text-white font-mono text-sm font-bold uppercase tracking-widest px-8 py-4 rounded-full transition-colors text-center"
+                className="border border-white/10 hover:border-white/35 text-white font-mono text-xs sm:text-sm font-bold uppercase tracking-widest px-8 py-3.5 rounded-full transition-colors text-center w-full sm:w-auto outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B]"
               >
                 Conhecer prêmios
               </a>
             </div>
           </div>
 
-          <div className="lg:col-span-5 relative flex justify-center">
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-[32px] p-6 w-full max-w-sm space-y-6 relative overflow-hidden shadow-2xl">
+          <div className="lg:col-span-5 relative flex justify-center mt-4 lg:mt-0">
+            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-[32px] p-5 sm:p-6 w-full max-w-sm space-y-4 relative overflow-hidden shadow-2xl">
               <div className="w-full aspect-square rounded-2xl overflow-hidden border border-white/10 relative">
                 <img
                   src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=600&q=80"
                   alt="Gravação ao vivo"
                   className="w-full h-full object-cover grayscale brightness-90"
                 />
-                <span className="absolute top-3 left-3 bg-[#F0C265] text-black font-mono text-sm uppercase tracking-widest px-3.5 py-1.5 rounded border border-black font-bold">
+                <span className="absolute top-3 left-3 bg-[#F0C265] text-black font-mono text-xs uppercase tracking-widest px-3 py-1 rounded border border-black font-bold">
                   STUDIO LIVE
                 </span>
               </div>
-              <div className="space-y-2">
-                <span className="font-mono text-[#F0C265] text-sm tracking-wider uppercase block font-bold">
+              <div className="space-y-1">
+                <span className="font-mono text-[#F0C265] text-xs tracking-wider uppercase block font-bold">
                   OPORTUNIDADE ÚNICA (1º LUGAR)
                 </span>
-                <h3 className="font-display font-bold text-lg text-white leading-relaxed uppercase">
+                <h3 className="font-display font-bold text-base sm:text-lg text-white uppercase leading-tight">
                   EP de 5 Faixas no Bolso
                 </h3>
-                <p className="text-sm text-gray-300 leading-relaxed font-normal">
+                <p className="text-xs text-gray-300 leading-relaxed font-normal">
                   Produção completa de EP (5 músicas autorais), mixagem/masterização profissional, gravação de webclipe de estúdio, fotos artísticas e distribuição fonográfica garantida.
                 </p>
               </div>
