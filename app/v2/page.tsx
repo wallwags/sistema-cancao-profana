@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Settings, Music, Video, Camera, Globe, Trash2, Users, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Shield, Settings, Music, Video, Camera, Globe, Trash2, Users, CheckCircle, Clock, AlertTriangle, ArrowRight, Play, Eye } from 'lucide-react';
 import Link from 'next/link';
 import Navbar from '../../components/v2/Navbar';
 import HeroCard from '../../components/v2/HeroCard';
@@ -476,158 +476,170 @@ export default function Page() {
   ];
 
   return (
-    <div className="bg-[#05070B] text-[#F0EAE0] min-h-screen relative font-sans antialiased">
+    <div className="bg-obsidian-base text-bento-snow min-h-screen relative font-sans antialiased">
       
       {/* UNIFIED FIXED CONTAINER FOR COUNTDOWN AND NAVBAR (Resolves overlap bug!) */}
-      <div className="fixed top-0 left-0 right-0 z-50 w-full bg-[#05070B]/95 backdrop-blur-md">
+      <div className="fixed top-0 left-0 right-0 z-50 w-full bg-obsidian-deep/95 backdrop-blur-md">
         <CountdownBar />
         <Navbar onOpenQuiz={handleOpenQuiz} />
       </div>
 
       {/* MAIN CONTAINER WITH FIXED NAVBAR ADJUSTMENT PT */}
-      <main className="max-w-6xl mx-auto px-6 pt-32 sm:pt-40 pb-10 grow space-y-24 relative z-10">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-40 pb-10 grow space-y-24 relative z-10">
         
-        {/* HERO SECTION */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-7 space-y-6">
-            <h1 className="font-display font-black text-4xl md:text-5xl lg:text-6xl text-white leading-none uppercase tracking-tight">
-              Grave seu som. Concorra à produção da sua <span className="bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(240,194,101,0.45)]">carreira</span>.
-            </h1>
-            <p className="text-base md:text-lg text-gray-300 leading-relaxed max-w-xl font-normal">
-              A maior vitrine de revelação musical autoral. Grave sua apresentação ao vivo com áudio e vídeo de alta fidelidade de graça e dispute uma produção completa de carreira que mudará sua história.
-            </p>
-            <div className="flex flex-wrap gap-4 pt-2 text-sm font-mono text-gray-400 uppercase tracking-wider">
-              <span>• AUTORAL PORTUGUÊS</span>
-              <span>• TRANSMISSÃO DIGITAL</span>
-              <span>• GRAVAÇÃO INCLUÍDA</span>
+        {/* HERO SECTION - RECONSTRUCTED AS PREMIUM BENTO MOCKUP STACK */}
+        <section className="grid grid-cols-12 gap-4 md:gap-6 items-stretch">
+          
+          {/* Left Large Bento Card: Content and Action */}
+          <div className="bento-card col-span-12 md:col-span-7 flex flex-col justify-between p-8 min-h-[360px]">
+            <div className="space-y-4">
+              <span className="text-xs uppercase tracking-widest font-bold text-bento-snow/40 font-[Inter] block">
+                Pedra Profana Sessions 2026
+              </span>
+              <h1 className="font-[Space_Grotesk] font-black text-3xl sm:text-4xl lg:text-5xl text-bento-snow leading-none uppercase tracking-tightest">
+                Grave seu som. Concorra à produção da sua <span className="text-bento-amber font-black">carreira</span>.
+              </h1>
+              <p className="text-sm font-medium text-bento-snow/60 leading-relaxed max-w-xl font-[Inter]">
+                A maior vitrine de revelação musical autoral. Grave sua apresentação ao vivo com áudio e vídeo de alta fidelidade de graça e dispute uma produção completa de carreira que mudará sua história.
+              </p>
             </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4">
+            
+            <div className="pt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <button
                 type="button"
                 onClick={handleOpenQuiz}
-                className="btn-gold-shimmer px-8 py-4 rounded-full text-sm uppercase tracking-widest shadow-[0_0_30px_rgba(227,181,82,0.35)]"
+                className="btn-gold-shimmer rounded-full px-8 py-3 text-xs uppercase tracking-widest font-black text-black shadow-sm"
               >
                 INSCREVER-SE
               </button>
               <a
                 href="#premios"
-                className="border border-white/10 hover:border-white/35 text-white font-mono text-sm font-bold uppercase tracking-widest px-8 py-4 rounded-full transition-colors text-center"
+                className="bento-pill-solid px-6 py-3 text-xs uppercase tracking-wider font-bold text-center"
               >
                 Conhecer prêmios
               </a>
             </div>
           </div>
 
-          <div className="lg:col-span-5 relative flex justify-center">
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-[32px] p-6 w-full max-w-sm space-y-6 relative overflow-hidden shadow-2xl">
-              <div className="w-full aspect-square rounded-2xl overflow-hidden border border-white/10 relative">
-                <img
-                  src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=600&q=80"
-                  alt="Gravação ao vivo"
-                  className="w-full h-full object-cover grayscale brightness-90"
-                />
-                <span className="absolute top-3 left-3 bg-[#F0C265] text-black font-mono text-sm uppercase tracking-widest px-3.5 py-1.5 rounded border border-black font-bold">
-                  STUDIO LIVE
-                </span>
+          {/* Right Bento Card: Simulated Smart Live App Stream proof */}
+          <div className="bento-card col-span-12 md:col-span-5 flex flex-col justify-between p-6 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-t from-obsidian-deep via-transparent to-transparent z-10"></div>
+            
+            {/* Aspect image stream representation */}
+            <div className="w-full aspect-video rounded-bento-inner overflow-hidden border border-bento-border relative z-0">
+              <img
+                src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=600&q=80"
+                alt="Gravação ao vivo"
+                className="w-full h-full object-cover grayscale brightness-75 group-hover:scale-105 transition-transform duration-500"
+              />
+              <span className="absolute top-2.5 left-2.5 bento-badge bg-bento-amber text-obsidian-ink font-bold px-3 py-1 font-[Space_Grotesk]">
+                STUDIO LIVE
+              </span>
+            </div>
+
+            <div className="space-y-1 mt-4 relative z-20">
+              <div className="flex items-center gap-1.5 font-mono text-[10px] text-bento-snow/40 uppercase tracking-widest">
+                <span className="live-dot text-bento-amber">●</span>
+                <span>Transmissão Profana</span>
               </div>
-              <div className="space-y-2">
-                <span className="font-mono text-[#F0C265] text-sm tracking-wider uppercase block font-bold">
-                  OPORTUNIDADE ÚNICA (1º LUGAR)
-                </span>
-                <h3 className="font-display font-bold text-lg text-white leading-relaxed uppercase">
-                  EP de 5 Faixas no Bolso
-                </h3>
-                <p className="text-sm text-gray-300 leading-relaxed font-normal">
-                  Produção completa de EP (5 músicas autorais), mixagem/masterização profissional, gravação de webclipe de estúdio, fotos artísticas e distribuição fonográfica garantida.
-                </p>
-              </div>
+              <h3 className="font-[Space_Grotesk] font-black text-base text-bento-snow uppercase leading-tight">
+                EP de 5 Faixas no Bolso
+              </h3>
+              <p className="text-xs text-bento-snow/60 font-[Inter] leading-normal font-normal">
+                Produção completa de EP (5 músicas autorais), mixagem/masterização profissional, clipe e fotos artísticas.
+              </p>
             </div>
           </div>
+
         </section>
 
         {/* B. AS 3 REGRAS DE MATRÍCULA */}
-        <section id="principios" className="space-y-12">
-          <div className="space-y-2 border-b border-white/5 pb-4">
-            <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
+        <section id="principios" className="space-y-8">
+          <div className="space-y-2 border-b border-bento-border pb-4">
+            <span className="text-xs uppercase tracking-widest font-bold text-bento-snow/40 font-[Inter] block">
               # REGRAS INVIOLÁVEIS DO CONCURSO
             </span>
-            <h2 className="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">
+            <h2 className="font-[Space_Grotesk] font-black text-2xl md:text-4xl text-bento-snow uppercase tracking-tightest">
               AS 3 REGRAS DE MATRÍCULA
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 hover:border-[#E3B552]/30 rounded-2xl p-6 space-y-4 shadow-lg transition-colors">
-              <span className="font-display font-black text-5xl text-[#F0C265] block select-none">01</span>
-              <h3 className="font-display font-bold text-lg text-white uppercase">Repertório & Música Autoral</h3>
-              <p className="text-sm text-gray-300">
+            
+            <div className="bento-card space-y-4 hover:border-bento-periwinkle/30 transition-all duration-300">
+              <span className="font-[Space_Grotesk] font-black text-4xl text-bento-amber block select-none">01</span>
+              <h3 className="font-[Space_Grotesk] font-black text-md text-bento-snow uppercase tracking-tight">Repertório & Autoral</h3>
+              <p className="text-xs text-bento-snow/60 leading-relaxed font-[Inter]">
                 Seu repertório deve ter no máximo 3 músicas, com pelo menos uma música original (autoral) escrita majoritariamente em português ou instrumental.
               </p>
             </div>
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 hover:border-[#E3B552]/30 rounded-2xl p-6 space-y-4 shadow-lg transition-colors">
-              <span className="font-display font-black text-5xl text-[#F0C265] block select-none">02</span>
-              <h3 className="font-display font-bold text-lg text-white uppercase">Alinhamento de Lineup</h3>
-              <p className="text-sm text-gray-300">
+
+            <div className="bento-card space-y-4 hover:border-bento-periwinkle/30 transition-all duration-300">
+              <span className="font-[Space_Grotesk] font-black text-4xl text-bento-periwinkle block select-none">02</span>
+              <h3 className="font-[Space_Grotesk] font-black text-md text-bento-snow uppercase tracking-tight">Alinhamento de Lineup</h3>
+              <p className="text-xs text-bento-snow/60 leading-relaxed font-[Inter]">
                 As apresentações e gravações devem ser compostas por grupos contendo no mínimo 2 e no máximo 7 integrantes por projeto.
               </p>
             </div>
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 hover:border-[#E3B552]/30 rounded-2xl p-6 space-y-4 shadow-lg transition-colors">
-              <span className="font-display font-black text-5xl text-[#F0C265] block select-none">03</span>
-              <h3 className="font-display font-bold text-lg text-white uppercase">Compromisso Solidário</h3>
-              <p className="text-sm text-gray-300">
+
+            <div className="bento-card space-y-4 hover:border-bento-periwinkle/30 transition-all duration-300">
+              <span className="font-[Space_Grotesk] font-black text-4xl text-bento-coral block select-none">03</span>
+              <h3 className="font-[Space_Grotesk] font-black text-md text-bento-snow uppercase tracking-tight">Compromisso Solidário</h3>
+              <p className="text-xs text-bento-snow/60 leading-relaxed font-[Inter]">
                 Entrega física obrigatória de 1kg (um quilo) de alimento não-perecível por integrante na entrada de cada etapa regulamentar.
               </p>
             </div>
+
           </div>
         </section>
 
         {/* NEW INFOGRAPHIC SECTION: REGRA DE FORMAÇÃO DO GRUPO (Roster Rule) */}
-        <section id="formacao" className="space-y-12">
-          <div className="space-y-2 border-b border-white/5 pb-4">
-            <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest"># REGRA DE FORMAÇÃO DE GRUPO</span>
-            <h2 className="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">COMO DEVE SER SUA FORMAÇÃO?</h2>
+        <section id="formacao" className="space-y-8">
+          <div className="space-y-2 border-b border-bento-border pb-4">
+            <span className="text-xs uppercase tracking-widest font-bold text-bento-snow/40 font-[Inter] block"># REGRA DE FORMAÇÃO DE GRUPO</span>
+            <h2 className="font-[Space_Grotesk] font-black text-2xl md:text-4xl text-bento-snow uppercase tracking-tightest">COMO DEVE SER SUA FORMAÇÃO?</h2>
           </div>
 
-          {/* Premium Infographic Banner Box */}
-          <div className="bg-gradient-to-r from-[#8B1E1E]/20 via-[#0B0F19]/80 to-[#8B1E1E]/20 border border-white/10 py-6 px-8 rounded-3xl text-center space-y-3 shadow-lg">
-            <h3 className="font-mono text-xs text-[#F0C265] font-black uppercase tracking-widest">DIRETRIZ DE INTEGRANTES DO PALCO</h3>
-            <div className="flex flex-wrap justify-center items-center gap-4 text-white font-display font-black text-xl sm:text-2xl md:text-3xl">
+          {/* Premium Infographic Banner Box - Reconstructed */}
+          <div className="bg-gradient-to-r from-obsidian-deep to-obsidian-base border border-bento-border py-6 px-8 rounded-bento text-center space-y-3 shadow-bento">
+            <h3 className="font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-widest">DIRETRIZ DE INTEGRANTES DO PALCO</h3>
+            <div className="flex flex-wrap justify-center items-center gap-4 text-bento-snow font-[Space_Grotesk] font-black text-lg sm:text-xl md:text-2xl tracking-tightest">
               <span>MÍNIMO DE 2 INTEGRANTES</span>
-              <span className="text-[#F0C265]">•</span>
+              <span className="text-bento-amber">•</span>
               <span>MÁXIMO DE 7 INTEGRANTES</span>
             </div>
-            <p className="text-xs text-gray-300 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xs text-bento-snow/60 max-w-2xl mx-auto leading-relaxed font-[Inter]">
               Para garantir a segurança física, qualidade acústica e colaboração mútua nas apresentações gravadas nos estúdios da Pedra Profana, as regras abaixo de lineup são estritas. Não são permitidos projetos solo sem acompanhantes.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#F0C265]/40 transition-all duration-300">
-              <div className="w-10 h-10 rounded bg-[#E3B552]/10 border border-[#E3B552]/30 flex items-center justify-center text-[#F0C265]">
+            <div className="bento-card space-y-3 hover:border-bento-periwinkle/30 transition-all duration-300">
+              <div className="w-10 h-10 rounded-xl bg-obsidian-base flex items-center justify-center text-bento-periwinkle">
                 <Music className="w-5 h-5 stroke-[2.2]" />
               </div>
-              <h4 className="font-display font-bold text-md text-white uppercase">Duplas de Rap / Hip-Hop</h4>
-              <p className="text-xs text-gray-300 leading-relaxed">
+              <h4 className="font-[Space_Grotesk] font-black text-md text-bento-snow uppercase">Duplas de Rap / Hip-Hop</h4>
+              <p className="text-xs text-bento-snow/60 leading-relaxed font-[Inter]">
                 Se você é um <strong>MC de Rap</strong>, deve se juntar obrigatoriamente a um <strong>beatmaker/DJ</strong> e vice-versa. O festival fomenta a união criativa e a produção colaborativa real.
               </p>
             </div>
 
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#F0C265]/40 transition-all duration-300">
-              <div className="w-10 h-10 rounded bg-[#E3B552]/10 border border-[#E3B552]/30 flex items-center justify-center text-[#F0C265]">
+            <div className="bento-card space-y-3 hover:border-bento-periwinkle/30 transition-all duration-300">
+              <div className="w-10 h-10 rounded-xl bg-obsidian-base flex items-center justify-center text-bento-periwinkle">
                 <Users className="w-5 h-5 stroke-[2.2]" />
               </div>
-              <h4 className="font-display font-bold text-md text-white uppercase">Cantores Solo & Duos</h4>
-              <p className="text-xs text-gray-300 leading-relaxed">
+              <h4 className="font-[Space_Grotesk] font-black text-md text-bento-snow uppercase">Cantores Solo & Duos</h4>
+              <p className="text-xs text-bento-snow/60 leading-relaxed font-[Inter]">
                 Se você é <strong>cantor(a) solo</strong>, deve se unir a alguém que <strong>toque algum instrumento</strong> (violão, teclado, guitarra, etc.). Não são aceitas apresentações solo puramente acapela.
               </p>
             </div>
 
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#F0C265]/40 transition-all duration-300">
-              <div className="w-10 h-10 rounded bg-[#E3B552]/10 border border-[#E3B552]/30 flex items-center justify-center text-[#F0C265]">
+            <div className="bento-card space-y-3 hover:border-bento-periwinkle/30 transition-all duration-300">
+              <div className="w-10 h-10 rounded-xl bg-obsidian-base flex items-center justify-center text-bento-periwinkle">
                 <Shield className="w-5 h-5 stroke-[2.2]" />
               </div>
-              <h4 className="font-display font-bold text-md text-white uppercase">Bandas & Coletivos</h4>
-              <p className="text-xs text-gray-300 leading-relaxed">
+              <h4 className="font-[Space_Grotesk] font-black text-md text-bento-snow uppercase">Bandas & Coletivos</h4>
+              <p className="text-xs text-bento-snow/60 leading-relaxed font-[Inter]">
                 Bandas completas de rock, metal, pop ou coletivos diversos possuem limite regulamentar de palco estabelecido em no <strong>máximo 7 integrantes</strong> por apresentação.
               </p>
             </div>
@@ -636,42 +648,41 @@ export default function Page() {
         </section>
 
         {/* C. FASES DO CONCURSO (Timeline) */}
-        <section id="cronograma" className="space-y-12">
-          <div className="space-y-2 border-b border-white/5 pb-4">
-            <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
+        <section id="cronograma" className="space-y-8">
+          <div className="space-y-2 border-b border-bento-border pb-4">
+            <span className="text-xs uppercase tracking-widest font-bold text-bento-snow/40 font-[Inter] block">
               # FLUXO DO PROCESSO
             </span>
-            <h2 className="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">
+            <h2 className="font-[Space_Grotesk] font-black text-2xl md:text-4xl text-bento-snow uppercase tracking-tightest">
               FASES DE EXECUÇÃO DO CONCURSO
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
-            <div className="hidden md:block absolute top-1/2 left-0 right-0 h-[1.5px] bg-white/5 -translate-y-1/2 z-0"></div>
             {[
               { f: 'F1', t: 'Inscrição Expressa', d: 'Matrícula no Quiz, lineup e upload da foto de divulgação.' },
               { f: 'F2', t: 'Transmissão ao Vivo', d: 'Gravação no estúdio com live e QR code para arrecadação.' },
               { f: 'F3', t: 'Mídias Ativas', d: 'Podcast especial de apresentação e abertura de voto popular.' },
               { f: 'F4', t: 'Grande Final', d: 'Apresentação presencial e revelação dos vencedores pela média final.' }
             ].map((p, i) => (
-              <div key={i} className="bg-[#05070B] border border-white/5 p-5 rounded-xl space-y-3 relative z-10">
+              <div key={i} className="bento-card p-5 space-y-3 relative z-10 hover:border-bento-periwinkle/30 transition-all duration-300">
                 <div className="flex justify-between items-center">
-                  <span className="bg-[#121215] text-white font-mono text-sm uppercase px-2.5 py-1 rounded font-bold border border-white/10">{p.f}</span>
-                  <span className="font-mono text-sm md:text-base text-gray-400 uppercase tracking-wider">Etapa</span>
+                  <span className="bento-badge bg-bento-snow/10 text-bento-snow/80 px-2.5 py-1 rounded font-bold border border-bento-border">{p.f}</span>
+                  <span className="font-mono text-xs text-bento-snow/40 uppercase font-bold">Etapa</span>
                 </div>
-                <h4 className="font-display font-bold text-md text-white uppercase">{p.t}</h4>
-                <p className="text-sm text-gray-300 leading-relaxed">{p.d}</p>
+                <h4 className="font-[Space_Grotesk] font-bold text-md text-bento-snow uppercase leading-tight">{p.t}</h4>
+                <p className="text-xs text-bento-snow/60 leading-relaxed font-[Inter]">{p.d}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* E. DELIVERABLES GRAPH FEATURE GRID - PLACED ABOVE PRICING */}
-        <section id="premios" className="space-y-12">
-          <div className="space-y-2 border-b border-white/5 pb-4">
-            <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
+        <section id="premios" className="space-y-8">
+          <div className="space-y-2 border-b border-bento-border pb-4">
+            <span className="text-xs uppercase tracking-widest font-bold text-bento-snow/40 font-[Inter] block">
               # VITRINE DE ENTREGÁVEIS
             </span>
-            <h2 className="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">
+            <h2 className="font-[Space_Grotesk] font-black text-2xl md:text-4xl text-bento-snow uppercase tracking-tightest">
               O QUE ESTÁ EM JOGO
             </h2>
           </div>
@@ -684,41 +695,49 @@ export default function Page() {
         </section>
 
         {/* D. LOTES TABLE WITH CONFIG STATES */}
-        <section id="lotes" className="space-y-12">
-          <div className="space-y-4 border-b border-white/5 pb-4">
-            <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
+        <section id="lotes" className="space-y-8">
+          <div className="space-y-4 border-b border-bento-border pb-4">
+            <span className="text-xs uppercase tracking-widest font-bold text-bento-snow/40 font-[Inter] block">
               # INVESTIMENTO E CRONOGRAMA DE PREÇOS
             </span>
-            <h2 className="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">
+            <h2 className="font-[Space_Grotesk] font-black text-2xl md:text-4xl text-bento-snow uppercase tracking-tightest">
               TABELA PROGRESSIVA DE LOTES
             </h2>
             
-            {/* Live Status banner simulation */}
+            {/* Live Status banner simulation - Styled exactly as mockup alert block */}
             {lotesConfig.live.status === 'ao_vivo' && (
-              <div className="py-4 px-6 rounded-2xl border-2 border-red-500 bg-red-950/20 text-red-500 flex flex-col sm:flex-row justify-between items-center gap-4 animate-pulse">
-                <span className="font-mono text-sm md:text-base font-black tracking-widest uppercase">🔴 TRANSMISSÃO AO VIVO AGORA</span>
-                <button className="bg-red-600 hover:bg-red-500 text-white font-mono text-sm font-bold uppercase px-5 py-2 rounded-xl border border-black shadow">ASSISTIR LIVE</button>
+              <div className="bento-card-amber flex items-center justify-between gap-4 p-5 rounded-bento shadow-bento">
+                <div className="flex items-center gap-3">
+                  <span className="live-dot text-obsidian-ink text-sm">●</span>
+                  <span className="font-[Space_Grotesk] font-black text-obsidian-ink uppercase tracking-wide">
+                    🔴 TRANSMISSÃO AO VIVO AGORA
+                  </span>
+                </div>
+                <button className="bento-badge bg-obsidian-deep text-bento-snow font-bold px-4 py-2 hover:bg-obsidian-elevated transition-colors">
+                  ASSISTIR LIVE
+                </button>
               </div>
             )}
             
-            {/* Swapped yellow banner for red-crimson with pulsating dot */}
+            {/* Swapped yellow banner for amber bento alert card */}
             {lotesConfig.live.status === 'em_breve' && (
-              <div className="py-4 px-6 rounded-2xl border-2 border-[#8B1E1E] bg-[#8B1E1E]/10 text-[#FF4B2E] flex items-center justify-center sm:justify-start gap-3 w-full shadow-[0_0_15px_rgba(139,30,30,0.15)]">
-                {/* Yellow pulsating dot from countdown */}
-                <span className="relative flex h-2 w-2 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F0C265] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#F0C265]"></span>
-                </span>
-                <span className="font-mono text-xs sm:text-sm md:text-base font-black tracking-widest uppercase text-[#FF4B2E]">
-                  Lançamento oficial: 07 de setembro às 20:00
-                </span>
+              <div className="bento-card-amber flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-bento shadow-bento">
+                <div className="flex items-center gap-3">
+                  <span className="live-dot text-obsidian-ink text-sm">●</span>
+                  <span className="font-[Space_Grotesk] font-black text-obsidian-ink uppercase tracking-wide">
+                    Lançamento oficial: 07 de setembro às 20:00
+                  </span>
+                </div>
+                <div className="bento-badge bg-obsidian-deep text-bento-snow font-bold font-mono tracking-wider px-3.5 py-1.5 rounded-full text-[10px]">
+                  PROGRAMADO
+                </div>
               </div>
             )}
             
             {lotesConfig.live.status === 'encerrada' && (
-              <div className="py-4 px-6 rounded-2xl border-2 border-white/5 bg-[#0B0F19]/60 text-gray-400 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <span className="font-mono text-sm md:text-base font-black tracking-widest uppercase">LIVE SESSIONS FINALIZADA • REPLAYS DISPONÍVEIS</span>
-                <button className="border border-white/10 text-white font-mono text-sm font-bold px-4 py-2 rounded-xl">VER REPLAY</button>
+              <div className="bento-card is-static flex items-center justify-between gap-4 p-5 opacity-50">
+                <span className="font-mono text-xs uppercase tracking-widest text-bento-snow/40">LIVE SESSIONS FINALIZADA • REPLAYS DISPONÍVEIS</span>
+                <button className="bento-badge bg-bento-snow/10 text-bento-snow/40 px-3 py-1.5 text-xs">VER REPLAY</button>
               </div>
             )}
           </div>
@@ -736,69 +755,69 @@ export default function Page() {
               return (
                 <div
                   key={i}
-                  className={`bg-[#0B0F19]/60 backdrop-blur-xl border-2 rounded-[24px] p-5 flex flex-col justify-between shadow transition-all duration-300 ${
+                  className={`bento-card relative flex flex-col justify-between shadow transition-all duration-300 ${
                     isActive 
-                      ? 'border-[#10B981] scale-[1.02] shadow-[0_0_20px_rgba(16,185,129,0.15)] bg-[#0B0F19]/90' 
-                      : 'border-white/5 opacity-50 bg-[#0B0F19]/30'
-                  }`}
+                      ? 'bento-card-periwinkle relative overflow-hidden col-span-12 md:col-span-7' 
+                      : 'col-span-12 sm:col-span-6 md:col-span-5'
+                  } ${isClosed ? 'is-static opacity-50' : ''}`}
                 >
                   <div className="space-y-4">
                     <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                      <h4 className="font-display font-bold text-md text-white uppercase">{l.title}</h4>
+                      <h4 className={`font-[Space_Grotesk] font-bold text-md uppercase ${isActive ? 'text-obsidian-ink' : 'text-bento-snow'}`}>{l.title}</h4>
                       {isActive && (
-                        <span className="bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 text-[10px] font-bold px-2.5 py-1 rounded font-mono uppercase tracking-wider">
+                        <span className="bento-badge bg-obsidian-deep text-bento-snow text-[9px] font-bold px-2.5 py-1 rounded font-mono uppercase tracking-wider">
                           VIGENTE
                         </span>
                       )}
                       {isClosed && (
-                        <span className="bg-[#121215] text-gray-500 text-[10px] font-bold px-2.5 py-1 rounded font-mono border border-white/5">
+                        <span className="bento-badge bg-bento-snow/10 text-bento-snow/40 text-[9px] font-bold px-2.5 py-1 rounded font-mono border border-white/5">
                           ENCERRADO
                         </span>
                       )}
                       {isComing && (
-                        <span className="bg-[#121215] text-gray-500 text-[10px] font-bold px-2.5 py-1 rounded font-mono border border-white/5">
+                        <span className="bento-badge bg-bento-snow/10 text-bento-snow/40 text-[9px] font-bold px-2.5 py-1 rounded font-mono border border-white/5">
                           EM BREVE
                         </span>
                       )}
                     </div>
                     {l.key === 'dia0' ? (
                       <div className="space-y-2 text-left mt-2">
-                        <div className="flex items-center gap-1.5 text-xs text-red-400">
+                        <div className={`flex items-center gap-1.5 text-xs ${isActive ? 'text-obsidian-ink/80' : 'text-bento-snow/40'}`}>
                           <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse shrink-0"></span>
                           <span>Só para quem assistir ao vivo;</span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                        <div className={`flex items-center gap-1.5 text-xs ${isActive ? 'text-obsidian-ink/80' : 'text-bento-snow/40'}`}>
                           <span className="w-1.5 h-1.5 rounded-full bg-gray-600 shrink-0"></span>
                           <span>Live no YouTube;</span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs text-[#F0C265]">
+                        <div className={`flex items-center gap-1.5 text-xs ${isActive ? 'text-obsidian-ink/80' : 'text-bento-snow/40'}`}>
                           <span className="w-1.5 h-1.5 rounded-full bg-[#F0C265] shrink-0"></span>
                           <span>Preço exclusivo de lançamento;</span>
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-300 leading-normal">{l.desc}</p>
+                      <p className={`text-sm leading-normal ${isActive ? 'text-obsidian-ink/80' : 'text-bento-snow/60'}`}>{l.desc}</p>
                     )}
                     
                     {isActive && l.vagas !== undefined && (
-                      <div className="space-y-1 bg-black/40 p-2.5 rounded-xl border border-white/5">
-                        <span className="font-mono text-sm text-gray-300 block font-bold">VAGAS RESTANTES: {l.vagas}</span>
-                        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden flex items-center">
-                          <div className="h-full bg-gradient-to-r from-[#10B981] to-[#34D399]" style={{ width: `${(l.vagas / 30) * 100}%` }}></div>
+                      <div className="space-y-1 bg-obsidian-deep/20 p-2.5 rounded-xl border border-bento-border/20 mt-4">
+                        <span className="font-mono text-xs font-bold tracking-wide text-obsidian-ink/70 block">VAGAS RESTANTES: {l.vagas}</span>
+                        <div className="w-full h-1.5 bg-obsidian-deep/20 rounded-full overflow-hidden flex items-center">
+                          <div className="h-full bg-obsidian-deep/60 transition-all duration-700" style={{ width: `${(l.vagas / 30) * 100}%` }}></div>
                         </div>
                       </div>
                     )}
                   </div>
 
-                  <div className="border-t border-white/5 pt-4 flex justify-between items-baseline mt-4">
+                  <div className={`border-t pt-4 flex justify-between items-baseline mt-4 ${isActive ? 'border-obsidian-ink/10' : 'border-white/5'}`}>
                     {isActive ? (
-                      <span className="text-xs font-mono text-[#10B981] font-bold uppercase tracking-wider">
+                      <span className="text-xs font-mono text-obsidian-ink font-bold uppercase tracking-wider">
                         + 1kg Alimento
                       </span>
                     ) : (
                       <span className="text-sm"></span>
                     )}
-                    <span className={`text-2xl font-display font-black ${isActive ? 'text-[#10B981]' : 'text-white'}`}>
+                    <span className={`text-2xl font-display font-black ${isActive ? 'text-obsidian-ink' : 'text-bento-snow'}`}>
                       R$ {l.valor},00
                     </span>
                   </div>
@@ -818,12 +837,12 @@ export default function Page() {
         </section>
 
         {/* F. FAQ ACCORDION SECTION */}
-        <section id="faq" className="space-y-12">
-          <div className="space-y-2 border-b border-white/5 pb-4">
-            <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
+        <section id="faq" className="space-y-8">
+          <div className="space-y-2 border-b border-bento-border pb-4">
+            <span className="text-xs uppercase tracking-widest font-bold text-bento-snow/40 font-[Inter] block">
               # PERGUNTAS FREQUENTES
             </span>
-            <h2 className="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">
+            <h2 className="font-[Space_Grotesk] font-black text-2xl md:text-4xl text-bento-snow uppercase tracking-tightest">
               DÚVIDAS FREQUENTES
             </h2>
           </div>
@@ -832,19 +851,19 @@ export default function Page() {
             {faqs.map((f, i) => (
               <div
                 key={i}
-                className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-xl p-5 cursor-pointer hover:border-[#E3B552]/40 transition-colors"
+                className="bento-card p-5 cursor-pointer hover:border-bento-periwinkle/30 transition-colors"
                 onClick={() => setActiveFaq(activeFaq === i ? null : i)}
               >
                 <div className="flex justify-between items-center">
-                  <h3 className="font-display font-bold text-white text-sm md:text-md uppercase tracking-wide">
+                  <h3 className="font-[Space_Grotesk] font-bold text-bento-snow text-sm md:text-md uppercase tracking-wide">
                     {f.q}
                   </h3>
-                  <span className="text-[#F0C265] font-bold text-md leading-none">
+                  <span className="text-bento-amber font-bold text-md leading-none">
                     {activeFaq === i ? '−' : '+'}
                   </span>
                 </div>
                 {activeFaq === i && (
-                  <p className="text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3 font-normal">
+                  <p className="text-sm text-bento-snow/60 mt-3 leading-relaxed border-t border-white/5 pt-3 font-normal font-[Inter]">
                     {f.a}
                   </p>
                 )}
@@ -856,7 +875,7 @@ export default function Page() {
       </main>
 
       {/* FOOTER */}
-      <footer className="bg-[#030407] border-t border-white/5 py-10 px-6 mt-16 text-center text-sm font-mono text-gray-400 uppercase tracking-widest relative z-20">
+      <footer className="bg-obsidian-deep border-t border-bento-border py-10 px-6 mt-16 text-center text-sm font-mono text-gray-400 uppercase tracking-widest relative z-20">
         <div className="max-w-6xl mx-auto flex flex-col items-center gap-4">
           <div>
             Estúdio Pedra Profana © 2026 • Todos os Direitos Reservados.
@@ -867,7 +886,7 @@ export default function Page() {
             <Link href="/privacidade" className="hover:text-white transition-colors font-semibold">Privacidade</Link>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <Link href="/sagrado" className="text-[#8B6F47] hover:text-[#F0C265] transition-colors" title="Painel Admin">
+            <Link href="/sagrado" className="text-bento-snow/40 hover:text-[#F0C265] transition-colors" title="Painel Admin">
               <Settings className="w-4 h-4" />
             </Link>
             <span>Sistema criado por <a href="https://instagram.com/ww.wagner" target="_blank" rel="noopener noreferrer" className="text-[#D4A843] hover:text-[#E8C06B] transition-colors font-bold">@ww.wagner</a></span>
@@ -882,13 +901,13 @@ export default function Page() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#05070B]/90 backdrop-blur-md"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian-deep/90 backdrop-blur-md"
           >
             <motion.div
               initial={{ scale: 0.95, y: 30 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 30 }}
-              className="bg-[#0B0F19] border-2 border-[#E3B552] w-full max-w-xl rounded-3xl p-6 md:p-8 relative space-y-6 shadow-2xl flex flex-col justify-between max-h-[90vh] overflow-y-auto"
+              className="bg-obsidian-base border-2 border-[#E3B552] w-full max-w-xl rounded-[32px] p-6 md:p-8 relative space-y-6 shadow-2xl flex flex-col justify-between max-h-[90vh] overflow-y-auto"
             >
               <button onClick={() => setIsQuizOpen(false)} className="absolute right-5 top-5 text-[#B3B3B3] hover:text-white font-mono text-2xl font-bold">&times;</button>
               
@@ -911,28 +930,28 @@ export default function Page() {
               <form onSubmit={(e) => e.preventDefault()} className="grow flex flex-col justify-between gap-6">
                 {quizStep === 1 && (
                   <div className="space-y-4">
-                    <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Dados do Projeto</h3>
-                    <p className="text-sm text-gray-300">Insira as informações gerais da banda/artista.</p>
+                    <h3 className="font-[Space_Grotesk] font-black text-2xl text-bento-snow uppercase tracking-tightest">Dados do Projeto</h3>
+                    <p className="text-sm text-bento-snow/60 font-[Inter]">Insira as informações gerais da banda/artista.</p>
                     <div className="space-y-4 pt-2">
                       <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome da Banda / Dupla de Rap *</label>
+                        <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase tracking-wide">Nome da Banda / Dupla de Rap *</label>
                         <input 
                           type="text" 
                           value={projectName} 
                           onChange={(e) => setProjectName(e.target.value)} 
                           placeholder="Ex: The Jackson Five" 
-                          className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552] placeholder-gray-600 text-sm" 
+                          className="w-full bg-obsidian-deep border border-bento-border rounded-bento-inner px-4 py-3 text-bento-snow text-sm font-[Inter] placeholder:text-bento-snow/30 focus:border-bento-periwinkle/60 focus:outline-none focus:ring-2 focus:ring-bento-periwinkle/30 focus-visible:ring-2 focus-visible:ring-bento-periwinkle/60 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-deep transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
                           required 
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Estilo / Gênero *</label>
+                        <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase tracking-wide">Estilo / Gênero *</label>
                         <input 
                           type="text" 
                           value={projectStyle} 
                           onChange={(e) => setProjectStyle(e.target.value)} 
                           placeholder="Ex: R&B" 
-                          className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552] placeholder-gray-600 text-sm" 
+                          className="w-full bg-obsidian-deep border border-bento-border rounded-bento-inner px-4 py-3 text-bento-snow text-sm font-[Inter] placeholder:text-bento-snow/30 focus:border-bento-periwinkle/60 focus:outline-none focus:ring-2 focus:ring-bento-periwinkle/30 focus-visible:ring-2 focus-visible:ring-bento-periwinkle/60 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-deep transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
                           required 
                         />
                       </div>
@@ -942,35 +961,34 @@ export default function Page() {
 
                 {quizStep === 2 && (
                   <div className="space-y-4">
-                    <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Biografia & Mídia</h3>
-                    <p className="text-sm text-gray-300">Estas informações serão avaliadas pelo corpo de jurados técnicos.</p>
+                    <h3 className="font-[Space_Grotesk] font-black text-2xl text-bento-snow uppercase tracking-tightest">Biografia & Mídia</h3>
+                    <p className="text-sm text-bento-snow/60 font-[Inter]">Estas informações serão avaliadas pelo corpo de jurados técnicos.</p>
                     <div className="space-y-4 pt-2">
                       <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Biografia *</label>
+                        <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase tracking-wide">Biografia *</label>
                         <textarea 
                           value={projectBio} 
                           onChange={(e) => setProjectBio(e.target.value.slice(0, 400))} 
                           rows={3} 
                           maxLength={400} 
-                          className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] resize-none" 
+                          className="w-full bg-obsidian-deep border border-bento-border rounded-bento-inner px-4 py-3 text-bento-snow text-sm font-[Inter] placeholder:text-bento-snow/30 focus:border-bento-periwinkle/60 focus:outline-none focus:ring-2 focus:ring-bento-periwinkle/30 focus-visible:ring-2 focus-visible:ring-bento-periwinkle/60 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-deep transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed resize-none"
                           required 
                         />
                         <span className="text-xs text-gray-500 font-mono block text-right mt-1 font-bold">{projectBio.length}/400 caracteres</span>
                       </div>
                       <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Foto Oficial *</label>
-                        <div className="border border-dashed border-white/10 hover:border-[#E3B552] rounded-xl p-5 text-center cursor-pointer bg-black/40 relative">
+                        <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase tracking-wide">Foto Oficial *</label>
+                        <div className="border border-dashed border-bento-border hover:border-bento-periwinkle rounded-bento-inner p-5 text-center cursor-pointer bg-obsidian-deep relative">
                           <input type="file" onChange={(e) => setProjectPhotoName(e.target.files ? e.target.files[0].name : null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" required />
                           {projectPhotoName ? (
                             <span className="text-sm text-[#10B981] font-bold">✓ Foto Selecionada: {projectPhotoName}</span>
                           ) : (
-                            <span className="text-sm text-[#B3B3B3]">Arraste ou clique para carregar foto</span>
+                            <span className="text-sm text-bento-snow/40">Arraste ou clique para carregar foto</span>
                           )}
                         </div>
                         <span className="text-[10px] text-gray-500 font-mono block mt-1">Formatos: JPEG, PNG, WEBP. Max: 5MB. Verificação de segurança ativa contra arquivos maliciosos.</span>
                       </div>
                       
-                      {/* Fixed values bound to independent states to resolve over-writing bug! */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-1">
                           <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Instagram (Opcional)</label>
@@ -979,7 +997,7 @@ export default function Page() {
                             value={projectInstagram} 
                             onChange={(e) => setProjectInstagram(e.target.value)} 
                             placeholder="Ex: @suabanda" 
-                            className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552] placeholder-gray-600 text-xs" 
+                            className="w-full bg-obsidian-deep border border-bento-border rounded-bento-inner px-4 py-3 text-bento-snow text-sm font-[Inter] placeholder:text-bento-snow/30 focus:border-bento-periwinkle/60 focus:outline-none focus:ring-2 focus:ring-bento-periwinkle/30 focus-visible:ring-2 focus-visible:ring-bento-periwinkle/60 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-deep transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
                           />
                         </div>
                         <div className="space-y-1">
@@ -989,7 +1007,7 @@ export default function Page() {
                             value={projectVideoLink} 
                             onChange={(e) => setProjectVideoLink(e.target.value)} 
                             placeholder="Ex: https://youtube.com/watch?v=..." 
-                            className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552] placeholder-gray-600 text-xs" 
+                            className="w-full bg-obsidian-deep border border-bento-border rounded-bento-inner px-4 py-3 text-bento-snow text-sm font-[Inter] placeholder:text-bento-snow/30 focus:border-bento-periwinkle/60 focus:outline-none focus:ring-2 focus:ring-bento-periwinkle/30 focus-visible:ring-2 focus-visible:ring-bento-periwinkle/60 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-deep transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
                           />
                         </div>
                       </div>
@@ -999,24 +1017,24 @@ export default function Page() {
 
                 {quizStep === 3 && (
                   <div className="space-y-4">
-                    <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Líder Responsável</h3>
-                    <p className="text-sm text-gray-300">Preencha as credenciais do integrante responsável legal da banda / dupla.</p>
+                    <h3 className="font-[Space_Grotesk] font-black text-2xl text-bento-snow uppercase tracking-tightest">Líder Responsável</h3>
+                    <p className="text-sm text-bento-snow/60 font-[Inter]">Preencha as credenciais do integrante responsável legal da banda / dupla.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                       <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome Completo *</label>
-                        <input type="text" value={respName} onChange={(e) => setRespName(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552]" required />
+                        <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Nome Completo *</label>
+                        <input type="text" value={respName} onChange={(e) => setRespName(e.target.value)} className="w-full bg-obsidian-deep border border-bento-border rounded-bento-inner px-4 py-3 text-bento-snow text-sm font-[Inter] placeholder:text-bento-snow/30 focus:border-bento-periwinkle/60 focus:outline-none focus:ring-2 focus:ring-bento-periwinkle/30 focus-visible:ring-2 focus-visible:ring-bento-periwinkle/60 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-deep transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed" required />
                       </div>
                       <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">CPF *</label>
-                        <input type="text" value={respCpf} onChange={(e) => setRespCpf(applyCpfMask(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552]" maxLength={14} required />
+                        <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">CPF *</label>
+                        <input type="text" value={respCpf} onChange={(e) => setRespCpf(applyCpfMask(e.target.value))} className="w-full bg-obsidian-deep border border-bento-border rounded-bento-inner px-4 py-3 text-bento-snow text-sm font-[Inter] placeholder:text-bento-snow/30 focus:border-bento-periwinkle/60 focus:outline-none focus:ring-2 focus:ring-bento-periwinkle/30 focus-visible:ring-2 focus-visible:ring-bento-periwinkle/60 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-deep transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed" maxLength={14} required />
                       </div>
                       <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nascimento *</label>
-                        <input type="text" value={respBirth} onChange={(e) => setRespBirth(applyDateMask(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552]" maxLength={10} required />
+                        <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Nascimento *</label>
+                        <input type="text" value={respBirth} onChange={(e) => setRespBirth(applyDateMask(e.target.value))} className="w-full bg-obsidian-deep border border-bento-border rounded-bento-inner px-4 py-3 text-bento-snow text-sm font-[Inter] placeholder:text-bento-snow/30 focus:border-bento-periwinkle/60 focus:outline-none focus:ring-2 focus:ring-bento-periwinkle/30 focus-visible:ring-2 focus-visible:ring-bento-periwinkle/60 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-deep transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed" maxLength={10} required />
                       </div>
                       <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">WhatsApp *</label>
-                        <input type="tel" value={respPhone} onChange={(e) => setRespPhone(applyPhoneMask(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552]" maxLength={15} required />
+                        <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">WhatsApp *</label>
+                        <input type="tel" value={respPhone} onChange={(e) => setRespPhone(applyPhoneMask(e.target.value))} className="w-full bg-obsidian-deep border border-bento-border rounded-bento-inner px-4 py-3 text-bento-snow text-sm font-[Inter] placeholder:text-bento-snow/30 focus:border-bento-periwinkle/60 focus:outline-none focus:ring-2 focus:ring-bento-periwinkle/30 focus-visible:ring-2 focus-visible:ring-bento-periwinkle/60 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-deep transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed" maxLength={15} required />
                       </div>
                     </div>
                   </div>
@@ -1026,46 +1044,46 @@ export default function Page() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center border-b border-white/5 pb-2">
                       <div>
-                        <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Escalar Integrantes</h3>
-                        <p className="text-xs text-gray-300">Mínimo 2, Máximo 7 integrantes.</p>
+                        <h3 className="font-[Space_Grotesk] font-black text-2xl text-bento-snow uppercase tracking-tightest">Escalar Integrantes</h3>
+                        <p className="text-xs text-bento-snow/60 font-[Inter]">Mínimo 2, Máximo 7 integrantes.</p>
                       </div>
-                      <button type="button" onClick={addQuizMember} className="font-mono text-sm font-bold text-[#F0C265] bg-[#E3B552]/10 border border-[#E3B552]/30 px-3.5 py-2.5 rounded-xl uppercase hover:bg-[#E3B552] hover:text-black transition-colors">
+                      <button type="button" onClick={addQuizMember} className="font-mono text-xs font-bold text-[#F0C265] bg-[#E3B552]/10 border border-[#E3B552]/30 px-3.5 py-2.5 rounded-bento-inner uppercase hover:bg-[#E3B552] hover:text-black transition-colors">
                         + Escalar
                       </button>
                     </div>
 
                     <div className="space-y-3 overflow-y-auto max-h-[220px] pr-1">
-                      <div className="bg-black/40 p-3 flex justify-between items-center border border-white/5 rounded-xl">
+                      <div className="bg-obsidian-deep p-3 flex justify-between items-center border border-bento-border rounded-bento-inner">
                         <div className="flex items-center gap-3">
-                          <span className="w-6 h-6 rounded-full bg-[#E3B552]/15 text-[#F0C265] flex items-center justify-center font-mono text-sm font-bold border border-[#E3B552]/35">1</span>
+                          <span className="w-6 h-6 rounded-full bg-[#E3B552]/15 text-[#F0C265] flex items-center justify-center font-mono text-xs font-bold border border-[#E3B552]/35">1</span>
                           <div>
-                            <span className="text-sm font-bold text-white block">{respName || 'Nome do Líder'}</span>
-                            <span className="font-mono text-sm text-gray-400 uppercase block mt-0.5">Integrante 1 (Líder)</span>
+                            <span className="text-xs font-bold text-bento-snow block">{respName || 'Nome do Líder'}</span>
+                            <span className="font-mono text-[9px] text-bento-snow/40 uppercase block mt-0.5">Integrante 1 (Líder)</span>
                           </div>
                         </div>
-                        <span className="font-mono text-sm text-gray-400 uppercase font-bold">Fixo</span>
+                        <span className="font-mono text-xs text-bento-snow/40 uppercase font-bold">Fixo</span>
                       </div>
 
                       {membersList.map((m, index) => (
-                        <div key={index} className="bg-black/40 p-4 rounded-xl space-y-4 border border-white/5">
-                          <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                            <span className="font-mono text-sm text-white font-bold">INTEGRANTE {index + 2}</span>
+                        <div key={index} className="bg-obsidian-deep p-4 rounded-bento-inner space-y-4 border border-bento-border">
+                          <div className="flex justify-between items-center border-b border-bento-border pb-2">
+                            <span className="font-mono text-xs text-bento-snow font-bold">INTEGRANTE {index + 2}</span>
                             <button type="button" onClick={() => removeQuizMember(index)} className="text-xs text-red-500 hover:underline flex items-center gap-1">
                               <Trash2 className="w-3.5 h-3.5" /> Remover
                             </button>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1">
-                              <label className="block font-mono text-xs text-gray-300 uppercase">Nome Completo</label>
-                              <input type="text" value={m.name} onChange={(e) => handleMemberFieldChange(index, 'name', e.target.value)} className="w-full bg-[#05070B] border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" />
+                              <label className="block font-mono text-xs text-bento-snow/40 uppercase">Nome Completo</label>
+                              <input type="text" value={m.name} onChange={(e) => handleMemberFieldChange(index, 'name', e.target.value)} className="w-full bg-obsidian-base border border-bento-border rounded-bento-inner px-3 py-2 text-bento-snow text-xs outline-none focus:border-[#E3B552]" />
                             </div>
                             <div className="space-y-1">
-                              <label className="block font-mono text-xs text-gray-300 uppercase">CPF</label>
-                              <input type="text" value={m.cpf} onChange={(e) => handleMemberFieldChange(index, 'cpf', applyCpfMask(e.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" maxLength={14} />
+                              <label className="block font-mono text-xs text-bento-snow/40 uppercase">CPF</label>
+                              <input type="text" value={m.cpf} onChange={(e) => handleMemberFieldChange(index, 'cpf', applyCpfMask(e.target.value))} className="w-full bg-obsidian-base border border-bento-border rounded-bento-inner px-3 py-2 text-bento-snow text-xs outline-none focus:border-[#E3B552]" maxLength={14} />
                             </div>
                             <div className="space-y-1 md:col-span-2">
-                              <label className="block font-mono text-xs text-gray-300 uppercase">Data de Nascimento</label>
-                              <input type="text" value={m.birth} onChange={(e) => handleMemberFieldChange(index, 'birth', applyDateMask(e.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" maxLength={10} />
+                              <label className="block font-mono text-xs text-bento-snow/40 uppercase">Data de Nascimento</label>
+                              <input type="text" value={m.birth} onChange={(e) => handleMemberFieldChange(index, 'birth', applyDateMask(e.target.value))} className="w-full bg-obsidian-base border border-bento-border rounded-bento-inner px-3 py-2 text-bento-snow text-xs outline-none focus:border-[#E3B552]" maxLength={10} />
                             </div>
                           </div>
                         </div>
@@ -1076,31 +1094,30 @@ export default function Page() {
 
                 {quizStep === 5 && (
                   <div className="space-y-4">
-                    <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Revisar Matrícula</h3>
-                    <p className="text-sm text-gray-300">Confirme os dados consolidados do sinal.</p>
+                    <h3 className="font-[Space_Grotesk] font-black text-2xl text-bento-snow uppercase tracking-tightest">Revisar Matrícula</h3>
+                    <p className="text-sm text-bento-snow/60 font-[Inter]">Confirme os dados consolidados do sinal.</p>
                     
-                    <div className="bg-black/50 p-5 rounded-2xl border border-white/5 space-y-4 text-xs font-mono">
+                    <div className="bg-obsidian-deep p-5 rounded-bento-inner border border-bento-border space-y-4 text-xs font-mono">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <span className="text-gray-400 block text-xs font-bold">PROJETO BANDA:</span>
-                          <span className="font-bold text-white text-sm block mt-1">{projectName || '-'}</span>
+                          <span className="text-bento-snow/40 block text-xs font-bold uppercase">PROJETO BANDA:</span>
+                          <span className="font-bold text-bento-snow text-sm block mt-1">{projectName || '-'}</span>
                         </div>
                         <div>
-                          <span className="text-gray-400 block text-xs font-bold">RESPONSÁVEL LÍDER:</span>
-                          <span className="font-bold text-white text-sm block mt-1">{respName || '-'}</span>
+                          <span className="text-bento-snow/40 block text-xs font-bold uppercase">RESPONSÁVEL LÍDER:</span>
+                          <span className="font-bold text-bento-snow text-sm block mt-1">{respName || '-'}</span>
                         </div>
                         <div>
-                          <span className="text-gray-400 block text-xs font-bold">LOTE VIGENTE:</span>
+                          <span className="text-bento-snow/40 block text-xs font-bold uppercase">LOTE VIGENTE:</span>
                           <span className="font-bold text-[#F0C265] text-sm block mt-1 uppercase">{activeLoteName} (R$ {activePrice} / integrante)</span>
                         </div>
                         <div>
-                          <span className="text-gray-400 block text-xs font-bold">INTEGRANTES CONECTADOS:</span>
-                          <span className="font-bold text-white text-sm block mt-1">{selectedMembers}</span>
+                          <span className="text-bento-snow/40 block text-xs font-bold uppercase">INTEGRANTES CONECTADOS:</span>
+                          <span className="font-bold text-bento-snow text-sm block mt-1">{selectedMembers}</span>
                         </div>
                       </div>
 
-                      <div className="border-t border-white/5 pt-4 flex flex-col sm:flex-row justify-between items-baseline gap-4">
-                        {/* Amplified value anchoring containing multiple premium items */}
+                      <div className="border-t border-bento-border pt-4 flex flex-col sm:flex-row justify-between items-baseline gap-4">
                         <div className="space-y-2">
                           <span className="font-mono text-sm text-[#F0C265] font-bold block">RETORNO GARANTIDO INCLUÍDO:</span>
                           <div className="space-y-1.5 text-[10px] md:text-xs text-gray-400 font-mono">
@@ -1137,7 +1154,7 @@ export default function Page() {
                     <div className="p-1">
                       <label className="flex items-start gap-3 cursor-pointer">
                         <input type="checkbox" checked={acceptRules} onChange={(e) => setAcceptRules(e.target.checked)} className="mt-1 w-4 h-4 text-[#F0C265] bg-black border-[#2E2820] rounded focus:ring-[#F0C265]" />
-                        <span className="text-xs text-gray-300 leading-relaxed font-normal">
+                        <span className="text-xs text-bento-snow/60 leading-relaxed font-normal font-[Inter]">
                           Declaramos ler e anuir os termos de uso e política de privacidade, concordando com as etapas.
                         </span>
                       </label>
@@ -1153,14 +1170,14 @@ export default function Page() {
                   </div>
 
                   <div className="flex gap-2.5">
-                    <button type="button" onClick={handleBypassClear} className="font-mono text-sm font-bold text-red-500 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-xl uppercase">Bypass</button>
+                    <button type="button" onClick={handleBypassClear} className="font-mono text-xs font-bold text-red-500 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-xl uppercase">Bypass</button>
                     {quizStep > 1 && (
-                      <button type="button" onClick={() => setQuizStep(quizStep - 1)} className="font-mono text-sm font-bold text-white border border-white/10 bg-white/5 px-5 py-2.5 rounded-xl uppercase">Voltar</button>
+                      <button type="button" onClick={() => setQuizStep(quizStep - 1)} className="font-mono text-xs font-bold text-bento-snow border border-bento-border bg-white/5 px-5 py-2.5 rounded-bento-inner uppercase">Voltar</button>
                     )}
                     {quizStep < 5 ? (
-                      <button type="button" onClick={handleQuizNext} className="btn-gold-shimmer px-7 py-2.5 rounded uppercase border-none text-black">Continuar</button>
+                      <button type="button" onClick={handleQuizNext} className="btn-gold-shimmer px-7 py-2.5 rounded-full uppercase border-none text-black font-bold">Continuar</button>
                     ) : (
-                      <button type="button" disabled={isSaving} onClick={handleLaunchCheckout} className="font-mono text-sm font-bold text-black bg-lime px-7 py-2.5 rounded-xl uppercase border-none">
+                      <button type="button" disabled={isSaving} onClick={handleLaunchCheckout} className="font-mono text-xs font-bold text-black bg-lime px-7 py-2.5 rounded-full uppercase border-none">
                         {isSaving ? "Gravando..." : "Gerar Pix"}
                       </button>
                     )}
@@ -1180,19 +1197,19 @@ export default function Page() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian-deep/90 backdrop-blur-md"
           >
             <motion.div
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
-              className="bg-[#0B0F19]/90 backdrop-blur-xl border-2 border-[#E3B552] max-w-sm w-full p-6 rounded-[32px] relative space-y-6 shadow-2xl"
+              className="bg-obsidian-base border-2 border-[#E3B552] max-w-sm w-full p-6 rounded-[32px] relative space-y-6 shadow-2xl"
             >
               <button onClick={() => setIsCheckoutOpen(false)} className="absolute right-4 top-4 text-gray-400 hover:text-white font-mono text-xl">&times;</button>
               
               <div className="text-center space-y-3 pt-2">
                 <span className="font-mono text-[10px] text-lime font-bold bg-lime/10 border border-lime/20 px-3 py-1 rounded-full w-max mx-auto block uppercase">● Servidor Autenticado</span>
-                <h3 className="font-display font-bold text-xl text-white uppercase tracking-tight">PIX DE INSCRIÇÃO</h3>
+                <h3 className="font-[Space_Grotesk] font-black text-xl text-bento-snow uppercase tracking-tightest">PIX DE INSCRIÇÃO</h3>
                 
                 {/* 10m countdown with yellow pulsating dot */}
                 <div className="flex items-center justify-center gap-2 font-mono text-[11px] text-[#FFF2D4] bg-[#8B1E1E]/20 border border-[#8B1E1E]/40 py-2 px-3 rounded-full w-max mx-auto">
@@ -1204,7 +1221,7 @@ export default function Page() {
                 </div>
               </div>
 
-              <div className="bg-[#030407] p-4 rounded-xl flex flex-col items-center space-y-4 border border-white/5">
+              <div className="bg-[#030407] p-4 rounded-xl flex flex-col items-center space-y-4 border border-bento-border">
                 <div className="w-48 h-48 bg-white p-3 rounded-xl flex items-center justify-center relative shadow-lg">
                   <div className="w-full h-full border border-black/10 flex flex-col justify-between p-2">
                     <div className="flex justify-between">
@@ -1253,7 +1270,7 @@ export default function Page() {
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
-              className="bg-[#0B0F19]/90 backdrop-blur-xl border-2 border-[#E3B552] max-w-lg w-full p-8 rounded-[32px] text-center space-y-6"
+              className="bg-obsidian-base border-2 border-[#E3B552] max-w-lg w-full p-8 rounded-[32px] text-center space-y-6"
             >
               <div className="w-16 h-16 rounded-full bg-lime/10 text-lime border-2 border-lime flex items-center justify-center mx-auto text-3xl shadow font-bold">✓</div>
               <div className="space-y-2">
@@ -1262,7 +1279,7 @@ export default function Page() {
                 <p className="text-xs text-gray-300 leading-relaxed max-w-sm mx-auto">O servidor do estúdio processou o Pix de forma segura. O recibo regulamentar foi transmitido ao e-mail cadastrado.</p>
               </div>
 
-              <div className="bg-black/50 p-5 max-w-xs mx-auto grid grid-cols-2 gap-4 text-left border border-white/5 rounded-2xl">
+              <div className="bg-black/50 p-5 max-w-xs mx-auto grid grid-cols-2 gap-4 text-left border border-bento-border rounded-2xl">
                 <div>
                   <span className="font-mono text-[10px] text-gray-400 uppercase">CÓDIGO ID BANDA:</span>
                   <span className="text-xs font-bold text-white font-mono block mt-1">CP-2026-X7Y9</span>
@@ -1271,7 +1288,7 @@ export default function Page() {
                   <span className="font-mono text-[10px] text-gray-400 uppercase">FILA CANAL:</span>
                   <span className="text-xs font-bold text-white font-mono block mt-1">{selectedMembers} INTEGRANTES</span>
                 </div>
-                <div className="col-span-2 border-t border-white/5 pt-3">
+                <div className="col-span-2 border-t border-bento-border pt-3">
                   <span className="font-mono text-[10px] text-lime uppercase font-bold">Condição Solidária:</span>
                   <p className="text-xs text-gray-300 mt-1 leading-relaxed font-mono">Trazer {selectedMembers}kg de alimento no dia do show.</p>
                 </div>
