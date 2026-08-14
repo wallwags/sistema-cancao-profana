@@ -31,7 +31,7 @@ function FeatureCard({ badge, icon, title, description }: FeatureCardProps) {
     <motion.div
       variants={itemVariants}
       whileHover={{ y: -6, scale: 1.01 }}
-      className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 hover:border-[#E3B552]/30 rounded-2xl p-6 relative space-y-4 flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_15px_30px_rgba(0,0,0,0.4)] transition-colors h-full group"
+      className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 hover:border-[#E3B552]/30 rounded-2xl p-5 sm:p-6 relative space-y-4 flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_15px_30px_rgba(0,0,0,0.4)] transition-colors h-full group"
     >
       {/* Floating Estimated Value Badge in Top Right */}
       <div className="absolute top-4 right-4 bg-black/50 px-2.5 py-1 rounded border border-[#E3B552]/30 font-mono text-xs text-[#F0C265] font-bold">

@@ -488,15 +488,15 @@ export default function Page() {
       <main className="max-w-6xl mx-auto px-6 pt-32 sm:pt-40 pb-10 grow space-y-24 relative z-10">
         
         {/* HERO SECTION */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center py-6 sm:py-10 md:py-14">
           <div className="lg:col-span-7 space-y-6">
-            <h1 className="font-display font-black text-4xl md:text-5xl lg:text-6xl text-white leading-none uppercase tracking-tight">
+            <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-white leading-[1.08] uppercase tracking-tight">
               Grave seu som. Concorra à produção da sua <span className="bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(240,194,101,0.45)]">carreira</span>.
             </h1>
             <p className="text-base md:text-lg text-gray-300 leading-relaxed max-w-xl font-normal">
               A maior vitrine de revelação musical autoral. Grave sua apresentação ao vivo com áudio e vídeo de alta fidelidade de graça e dispute uma produção completa de carreira que mudará sua história.
             </p>
-            <div className="flex flex-wrap gap-4 pt-2 text-sm font-mono text-gray-400 uppercase tracking-wider">
+            <div className="flex flex-wrap gap-x-6 gap-y-3 pt-3 text-xs sm:text-sm font-mono text-[#F0C265] uppercase tracking-widest font-bold">
               <span>• AUTORAL PORTUGUÊS</span>
               <span>• TRANSMISSÃO DIGITAL</span>
               <span>• GRAVAÇÃO INCLUÍDA</span>
@@ -546,12 +546,12 @@ export default function Page() {
         </section>
 
         {/* B. AS 3 REGRAS DE MATRÍCULA */}
-        <section id="principios" className="space-y-12">
+        <section id="principios" className="space-y-12 py-14 sm:py-16 md:py-20">
           <div className="space-y-2 border-b border-white/5 pb-4">
-            <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
+            <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono">
               # REGRAS INVIOLÁVEIS DO CONCURSO
             </span>
-            <h2 className="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">
+            <h2 className="font-display font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white uppercase tracking-tight">
               AS 3 REGRAS DE MATRÍCULA
             </h2>
           </div>
@@ -581,10 +581,10 @@ export default function Page() {
         </section>
 
         {/* NEW INFOGRAPHIC SECTION: REGRA DE FORMAÇÃO DO GRUPO (Roster Rule) */}
-        <section id="formacao" className="space-y-12">
+        <section id="formacao" className="space-y-12 py-14 sm:py-16 md:py-20">
           <div className="space-y-2 border-b border-white/5 pb-4">
-            <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest"># REGRA DE FORMAÇÃO DE GRUPO</span>
-            <h2 className="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">COMO DEVE SER SUA FORMAÇÃO?</h2>
+            <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono"># REGRA DE FORMAÇÃO DE GRUPO</span>
+            <h2 className="font-display font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white uppercase tracking-tight">COMO DEVE SER SUA FORMAÇÃO?</h2>
           </div>
 
           {/* Premium Infographic Banner Box */}
@@ -636,12 +636,12 @@ export default function Page() {
         </section>
 
         {/* C. FASES DO CONCURSO (Timeline) */}
-        <section id="cronograma" className="space-y-12">
+        <section id="cronograma" className="space-y-12 py-14 sm:py-16 md:py-20">
           <div className="space-y-2 border-b border-white/5 pb-4">
-            <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
+            <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono">
               # FLUXO DO PROCESSO
             </span>
-            <h2 className="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">
+            <h2 className="font-display font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white uppercase tracking-tight">
               FASES DE EXECUÇÃO DO CONCURSO
             </h2>
           </div>
@@ -666,12 +666,12 @@ export default function Page() {
         </section>
 
         {/* E. DELIVERABLES GRAPH FEATURE GRID - PLACED ABOVE PRICING */}
-        <section id="premios" className="space-y-12">
+        <section id="premios" className="space-y-12 py-14 sm:py-16 md:py-20">
           <div className="space-y-2 border-b border-white/5 pb-4">
-            <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
+            <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono">
               # VITRINE DE ENTREGÁVEIS
             </span>
-            <h2 className="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">
+            <h2 className="font-display font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white uppercase tracking-tight">
               O QUE ESTÁ EM JOGO
             </h2>
           </div>
@@ -684,12 +684,12 @@ export default function Page() {
         </section>
 
         {/* D. LOTES TABLE WITH CONFIG STATES */}
-        <section id="lotes" className="space-y-12">
+        <section id="lotes" className="space-y-12 py-14 sm:py-16 md:py-20">
           <div className="space-y-4 border-b border-white/5 pb-4">
-            <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
+            <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono">
               # INVESTIMENTO E CRONOGRAMA DE PREÇOS
             </span>
-            <h2 className="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">
+            <h2 className="font-display font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white uppercase tracking-tight">
               TABELA PROGRESSIVA DE LOTES
             </h2>
             
@@ -818,12 +818,12 @@ export default function Page() {
         </section>
 
         {/* F. FAQ ACCORDION SECTION */}
-        <section id="faq" className="space-y-12">
+        <section id="faq" className="space-y-12 py-14 sm:py-16 md:py-20">
           <div className="space-y-2 border-b border-white/5 pb-4">
-            <span className="font-mono text-sm md:text-base text-[#F0C265] font-bold uppercase tracking-widest">
+            <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono">
               # PERGUNTAS FREQUENTES
             </span>
-            <h2 className="font-display font-black text-2xl md:text-3xl text-white uppercase tracking-tight">
+            <h2 className="font-display font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white uppercase tracking-tight">
               DÚVIDAS FREQUENTES
             </h2>
           </div>
@@ -832,7 +832,7 @@ export default function Page() {
             {faqs.map((f, i) => (
               <div
                 key={i}
-                className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-xl p-5 cursor-pointer hover:border-[#E3B552]/40 transition-colors"
+                className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-xl p-5 sm:p-6 cursor-pointer hover:border-[#E3B552]/40 transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B]"
                 onClick={() => setActiveFaq(activeFaq === i ? null : i)}
               >
                 <div className="flex justify-between items-center">

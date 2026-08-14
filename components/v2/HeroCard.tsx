@@ -9,7 +9,7 @@ export default function HeroCard() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease: 'easeOut' }}
-      className="relative overflow-hidden rounded-[32px] p-8 md:p-14 border-2 border-[#F0C265]/30 hover:border-[#F0C265]/50 bg-gradient-to-b from-[#0B1220] via-[#060A14] to-[#03050A] backdrop-blur-2xl shadow-[0_0_60px_rgba(240,194,101,0.12),inset_0_1px_1px_rgba(255,255,255,0.1)] flex flex-col justify-between items-center text-center space-y-6 transition-all duration-500 group"
+      className="relative overflow-hidden rounded-[32px] p-6 sm:p-10 md:p-14 border-2 border-[#F0C265]/30 hover:border-[#F0C265]/50 bg-gradient-to-b from-[#0B1220] via-[#060A14] to-[#03050A] backdrop-blur-2xl shadow-[0_0_60px_rgba(240,194,101,0.12),inset_0_1px_1px_rgba(255,255,255,0.1)] flex flex-col justify-between items-center text-center space-y-6 transition-all duration-500 group"
     >
       {/* Luxury Golden Glow Leak Overlay Vectors */}
       <div className="absolute -right-40 -top-40 w-96 h-90 bg-gradient-to-br from-[#F0C265]/20 to-transparent rounded-full blur-[100px] pointer-events-none group-hover:opacity-100 transition-opacity duration-700"></div>
@@ -19,7 +19,7 @@ export default function HeroCard() {
       <div className="absolute inset-0 bg-[linear-gradient(rgba(240,194,101,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(240,194,101,0.02)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
 
       <div className="space-y-4 relative z-10 w-full">
-        <span className="font-mono text-[11px] md:text-xs text-[#F0C265] font-black tracking-widest uppercase block bg-[#F0C265]/10 border border-[#F0C265]/20 px-4 py-1.5 rounded-full w-max mx-auto">
+        <span className="font-mono text-[10px] sm:text-xs text-[#F0C265] font-black tracking-widest uppercase block bg-[#F0C265]/10 border border-[#F0C265]/20 px-4 py-1.5 rounded-full w-max mx-auto">
           VALOR TOTAL ESTIMADO DE CARREIRA (1º LUGAR)
         </span>
         

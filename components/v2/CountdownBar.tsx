@@ -41,25 +41,28 @@ export default function CountdownBar() {
   }, []);
 
   return (
-    <div className="w-full bg-[#8B1E1E] py-2 px-4 flex justify-center items-center gap-2.5 md:gap-3.5 select-none text-center relative z-50 text-xs md:text-sm border-b border-white/5 shadow-md">
+    <div className="w-full bg-[#8B1E1E] py-2.5 px-4 flex justify-center items-center gap-2.5 sm:gap-3.5 select-none text-center relative z-50 text-xs md:text-sm border-b border-white/5 shadow-md">
       {/* High-visibility golden/yellow pulsating indicator */}
       <span className="relative flex h-2 w-2 shrink-0">
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F0C265] opacity-75"></span>
         <span className="relative inline-flex rounded-full h-2 w-2 bg-[#F0C265]"></span>
       </span>
       
-      <span className="font-mono text-[#F0EAE0] font-black uppercase tracking-wider text-[11px] md:text-xs">
+      <span className="font-mono text-[#F0EAE0] font-black uppercase tracking-widest text-[10px] sm:text-xs">
         Lote 1 ativo até:
       </span>
       
       {/* Elegantly styled countdown ticking digits */}
-      <div className="bg-[#05070B] px-3.5 py-1 rounded-full font-mono font-black text-[#F0C265] tracking-widest flex items-center gap-1 shadow-inner border border-white/5 text-[10px] md:text-xs">
+      <div className="bg-[#05070B] px-3.5 py-1 rounded-full font-mono font-black text-[#F0C265] tracking-wider flex items-center gap-1.5 shadow-inner border border-white/5 text-[10px] sm:text-xs">
         <span className="text-[#F0C265] font-extrabold">{timeLeft.days}</span>
-        <span className="text-gray-500 text-[9px] font-bold mr-0.5">D</span>:
+        <span className="text-gray-500 text-[9px] font-bold">D</span>
+        <span className="text-[#F0C265]/40 font-bold">:</span>
         <span className="text-[#F0C265] font-extrabold">{timeLeft.hours}</span>
-        <span className="text-gray-500 text-[9px] font-bold mr-0.5">H</span>:
+        <span className="text-gray-500 text-[9px] font-bold">H</span>
+        <span className="text-[#F0C265]/40 font-bold">:</span>
         <span className="text-[#F0C265] font-extrabold">{timeLeft.minutes}</span>
-        <span className="text-gray-500 text-[9px] font-bold mr-0.5">M</span>:
+        <span className="text-gray-500 text-[9px] font-bold">M</span>
+        <span className="text-[#F0C265]/40 font-bold">:</span>
         <span className="text-[#F0C265] font-extrabold text-[#FFF2D4]">{timeLeft.seconds}</span>
         <span className="text-gray-500 text-[9px] font-bold">S</span>
       </div>
