@@ -41,32 +41,27 @@ export default function CountdownBar() {
   }, []);
 
   return (
-    <div className="w-full bg-bento-amber sticky top-0 z-50 px-4 py-2 border-b border-bento-border">
-      <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-1 select-none text-center">
-        
-        {/* High-visibility live dot in Obsidian color */}
-        <span className="live-dot text-obsidian-ink text-sm leading-none select-none">
-          ●
-        </span>
-        
-        <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-obsidian-ink whitespace-nowrap font-[Inter]">
-          Lote 1 ativo até:
-        </span>
-        
-        {/* Elegantly styled countdown ticking digits container */}
-        <div className="flex items-center gap-1.5 bg-obsidian-deep rounded-bento-inner px-3 py-1 border border-bento-border select-none">
-          <span className="font-black text-sm text-bento-amber tabular-nums font-[Space_Grotesk]">{timeLeft.days}</span>
-          <span className="text-[10px] font-bold uppercase text-bento-amber/70 leading-none font-[Inter] mr-0.5">D</span>
-          <span className="text-bento-amber/40 text-sm font-bold">:</span>
-          <span className="font-black text-sm text-bento-amber tabular-nums font-[Space_Grotesk]">{timeLeft.hours}</span>
-          <span className="text-[10px] font-bold uppercase text-bento-amber/70 leading-none font-[Inter] mr-0.5">H</span>
-          <span className="text-bento-amber/40 text-sm font-bold">:</span>
-          <span className="font-black text-sm text-bento-amber tabular-nums font-[Space_Grotesk]">{timeLeft.minutes}</span>
-          <span className="text-[10px] font-bold uppercase text-bento-amber/70 leading-none font-[Inter] mr-0.5">M</span>
-          <span className="text-bento-amber/40 text-sm font-bold">:</span>
-          <span className="font-black text-sm text-bento-amber tabular-nums font-[Space_Grotesk]">{timeLeft.seconds}</span>
-          <span className="text-[10px] font-bold uppercase text-bento-amber/70 leading-none font-[Inter]">S</span>
-        </div>
+    <div className="w-full bg-[#8B1E1E] py-2 px-4 flex justify-center items-center gap-2.5 md:gap-3.5 select-none text-center relative z-50 text-xs md:text-sm border-b border-white/5 shadow-md">
+      {/* High-visibility golden/yellow pulsating indicator */}
+      <span className="relative flex h-2 w-2 shrink-0">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F0C265] opacity-75"></span>
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#F0C265]"></span>
+      </span>
+      
+      <span className="font-mono text-[#F0EAE0] font-black uppercase tracking-wider text-[11px] md:text-xs">
+        Lote 1 ativo até:
+      </span>
+      
+      {/* Elegantly styled countdown ticking digits */}
+      <div className="bg-[#05070B] px-3.5 py-1 rounded-full font-mono font-black text-[#F0C265] tracking-widest flex items-center gap-1 shadow-inner border border-white/5 text-[10px] md:text-xs">
+        <span className="text-[#F0C265] font-extrabold">{timeLeft.days}</span>
+        <span className="text-gray-500 text-[9px] font-bold mr-0.5">D</span>:
+        <span className="text-[#F0C265] font-extrabold">{timeLeft.hours}</span>
+        <span className="text-gray-500 text-[9px] font-bold mr-0.5">H</span>:
+        <span className="text-[#F0C265] font-extrabold">{timeLeft.minutes}</span>
+        <span className="text-gray-500 text-[9px] font-bold mr-0.5">M</span>:
+        <span className="text-[#F0C265] font-extrabold text-[#FFF2D4]">{timeLeft.seconds}</span>
+        <span className="text-gray-500 text-[9px] font-bold">S</span>
       </div>
     </div>
   );

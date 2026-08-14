@@ -13,16 +13,17 @@ export default function Navbar({ onOpenQuiz }: NavbarProps) {
 
   const handleScrollToSection = (item: string) => {
     setActiveTab(item);
+    // Convert e.g. "DÚVIDAS" to "faq" or "PRINCÍPIOS" to "principios"
     let elementId = item.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     if (elementId === 'duvidas') {
-      elementId = 'faq';
+      elementId = 'faq'; // Align with id="FAQ"
     } else if (elementId === 'fases') {
-      elementId = 'cronograma';
+      elementId = 'cronograma'; // Align with id="cronograma"
     }
 
     const targetElement = document.getElementById(elementId) || document.getElementById(elementId.toUpperCase());
     if (targetElement) {
-      const headerOffset = 130;
+      const headerOffset = 130; // height of the fixed CountdownBar + Navbar
       const elementPosition = targetElement.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
       
@@ -34,41 +35,41 @@ export default function Navbar({ onOpenQuiz }: NavbarProps) {
   };
 
   return (
-    <header className="w-full bg-obsidian-deep/90 backdrop-blur-sm border-b border-bento-border sticky top-0 z-40">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
+    <header className="w-full bg-[#05070B]/85 backdrop-blur-md border-b border-white/5 py-4 px-6 relative z-40">
+      <div className="max-w-6xl mx-auto flex justify-between items-center">
         
         {/* LOGO ASSEMBLY */}
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[#F0C265] flex items-center justify-center font-[Space_Grotesk] font-black text-black text-lg border border-black shadow-sm">
+          <div className="w-10 h-10 rounded bg-[#F0C265] flex items-center justify-center font-display font-black text-black text-xl border-2 border-black shadow-[0_0_15px_rgba(240,194,101,0.2)]">
             P
           </div>
           <div>
-            <span className="font-[Space_Grotesk] font-black text-bento-snow text-sm sm:text-base tracking-tightest block leading-none uppercase">
+            <span className="font-display font-black text-white text-md tracking-tight uppercase block leading-none">
               CANÇÃO PROFANA
             </span>
-            <span className="font-mono text-[8px] text-[#F0C265] tracking-widest block uppercase mt-0.5">
+            <span className="font-mono text-[9px] text-[#F0C265] tracking-widest block uppercase mt-1">
               MÚSICA AUTORAL
             </span>
           </div>
         </div>
 
         {/* INTERACTIVE NAVIGATION LINKS WITH FRAMER-MOTION UNDERLINE */}
-        <nav className="hidden md:flex items-center gap-8 uppercase">
+        <nav className="hidden md:flex items-center gap-8 text-[11px] font-mono font-bold tracking-wider text-[#B3B3B3] uppercase">
           {menuItems.map((item) => {
             const isActive = activeTab === item;
             return (
               <button
                 key={item}
                 onClick={() => handleScrollToSection(item)}
-                className={`relative py-1 text-xs font-medium transition-colors duration-200 font-mono tracking-wider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bento-periwinkle/60 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-base ${
-                  isActive ? 'text-bento-snow' : 'text-bento-snow/60 hover:text-bento-snow'
+                className={`relative py-1 transition-colors ${
+                  isActive ? 'text-white' : 'hover:text-white'
                 }`}
               >
                 {item}
                 {isActive && (
                   <motion.span
                     layoutId="activeUnderline"
-                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-bento-periwinkle"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#F0C265]"
                     transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                   />
                 )}
@@ -83,7 +84,7 @@ export default function Navbar({ onOpenQuiz }: NavbarProps) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
             onClick={onOpenQuiz}
-            className="btn-gold-shimmer rounded-full px-4 py-2 text-xs sm:text-sm font-bold uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bento-periwinkle/60 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-base"
+            className="relative overflow-hidden bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black font-display font-black text-xs uppercase tracking-widest px-6 py-3 rounded-full border border-black shadow-[0_0_20px_rgba(240,194,101,0.35)] transition-all animate-none"
           >
             INSCREVER-SE
           </motion.button>
