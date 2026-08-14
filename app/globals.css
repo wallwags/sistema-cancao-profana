@@ -129,15 +129,19 @@
     inset 0 1px 1px rgba(255,255,255,0.06);
 }
 .bento-card-coral {
-  background: linear-gradient(135deg, #FF5A43 0%, #FF4B2E 100%);
+  background: linear-gradient(135deg, #FF8F7A 0%, #FF6B5B 100%);
   border-radius: 32px;
   padding: 2rem;
-  box-shadow: 0 4px 32px rgba(255,90,67,0.25);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.05),
+    0 4px 24px rgba(0,0,0,0.3);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .bento-card-coral:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 40px rgba(255,90,67,0.35);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.08),
+    0 8px 32px rgba(0,0,0,0.4);
 }
 .bento-card-periwinkle {
   background-color: #7A80FF;

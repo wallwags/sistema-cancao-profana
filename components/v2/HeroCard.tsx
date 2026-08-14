@@ -16,14 +16,14 @@ export default function HeroCard() {
       >
         {/* Decorative subtle light leaks */}
         <div className="absolute -right-32 -top-32 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none group-hover:opacity-100 transition-opacity duration-700"></div>
-        <div className="absolute -left-32 -bottom-32 w-80 h-80 bg-black/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -left-32 -bottom-32 w-80 h-80 bg-black/5 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="space-y-4 relative z-10">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs uppercase tracking-widest font-bold text-obsidian-ink/60 font-[Inter]">
+            <span className="text-xs uppercase tracking-widest font-bold text-obsidian-ink/70 font-[Inter]">
               VALOR ESTIMADO DE CARREIRA (1º LUGAR)
             </span>
-            <span className="bento-badge bg-obsidian-deep/20 text-obsidian-ink text-[9px] font-bold">
+            <span className="bento-badge bg-obsidian-deep text-bento-snow text-[9px] font-bold px-2.5 py-1">
               PRÊMIO MÁXIMO
             </span>
           </div>
@@ -32,17 +32,17 @@ export default function HeroCard() {
             R$ 20.000,00
           </h1>
 
-          <p className="text-sm font-semibold text-obsidian-ink leading-relaxed max-w-lg">
+          <p className="text-sm font-semibold text-obsidian-ink/80 leading-relaxed max-w-lg">
             Um pacote completo de estúdio físico e lançamentos digitais garantidos, entregues diretamente pela equipe técnica Pedra Profana.
           </p>
         </div>
 
-        <div className="border-t border-obsidian-ink/10 pt-4 mt-6 relative z-10 flex flex-wrap justify-between items-center gap-2">
-          <span className="text-[10px] font-bold uppercase text-obsidian-ink/60 font-[Inter] tracking-wide">
+        <div className="border-t border-obsidian-ink/15 pt-4 mt-6 relative z-10 flex flex-wrap justify-between items-center gap-2">
+          <span className="text-[11px] font-bold uppercase text-obsidian-ink/60 font-[Inter] tracking-wide">
             * Valores equivalentes em serviços de estúdio profissional.
           </span>
-          <div className="flex items-center gap-1 font-mono text-[9px] text-obsidian-ink uppercase tracking-wider bg-obsidian-deep/10 px-3 py-1.5 rounded-full font-bold">
-            <span className="w-1.5 h-1.5 rounded-full bg-obsidian-ink animate-pulse mr-1"></span>
+          <div className="flex items-center gap-1 font-mono text-[9px] text-bento-snow uppercase tracking-wider bg-obsidian-deep px-3 py-1.5 rounded-full font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FF8F7A] animate-pulse mr-1"></span>
             MASTER MIX STUDIO
           </div>
         </div>
@@ -62,7 +62,7 @@ export default function HeroCard() {
               <span className="text-xs uppercase tracking-widest font-bold text-bento-snow/60 font-[Inter]">
                 PRODUÇÃO PARCIAL (2º LUGAR)
               </span>
-              <span className="bento-badge bg-[#7A80FF]/15 text-[#7A80FF] text-[9px] font-bold font-mono tracking-wider">
+              <span className="bento-badge bg-bento-periwinkle/15 text-bento-periwinkle text-[9px] font-bold font-mono tracking-wider px-2.5 py-1">
                 VAGA 2
               </span>
             </div>
@@ -84,7 +84,7 @@ export default function HeroCard() {
               <span className="text-xs uppercase tracking-widest font-bold text-bento-snow/60 font-[Inter]">
                 PRODUÇÃO INICIAL (3º LUGAR)
               </span>
-              <span className="bento-badge bg-[#FFCB57]/15 text-[#FFCB57] text-[9px] font-bold font-mono tracking-wider">
+              <span className="bento-badge bg-bento-amber/15 text-bento-amber text-[9px] font-bold font-mono tracking-wider px-2.5 py-1">
                 VAGA 3
               </span>
             </div>

@@ -22,8 +22,8 @@ module.exports = {
             ink:      '#131415',
           },
           bento: {
-            coral:       '#FF5A43',
-            coralDark:   '#FF4B2E',
+            coral:       '#FF8F7A',
+            coralDark:   '#FF6B5B',
             periwinkle:  '#7A80FF',
             sage:        '#A3C0B8',
             amber:       '#FFCB57',
