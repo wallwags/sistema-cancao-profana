@@ -488,7 +488,7 @@ export default function Page() {
       <main className="max-w-6xl mx-auto px-6 pt-32 sm:pt-40 pb-10 grow space-y-24 relative z-10">
         
         {/* HERO SECTION */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center py-6 sm:py-10 md:py-14">
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-7 space-y-6">
             <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-white leading-[1.08] uppercase tracking-tight">
               Grave seu som. Concorra à produção da sua <span className="bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(240,194,101,0.45)]">carreira</span>.
@@ -546,7 +546,7 @@ export default function Page() {
         </section>
 
         {/* B. AS 3 REGRAS DE MATRÍCULA */}
-        <section id="principios" className="space-y-12 py-14 sm:py-16 md:py-20">
+        <section id="principios" className="space-y-12">
           <div className="space-y-2 border-b border-white/5 pb-4">
             <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono">
               # REGRAS INVIOLÁVEIS DO CONCURSO
@@ -581,7 +581,7 @@ export default function Page() {
         </section>
 
         {/* NEW INFOGRAPHIC SECTION: REGRA DE FORMAÇÃO DO GRUPO (Roster Rule) */}
-        <section id="formacao" className="space-y-12 py-14 sm:py-16 md:py-20">
+        <section id="formacao" className="space-y-12">
           <div className="space-y-2 border-b border-white/5 pb-4">
             <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono"># REGRA DE FORMAÇÃO DE GRUPO</span>
             <h2 className="font-display font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white uppercase tracking-tight">COMO DEVE SER SUA FORMAÇÃO?</h2>
@@ -636,7 +636,7 @@ export default function Page() {
         </section>
 
         {/* C. FASES DO CONCURSO (Timeline) */}
-        <section id="cronograma" className="space-y-12 py-14 sm:py-16 md:py-20">
+        <section id="cronograma" className="space-y-12">
           <div className="space-y-2 border-b border-white/5 pb-4">
             <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono">
               # FLUXO DO PROCESSO
@@ -666,7 +666,7 @@ export default function Page() {
         </section>
 
         {/* E. DELIVERABLES GRAPH FEATURE GRID - PLACED ABOVE PRICING */}
-        <section id="premios" className="space-y-12 py-14 sm:py-16 md:py-20">
+        <section id="premios" className="space-y-12">
           <div className="space-y-2 border-b border-white/5 pb-4">
             <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono">
               # VITRINE DE ENTREGÁVEIS
@@ -684,7 +684,7 @@ export default function Page() {
         </section>
 
         {/* D. LOTES TABLE WITH CONFIG STATES */}
-        <section id="lotes" className="space-y-12 py-14 sm:py-16 md:py-20">
+        <section id="lotes" className="space-y-12">
           <div className="space-y-4 border-b border-white/5 pb-4">
             <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono">
               # INVESTIMENTO E CRONOGRAMA DE PREÇOS
@@ -818,7 +818,7 @@ export default function Page() {
         </section>
 
         {/* F. FAQ ACCORDION SECTION */}
-        <section id="faq" className="space-y-12 py-14 sm:py-16 md:py-20">
+        <section id="faq" className="space-y-12">
           <div className="space-y-2 border-b border-white/5 pb-4">
             <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono">
               # PERGUNTAS FREQUENTES
