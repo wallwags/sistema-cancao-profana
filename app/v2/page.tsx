@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Settings, Music, Video, Camera, Globe, Trash2, Users, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Shield, Settings, Music, Video, Camera, Globe, Trash2, Users, CheckCircle, Clock, AlertTriangle, ArrowRight, ArrowLeft, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import Navbar from '../../components/v2/Navbar';
 import HeroCard from '../../components/v2/HeroCard';
@@ -57,6 +57,12 @@ export default function Page() {
   const [membersList, setMembersList] = useState<Array<{ name: string; cpf: string; birth: string }>>([]);
   const [acceptRules, setAcceptRules] = useState(false);
 
+  // Form interactive state for adding member inline
+  const [isAddingMemberInline, setIsAddingMemberInline] = useState(false);
+  const [newMemberName, setNewMemberName] = useState('');
+  const [newMemberCpf, setNewMemberCpf] = useState('');
+  const [newMemberBirth, setNewMemberBirth] = useState('');
+
   // Database saved states
   const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
 
@@ -68,16 +74,19 @@ export default function Page() {
   // Checkout Simulated Timer (10m countdown)
   const [checkoutTimeLeft, setCheckoutTimeLeft] = useState(600);
 
+  // Direction of Typeform slider ('next' | 'prev')
+  const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next');
+
   // Sync pricing configurations from Supabase on mount
   useEffect(() => {
     const fetchSupabaseConfig = async () => {
       try {
-        const { data: batches, error: bError } = await supabase
+        const { data: batches } = await supabase
           .from('batches')
           .select('*')
           .order('created_at', { ascending: true });
 
-        const { data: liveData, error: lError } = await supabase
+        const { data: liveData } = await supabase
           .from('live_broadcast')
           .select('*')
           .eq('id', 1)
@@ -214,6 +223,11 @@ export default function Page() {
       }
     }
     if (quizStep === 4) {
+      // If inline add is open, force them to close/save or validate first
+      if (isAddingMemberInline) {
+        alert('Por favor, confirme ou descarte o integrante em preenchimento antes de avançar.');
+        return;
+      }
       for (let i = 0; i < membersList.length; i++) {
         const m = membersList[i];
         if (!m.name || m.cpf.length < 14 || m.birth.length < 10) {
@@ -227,7 +241,15 @@ export default function Page() {
         }
       }
     }
+    setSlideDirection('next');
     setQuizStep(quizStep + 1);
+  };
+
+  const handleQuizPrev = () => {
+    if (quizStep > 1) {
+      setSlideDirection('prev');
+      setQuizStep(quizStep - 1);
+    }
   };
 
   const handleMemberFieldChange = (index: number, field: string, value: string) => {
@@ -236,12 +258,41 @@ export default function Page() {
     setMembersList(copy);
   };
 
-  const addQuizMember = () => {
+  // Add Member inline directly with state verification
+  const saveMemberInline = () => {
+    if (!newMemberName || newMemberCpf.length < 14 || newMemberBirth.length < 10) {
+      alert("Por favor, preencha todas as informações do integrante.");
+      return;
+    }
+    if (!isValidCPF(newMemberCpf)) {
+      alert("⚠️ CPF do integrante inválido!");
+      return;
+    }
+    if (!isValidBirthDate(newMemberBirth)) {
+      alert("⚠️ Data de nascimento inválida!");
+      return;
+    }
+
     if (selectedMembers >= 7) {
       alert("O limite máximo do regulamento é de 7 integrantes por projeto.");
       return;
     }
+
+    // Append inline member directly
+    const copy = [...membersList];
+    copy.push({
+      name: newMemberName,
+      cpf: newMemberCpf,
+      birth: newMemberBirth
+    });
+    setMembersList(copy);
     setSelectedMembers(selectedMembers + 1);
+
+    // Reset inline form fields
+    setNewMemberName('');
+    setNewMemberCpf('');
+    setNewMemberBirth('');
+    setIsAddingMemberInline(false);
   };
 
   const removeQuizMember = (index: number) => {
@@ -628,7 +679,7 @@ export default function Page() {
               </div>
               <h4 className="font-display font-bold text-md text-white uppercase">Bandas & Coletivos</h4>
               <p className="text-xs text-gray-300 leading-relaxed">
-                Bandas completas de rock, metal, pop ou coletivos diversos possuem limite regulamentar de palco estabelecido em no <strong>máximo 7 integrantes</strong> por apresentação.
+                Para bandas completas de rock, metal, pop ou coletivos de música, o limite de palco regulamentar estrito é de no máximo 7 integrantes por apresentação ao vivo no estúdio.
               </p>
             </div>
 
@@ -700,8 +751,6 @@ export default function Page() {
                 <button className="bg-red-600 hover:bg-red-500 text-white font-mono text-sm font-bold uppercase px-5 py-2 rounded-xl border border-black shadow">ASSISTIR LIVE</button>
               </div>
             )}
-            
-            {/* Swapped yellow banner for red-crimson with pulsating dot */}
             {lotesConfig.live.status === 'em_breve' && (
               <div className="py-4 px-6 rounded-2xl border-2 border-[#8B1E1E] bg-[#8B1E1E]/10 text-[#FF4B2E] flex items-center justify-center sm:justify-start gap-3 w-full shadow-[0_0_15px_rgba(139,30,30,0.15)]">
                 {/* Yellow pulsating dot from countdown */}
@@ -714,7 +763,6 @@ export default function Page() {
                 </span>
               </div>
             )}
-            
             {lotesConfig.live.status === 'encerrada' && (
               <div className="py-4 px-6 rounded-2xl border-2 border-white/5 bg-[#0B0F19]/60 text-gray-400 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <span className="font-mono text-sm md:text-base font-black tracking-widest uppercase">LIVE SESSIONS FINALIZADA • REPLAYS DISPONÍVEIS</span>
@@ -844,7 +892,7 @@ export default function Page() {
                   </span>
                 </div>
                 {activeFaq === i && (
-                  <p className="text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3 font-normal">
+                  <p className="text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3">
                     {f.a}
                   </p>
                 )}
@@ -878,12 +926,7 @@ export default function Page() {
       {/* QUIZ INTERACTIVE POPUP MODAL */}
       <AnimatePresence>
         {isQuizOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#05070B]/90 backdrop-blur-md"
-          >
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#05070B]/90 backdrop-blur-md">
             <motion.div
               initial={{ scale: 0.95, y: 30 }}
               animate={{ scale: 1, y: 0 }}
@@ -909,241 +952,282 @@ export default function Page() {
 
               {/* STEP CONTENTS */}
               <form onSubmit={(e) => e.preventDefault()} className="grow flex flex-col justify-between gap-6">
-                {quizStep === 1 && (
-                  <div className="space-y-4">
-                    <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Dados do Projeto</h3>
-                    <p className="text-sm text-gray-300">Insira as informações gerais da banda/artista.</p>
-                    <div className="space-y-4 pt-2">
-                      <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome da Banda / Dupla de Rap *</label>
-                        <input 
-                          type="text" 
-                          value={projectName} 
-                          onChange={(e) => setProjectName(e.target.value)} 
-                          placeholder="Ex: The Jackson Five" 
-                          className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552] placeholder-gray-600 text-sm" 
-                          required 
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Estilo / Gênero *</label>
-                        <input 
-                          type="text" 
-                          value={projectStyle} 
-                          onChange={(e) => setProjectStyle(e.target.value)} 
-                          placeholder="Ex: R&B" 
-                          className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552] placeholder-gray-600 text-sm" 
-                          required 
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {quizStep === 2 && (
-                  <div className="space-y-4">
-                    <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Biografia & Mídia</h3>
-                    <p className="text-sm text-gray-300">Estas informações serão avaliadas pelo corpo de jurados técnicos.</p>
-                    <div className="space-y-4 pt-2">
-                      <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Biografia *</label>
-                        <textarea 
-                          value={projectBio} 
-                          onChange={(e) => setProjectBio(e.target.value.slice(0, 400))} 
-                          rows={3} 
-                          maxLength={400} 
-                          className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] resize-none" 
-                          required 
-                        />
-                        <span className="text-xs text-gray-500 font-mono block text-right mt-1 font-bold">{projectBio.length}/400 caracteres</span>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Foto Oficial *</label>
-                        <div className="border border-dashed border-white/10 hover:border-[#E3B552] rounded-xl p-5 text-center cursor-pointer bg-black/40 relative">
-                          <input type="file" onChange={(e) => setProjectPhotoName(e.target.files ? e.target.files[0].name : null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" required />
-                          {projectPhotoName ? (
-                            <span className="text-sm text-[#10B981] font-bold">✓ Foto Selecionada: {projectPhotoName}</span>
-                          ) : (
-                            <span className="text-sm text-[#B3B3B3]">Arraste ou clique para carregar foto</span>
-                          )}
-                        </div>
-                        <span className="text-[10px] text-gray-500 font-mono block mt-1">Formatos: JPEG, PNG, WEBP. Max: 5MB. Verificação de segurança ativa contra arquivos maliciosos.</span>
-                      </div>
-                      
-                      {/* Fixed values bound to independent states to resolve over-writing bug! */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Instagram (Opcional)</label>
-                          <input 
-                            type="text" 
-                            value={projectInstagram} 
-                            onChange={(e) => setProjectInstagram(e.target.value)} 
-                            placeholder="Ex: @suabanda" 
-                            className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552] placeholder-gray-600 text-xs" 
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Link do Vídeo (Opcional)</label>
-                          <input 
-                            type="url" 
-                            value={projectVideoLink} 
-                            onChange={(e) => setProjectVideoLink(e.target.value)} 
-                            placeholder="Ex: https://youtube.com/watch?v=..." 
-                            className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#E3B552] placeholder-gray-600 text-xs" 
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {quizStep === 3 && (
-                  <div className="space-y-4">
-                    <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Líder Responsável</h3>
-                    <p className="text-sm text-gray-300">Preencha as credenciais do integrante responsável legal da banda / dupla.</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                      <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome Completo *</label>
-                        <input type="text" value={respName} onChange={(e) => setRespName(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552]" required />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">CPF *</label>
-                        <input type="text" value={respCpf} onChange={(e) => setRespCpf(applyCpfMask(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552]" maxLength={14} required />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nascimento *</label>
-                        <input type="text" value={respBirth} onChange={(e) => setRespBirth(applyDateMask(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552]" maxLength={10} required />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">WhatsApp *</label>
-                        <input type="tel" value={respPhone} onChange={(e) => setRespPhone(applyPhoneMask(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552]" maxLength={15} required />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {quizStep === 4 && (
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                      <div>
-                        <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Escalar Integrantes</h3>
-                        <p className="text-xs text-gray-300">Mínimo 2, Máximo 7 integrantes.</p>
-                      </div>
-                      <button type="button" onClick={addQuizMember} className="font-mono text-sm font-bold text-[#F0C265] bg-[#E3B552]/10 border border-[#E3B552]/30 px-3.5 py-2.5 rounded-xl uppercase hover:bg-[#E3B552] hover:text-black transition-colors">
-                        + Escalar
-                      </button>
-                    </div>
-
-                    <div className="space-y-3 overflow-y-auto max-h-[220px] pr-1">
-                      <div className="bg-black/40 p-3 flex justify-between items-center border border-white/5 rounded-xl">
-                        <div className="flex items-center gap-3">
-                          <span className="w-6 h-6 rounded-full bg-[#E3B552]/15 text-[#F0C265] flex items-center justify-center font-mono text-sm font-bold border border-[#E3B552]/35">1</span>
-                          <div>
-                            <span className="text-sm font-bold text-white block">{respName || 'Nome do Líder'}</span>
-                            <span className="font-mono text-sm text-gray-400 uppercase block mt-0.5">Integrante 1 (Líder)</span>
+                
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={quizStep}
+                    initial={{ x: slideDirection === 'next' ? 50 : -50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: slideDirection === 'next' ? -50 : 50, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                    className="space-y-6"
+                  >
+                    {quizStep === 1 && (
+                      <div className="space-y-4">
+                        <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Dados do Projeto</h3>
+                        <p className="text-sm text-gray-300">Insira as informações gerais da banda/artista.</p>
+                        <div className="space-y-4 pt-2">
+                          <div className="space-y-1">
+                            <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome da Banda / Dupla de Rap *</label>
+                            <input 
+                              type="text" 
+                              value={projectName} 
+                              onChange={(e) => setProjectName(e.target.value)} 
+                              placeholder="Ex: The Jackson Five" 
+                              className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" 
+                              required 
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Estilo / Gênero *</label>
+                            <input 
+                              type="text" 
+                              value={projectStyle} 
+                              onChange={(e) => setProjectStyle(e.target.value)} 
+                              placeholder="Ex: R&B" 
+                              className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" 
+                              required 
+                            />
                           </div>
                         </div>
-                        <span className="font-mono text-sm text-gray-400 uppercase font-bold">Fixo</span>
                       </div>
+                    )}
 
-                      {membersList.map((m, index) => (
-                        <div key={index} className="bg-black/40 p-4 rounded-xl space-y-4 border border-white/5">
-                          <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                            <span className="font-mono text-sm text-white font-bold">INTEGRANTE {index + 2}</span>
-                            <button type="button" onClick={() => removeQuizMember(index)} className="text-xs text-red-500 hover:underline flex items-center gap-1">
-                              <Trash2 className="w-3.5 h-3.5" /> Remover
-                            </button>
+                    {quizStep === 2 && (
+                      <div className="space-y-4">
+                        <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Biografia & Mídia</h3>
+                        <p className="text-sm text-gray-300">Estas informações serão avaliadas pelo corpo de jurados técnicos.</p>
+                        <div className="space-y-4 pt-2">
+                          <div className="space-y-1">
+                            <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Biografia *</label>
+                            <textarea 
+                              value={projectBio} 
+                              onChange={(e) => setProjectBio(e.target.value.slice(0, 400))} 
+                              rows={3} 
+                              maxLength={400} 
+                              className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] resize-none focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" 
+                              required 
+                            />
+                            <span className="text-xs text-gray-500 font-mono block text-right mt-1 font-bold">{projectBio.length}/400 caracteres</span>
                           </div>
+                          <div className="space-y-1">
+                            <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Foto Oficial *</label>
+                            <div className="border border-dashed border-white/10 hover:border-[#E3B552] rounded-xl p-5 text-center cursor-pointer bg-black/40 relative">
+                              <input type="file" onChange={(e) => setProjectPhotoName(e.target.files ? e.target.files[0].name : null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" required />
+                              {projectPhotoName ? (
+                                <span className="text-sm text-[#10B981] font-bold">✓ Foto Selecionada: {projectPhotoName}</span>
+                              ) : (
+                                <span className="text-sm text-gray-400">Arraste ou clique para carregar foto</span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-gray-500 font-mono block mt-1">Formatos: JPEG, PNG, WEBP. Max: 5MB. Verificação de segurança ativa contra arquivos maliciosos.</span>
+                          </div>
+                          
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1">
-                              <label className="block font-mono text-xs text-gray-300 uppercase">Nome Completo</label>
-                              <input type="text" value={m.name} onChange={(e) => handleMemberFieldChange(index, 'name', e.target.value)} className="w-full bg-[#05070B] border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" />
+                              <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Instagram (Opcional)</label>
+                              <input 
+                                type="text" 
+                                value={projectInstagram} 
+                                onChange={(e) => setProjectInstagram(e.target.value)} 
+                                placeholder="Ex: @suabanda" 
+                                className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-xs outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" 
+                              />
                             </div>
                             <div className="space-y-1">
-                              <label className="block font-mono text-xs text-gray-300 uppercase">CPF</label>
-                              <input type="text" value={m.cpf} onChange={(e) => handleMemberFieldChange(index, 'cpf', applyCpfMask(e.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" maxLength={14} />
-                            </div>
-                            <div className="space-y-1 md:col-span-2">
-                              <label className="block font-mono text-xs text-gray-300 uppercase">Data de Nascimento</label>
-                              <input type="text" value={m.birth} onChange={(e) => handleMemberFieldChange(index, 'birth', applyDateMask(e.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" maxLength={10} />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {quizStep === 5 && (
-                  <div className="space-y-4">
-                    <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Revisar Matrícula</h3>
-                    <p className="text-sm text-gray-300">Confirme os dados consolidados do sinal.</p>
-                    
-                    <div className="bg-black/50 p-5 rounded-2xl border border-white/5 space-y-4 text-xs font-mono">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-gray-400 block text-xs font-bold">PROJETO BANDA:</span>
-                          <span className="font-bold text-white text-sm block mt-1">{projectName || '-'}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-400 block text-xs font-bold">RESPONSÁVEL LÍDER:</span>
-                          <span className="font-bold text-white text-sm block mt-1">{respName || '-'}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-400 block text-xs font-bold">LOTE VIGENTE:</span>
-                          <span className="font-bold text-[#F0C265] text-sm block mt-1 uppercase">{activeLoteName} (R$ {activePrice} / integrante)</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-400 block text-xs font-bold">INTEGRANTES CONECTADOS:</span>
-                          <span className="font-bold text-white text-sm block mt-1">{selectedMembers}</span>
-                        </div>
-                      </div>
-
-                      <div className="border-t border-white/5 pt-4 flex flex-col sm:flex-row justify-between items-baseline gap-4">
-                        {/* Amplified value anchoring containing multiple premium items */}
-                        <div className="space-y-2">
-                          <span className="font-mono text-sm text-[#F0C265] font-bold block">RETORNO GARANTIDO INCLUÍDO:</span>
-                          <div className="space-y-1.5 text-[10px] md:text-xs text-gray-400 font-mono">
-                            <div className="flex items-center gap-2">
-                              <span>• Gravação e Transmissão de Live no Estúdio:</span>
-                              <span className="line-through">R$ 1.500,00</span>
-                              <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span>• Mixagem e Masterização Multicanal Profissional:</span>
-                              <span className="line-through">R$ 600,00</span>
-                              <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span>• Direção Artística e Sessão de Fotos:</span>
-                              <span className="line-through">R$ 500,00</span>
-                              <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span>• Assessoria de Imprensa e Kit de Divulgação:</span>
-                              <span className="line-through">R$ 400,00</span>
-                              <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
+                              <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Link do Vídeo (Opcional)</label>
+                              <input 
+                                type="url" 
+                                value={projectVideoLink} 
+                                onChange={(e) => setProjectVideoLink(e.target.value)} 
+                                placeholder="Ex: https://youtube.com/watch?v=..." 
+                                className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-xs outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" 
+                              />
                             </div>
                           </div>
                         </div>
-                        <div className="text-right shrink-0">
-                          <span className="font-mono text-sm text-gray-300 block font-bold">TAXA TOTAL DO GRUPO:</span>
-                          <span className="text-3xl font-display font-black text-[#F0C265] block mt-1">R$ {totalCost},00</span>
-                          <span className="text-xs text-gray-300 font-mono block mt-1 uppercase">E mais {selectedMembers}kg de alimento</span>
+                      </div>
+                    )}
+
+                    {quizStep === 3 && (
+                      <div className="space-y-4">
+                        <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Líder Responsável</h3>
+                        <p className="text-sm text-gray-300">Preencha as credenciais do integrante responsável legal da banda / dupla.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                          <div className="space-y-1">
+                            <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome Completo *</label>
+                            <input type="text" value={respName} onChange={(e) => setRespName(e.target.value)} className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" required />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">CPF *</label>
+                            <input type="text" value={respCpf} onChange={(e) => setRespCpf(applyCpfMask(e.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" maxLength={14} required />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nascimento *</label>
+                            <input type="text" value={respBirth} onChange={(e) => setRespBirth(applyDateMask(e.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" maxLength={10} required />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">WhatsApp *</label>
+                            <input type="tel" value={respPhone} onChange={(e) => setRespPhone(applyPhoneMask(e.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" maxLength={15} required />
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
 
-                    <div className="p-1">
-                      <label className="flex items-start gap-3 cursor-pointer">
-                        <input type="checkbox" checked={acceptRules} onChange={(e) => setAcceptRules(e.target.checked)} className="mt-1 w-4 h-4 text-[#F0C265] bg-black border-[#2E2820] rounded focus:ring-[#F0C265]" />
-                        <span className="text-xs text-gray-300 leading-relaxed font-normal">
-                          Declaramos ler e anuir os termos de uso e política de privacidade, concordando com as etapas.
-                        </span>
-                      </label>
-                    </div>
-                  </div>
-                )}
+                    {quizStep === 4 && (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                          <div>
+                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Lineup da Banda</h3>
+                            <p className="text-xs text-gray-300">Preencha o roster oficial de integrantes (Mínimo 2, Máximo 7).</p>
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={() => setIsAddingMemberInline(true)}
+                            className="flex items-center gap-1.5 font-mono text-xs font-bold text-black bg-[#F0C265] px-3.5 py-2.5 rounded-full hover:bg-[#FFF2D4] active:scale-95 transition-all outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B]"
+                          >
+                            <Plus className="w-4 h-4" /> Escalar Integrante
+                          </button>
+                        </div>
+
+                        {/* Interactive dynamic inline member insert form (Item 3) */}
+                        <AnimatePresence>
+                          {isAddingMemberInline && (
+                            <motion.div 
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="bg-black/50 p-4 border border-[#E3B552]/30 rounded-2xl space-y-4 overflow-hidden"
+                            >
+                              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                                <span className="font-mono text-xs text-[#F0C265] font-bold uppercase tracking-wider">Novo Integrante Roster</span>
+                                <button type="button" onClick={() => setIsAddingMemberInline(false)} className="text-gray-400 hover:text-white"><X className="w-4 h-4" /></button>
+                              </div>
+                              
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                  <label className="block font-mono text-[10px] text-gray-400 uppercase">Nome Completo</label>
+                                  <input type="text" value={newMemberName} onChange={(e) => setNewMemberName(e.target.value)} className="w-full bg-[#05070B] border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="block font-mono text-[10px] text-gray-400 uppercase">CPF</label>
+                                  <input type="text" value={newMemberCpf} onChange={(e) => setNewMemberCpf(applyCpfMask(e.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" maxLength={14} />
+                                </div>
+                                <div className="space-y-1 sm:col-span-2">
+                                  <label className="block font-mono text-[10px] text-gray-400 uppercase">Nascimento (DD/MM/AAAA)</label>
+                                  <input type="text" value={newMemberBirth} onChange={(e) => setNewMemberBirth(applyDateMask(e.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" maxLength={10} />
+                                </div>
+                              </div>
+                              
+                              <div className="flex justify-end gap-2.5 pt-2">
+                                <button type="button" onClick={() => setIsAddingMemberInline(false)} className="font-mono text-xs font-bold text-gray-400 px-4 py-2 border border-white/10 rounded-full">Descartar</button>
+                                <button type="button" onClick={saveMemberInline} className="font-mono text-xs font-bold text-black bg-[#10B981] px-4 py-2 rounded-full">Confirmar</button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        <div className="space-y-3 overflow-y-auto max-h-[220px] pr-1">
+                          <div className="bg-[#05070B] p-4 flex justify-between items-center border border-white/5 rounded-2xl shadow">
+                            <div className="flex items-center gap-3">
+                              <span className="w-8 h-8 rounded-full bg-[#F0C265]/10 text-[#F0C265] flex items-center justify-center font-mono text-xs font-bold border border-[#F0C265]/20">1</span>
+                              <div>
+                                <span className="text-xs sm:text-sm font-bold text-white block">{respName || 'Nome do Líder'}</span>
+                                <span className="font-mono text-[10px] text-gray-400 uppercase block mt-0.5">Integrante 1 • Líder Responsável (CPF: {respCpf || '---'})</span>
+                              </div>
+                            </div>
+                            <span className="font-mono text-[9px] text-[#F0C265] bg-[#F0C265]/10 px-2.5 py-1 rounded border border-[#F0C265]/20 uppercase font-bold tracking-wider">Fixo</span>
+                          </div>
+
+                          {membersList.map((m, index) => (
+                            <div key={index} className="bg-[#05070B] p-4 flex justify-between items-center border border-white/5 rounded-2xl shadow hover:border-white/10 transition-colors">
+                              <div className="flex items-center gap-3">
+                                <span className="w-8 h-8 rounded-full bg-[#E3B552]/10 text-[#F0C265] flex items-center justify-center font-mono text-xs font-bold border border-[#E3B552]/20">{index + 2}</span>
+                                <div>
+                                  <span className="text-xs sm:text-sm font-bold text-white block">{m.name || `Integrante ${index + 2}`}</span>
+                                  <span className="font-mono text-[10px] text-gray-400 uppercase block mt-0.5">Integrante {index + 2} • CPF: {m.cpf || '---'} • Nascimento: {m.birth || '---'}</span>
+                                </div>
+                              </div>
+                              <button type="button" onClick={() => removeQuizMember(index)} className="text-xs text-red-500 hover:text-red-400 font-bold uppercase font-mono tracking-wider flex items-center gap-1">
+                                <Trash2 className="w-3.5 h-3.5" /> Remover
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {quizStep === 5 && (
+                      <div className="space-y-4">
+                        <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Revisar Matrícula</h3>
+                        <p className="text-sm text-gray-300">Confirme os dados consolidados do sinal.</p>
+                        
+                        <div className="bg-black/50 p-5 rounded-2xl border border-white/5 space-y-4 text-xs font-mono">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <span className="text-gray-400 block text-xs font-bold uppercase">PROJETO BANDA:</span>
+                              <span className="font-bold text-white text-sm block mt-1">{projectName || '-'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400 block text-xs font-bold uppercase">RESPONSÁVEL LÍDER:</span>
+                              <span className="font-bold text-white text-sm block mt-1">{respName || '-'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400 block text-xs font-bold uppercase">LOTE VIGENTE:</span>
+                              <span className="font-bold text-[#F0C265] text-sm block mt-1 uppercase">{activeLoteName} (R$ {activePrice} / integrante)</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400 block text-xs font-bold uppercase">INTEGRANTES CONECTADOS:</span>
+                              <span className="font-bold text-white text-sm block mt-1">{selectedMembers}</span>
+                            </div>
+                          </div>
+
+                          <div className="border-t border-white/5 pt-4 flex flex-col sm:flex-row justify-between items-baseline gap-4">
+                            <div className="space-y-2">
+                              <span className="font-mono text-sm text-[#F0C265] font-bold block">RETORNO GARANTIDO INCLUÍDO:</span>
+                              <div className="space-y-1.5 text-[10px] md:text-xs text-gray-400 font-mono">
+                                <div className="flex items-center gap-2">
+                                  <span>• Gravação e Transmissão de Live no Estúdio:</span>
+                                  <span className="line-through">R$ 1.500,00</span>
+                                  <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span>• Mixagem e Masterização Multicanal Profissional:</span>
+                                  <span className="line-through">R$ 600,00</span>
+                                  <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span>• Direção Artística e Sessão de Fotos:</span>
+                                  <span className="line-through">R$ 500,00</span>
+                                  <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span>• Assessoria de Imprensa e Kit de Divulgação:</span>
+                                  <span className="line-through">R$ 400,00</span>
+                                  <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="font-mono text-sm text-gray-300 block font-bold">TAXA TOTAL DO GRUPO:</span>
+                              <span className="text-3xl font-display font-black text-[#F0C265] block mt-1">R$ {totalCost},00</span>
+                              <span className="text-xs text-gray-300 font-mono block mt-1 uppercase">E mais {selectedMembers}kg de alimento</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="p-1">
+                          <label className="flex items-start gap-3 cursor-pointer">
+                            <input type="checkbox" checked={acceptRules} onChange={(e) => setAcceptRules(e.target.checked)} className="mt-1 w-4 h-4 text-[#F0C265] bg-black border-[#2E2820] rounded focus:ring-[#F0C265]" />
+                            <span className="text-xs text-gray-300 leading-relaxed font-normal">
+                              Declaramos ler e anuir os termos de uso e política de privacidade, concordando com as etapas.
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
 
                 {/* CONTROLS */}
                 <div className="border-t border-[#2C2C2C] pt-4 flex justify-between items-center gap-4 shrink-0">
@@ -1153,14 +1237,14 @@ export default function Page() {
                   </div>
 
                   <div className="flex gap-2.5">
-                    <button type="button" onClick={handleBypassClear} className="font-mono text-sm font-bold text-red-500 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-xl uppercase">Bypass</button>
+                    <button type="button" onClick={handleBypassClear} className="font-mono text-xs font-bold text-red-500 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-xl uppercase">Bypass</button>
                     {quizStep > 1 && (
-                      <button type="button" onClick={() => setQuizStep(quizStep - 1)} className="font-mono text-sm font-bold text-white border border-white/10 bg-white/5 px-5 py-2.5 rounded-xl uppercase">Voltar</button>
+                      <button type="button" onClick={handleQuizPrev} className="font-mono text-xs font-bold text-white border border-white/10 bg-white/5 px-5 py-2.5 rounded-xl uppercase">Voltar</button>
                     )}
                     {quizStep < 5 ? (
                       <button type="button" onClick={handleQuizNext} className="btn-gold-shimmer px-7 py-2.5 rounded uppercase border-none text-black">Continuar</button>
                     ) : (
-                      <button type="button" disabled={isSaving} onClick={handleLaunchCheckout} className="font-mono text-sm font-bold text-black bg-lime px-7 py-2.5 rounded-xl uppercase border-none">
+                      <button type="button" disabled={isSaving} onClick={handleLaunchCheckout} className="font-mono text-xs font-bold text-black bg-lime px-7 py-2.5 rounded-xl uppercase border-none">
                         {isSaving ? "Gravando..." : "Gerar Pix"}
                       </button>
                     )}
@@ -1169,19 +1253,14 @@ export default function Page() {
 
               </form>
             </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
       {/* CHECKOUT POPUP MODAL */}
       <AnimatePresence>
         {isCheckoutOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
-          >
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
             <motion.div
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
@@ -1190,8 +1269,8 @@ export default function Page() {
             >
               <button onClick={() => setIsCheckoutOpen(false)} className="absolute right-4 top-4 text-gray-400 hover:text-white font-mono text-xl">&times;</button>
               
-              <div className="text-center space-y-3 pt-2">
-                <span className="font-mono text-[10px] text-lime font-bold bg-lime/10 border border-lime/20 px-3 py-1 rounded-full w-max mx-auto block uppercase">● Servidor Autenticado</span>
+              <div className="text-center space-y-2 pt-2">
+                <span className="font-mono text-sm text-lime font-bold bg-lime/10 border border-lime/20 px-3 py-1 rounded-full w-max mx-auto block uppercase">● Servidor Autenticado</span>
                 <h3 className="font-display font-bold text-xl text-white uppercase tracking-tight">PIX DE INSCRIÇÃO</h3>
                 
                 {/* 10m countdown with yellow pulsating dot */}
@@ -1236,52 +1315,88 @@ export default function Page() {
                 <button onClick={handleSimulateWebhook} className="font-mono text-sm font-bold text-black bg-lime py-3 rounded-xl w-full hover:bg-lime/90 transition-colors uppercase border-none shadow-lg shadow-lime/20">Confirmar Pagamento</button>
               </div>
             </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
-      {/* SUCCESS STATE */}
+      {/* SUCCESS STATE - BACKSTAGE PASS / CONCERT TICKET (Item 6) */}
       <AnimatePresence>
         {isSuccessOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md"
-          >
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
             <motion.div
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
-              className="bg-[#0B0F19]/90 backdrop-blur-xl border-2 border-[#E3B552] max-w-lg w-full p-8 rounded-[32px] text-center space-y-6"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#0B0F19] border-2 border-[#F0C265] max-w-md w-full rounded-[32px] text-center overflow-hidden shadow-2xl relative"
             >
-              <div className="w-16 h-16 rounded-full bg-lime/10 text-lime border-2 border-lime flex items-center justify-center mx-auto text-3xl shadow font-bold">✓</div>
-              <div className="space-y-2">
-                <span className="font-mono text-sm text-lime uppercase tracking-widest font-bold">● Matrícula Concluída</span>
-                <h3 className="font-display font-black text-3xl text-white uppercase tracking-tight">BANDA MATRICULADA!</h3>
-                <p className="text-xs text-gray-300 leading-relaxed max-w-sm mx-auto">O servidor do estúdio processou o Pix de forma segura. O recibo regulamentar foi transmitido ao e-mail cadastrado.</p>
+              
+              {/* Luxury Ticket Background Graphics */}
+              <div className="absolute -right-32 -top-32 w-64 h-64 bg-[#F0C265]/5 rounded-full blur-3xl pointer-events-none"></div>
+              <div className="absolute -left-32 -bottom-32 w-64 h-64 bg-purple-600/5 rounded-full blur-3xl pointer-events-none"></div>
+
+              {/* Faux Torn Edge notches represent real tickets */}
+              <div className="absolute left-[-10px] top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#05070B] border-r border-[#F0C265]"></div>
+              <div className="absolute right-[-10px] top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#05070B] border-l border-[#F0C265]"></div>
+
+              {/* TICKET TOP PORTION */}
+              <div className="p-6 md:p-8 space-y-4">
+                <div className="w-12 h-12 rounded-full bg-lime/10 text-lime border-2 border-lime flex items-center justify-center mx-auto text-2xl shadow font-bold">✓</div>
+                
+                <div className="space-y-1">
+                  <span className="font-mono text-[9px] text-lime uppercase tracking-widest font-black bg-lime/10 px-2.5 py-0.5 rounded border border-lime/20">● Homologado no Sistema</span>
+                  <h4 className="font-mono text-[10px] text-[#F0C265] font-black uppercase tracking-widest block pt-2">CONCURSO CANÇÃO PROFANA</h4>
+                  <h3 className="font-display font-black text-2xl text-white uppercase tracking-tightest leading-tight">MATRÍCULA CONFIRMADA!</h3>
+                </div>
+
+                <p className="text-xs text-gray-400 leading-relaxed max-w-xs mx-auto">Sua inscrição foi confirmada e processada via webhook seguro. O passaporte oficial foi enviado ao e-mail.</p>
               </div>
 
-              <div className="bg-black/50 p-5 max-w-xs mx-auto grid grid-cols-2 gap-4 text-left border border-white/5 rounded-2xl">
-                <div>
-                  <span className="font-mono text-[10px] text-gray-400 uppercase">CÓDIGO ID BANDA:</span>
-                  <span className="text-xs font-bold text-white font-mono block mt-1">CP-2026-X7Y9</span>
+              {/* DASHED SEPARATOR LINE */}
+              <div className="border-t-2 border-dashed border-[#F0C265]/30 relative"></div>
+
+              {/* TICKET BOTTOM PORTION */}
+              <div className="p-6 md:p-8 bg-black/40 space-y-6">
+                
+                <div className="grid grid-cols-2 gap-4 text-left border border-white/5 p-4 rounded-2xl bg-black/30 font-mono text-[11px]">
+                  <div>
+                    <span className="text-gray-500 uppercase block text-[9px]">CÓDIGO ID BANDA:</span>
+                    <span className="text-xs font-black text-white font-mono block mt-0.5">CP-2026-X7Y9</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 uppercase block text-[9px]">ROSTER CONECTADO:</span>
+                    <span className="text-xs font-black text-bento-snow font-mono block mt-0.5">{selectedMembers} INTEGRANTES</span>
+                  </div>
+                  <div className="col-span-2 border-t border-white/5 pt-3">
+                    <span className="text-[#10B981] uppercase font-bold block text-[9px]">Condição Solidária Obligatória:</span>
+                    <p className="text-xs text-gray-300 mt-1 leading-relaxed font-mono">Trazer {selectedMembers}kg de alimento não-perecível na entrada do estúdio.</p>
+                  </div>
                 </div>
-                <div>
-                  <span className="font-mono text-[10px] text-gray-400 uppercase">FILA CANAL:</span>
-                  <span className="text-xs font-bold text-white font-mono block mt-1">{selectedMembers} INTEGRANTES</span>
+
+                {/* Realistic Barcode Design */}
+                <div className="space-y-1">
+                  <div className="h-9 bg-white/5 rounded px-4 flex items-center justify-between opacity-70 border border-white/5">
+                    <div className="w-1.5 h-full bg-white/80"></div>
+                    <div className="w-0.5 h-full bg-white/80"></div>
+                    <div className="w-1 h-full bg-white/80"></div>
+                    <div className="w-2 h-full bg-white/80"></div>
+                    <div className="w-0.5 h-full bg-white/80"></div>
+                    <div className="w-1.5 h-full bg-white/80"></div>
+                    <div className="w-0.5 h-full bg-white/80"></div>
+                    <div className="w-1 h-full bg-white/80"></div>
+                    <div className="w-2.5 h-full bg-white/80"></div>
+                    <div className="w-0.5 h-full bg-white/80"></div>
+                    <div className="w-1.5 h-full bg-white/80"></div>
+                  </div>
+                  <span className="font-mono text-[8px] text-gray-500 uppercase tracking-widest block">Pedra Profana Backstage Access</span>
                 </div>
-                <div className="col-span-2 border-t border-white/5 pt-3">
-                  <span className="font-mono text-[10px] text-lime uppercase font-bold">Condição Solidária:</span>
-                  <p className="text-xs text-gray-300 mt-1 leading-relaxed font-mono">Trazer {selectedMembers}kg de alimento no dia do show.</p>
+
+                <div className="pt-2">
+                  <Link href="/minha-inscricao" className="btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-wider block w-full max-w-xs mx-auto border-none text-center font-bold">Ver minha inscrição</Link>
                 </div>
               </div>
 
-              <div className="space-y-3 pt-2">
-                <Link href="/minha-inscricao" className="btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-wider block w-full max-w-xs mx-auto border-none text-center font-bold">Ver minha inscrição</Link>
-              </div>
             </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
