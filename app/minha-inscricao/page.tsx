@@ -48,11 +48,23 @@ export default function MinhaInscricaoPage() {
     return value;
   };
 
-  // Load project by ID
+  // Load project by ID with defensive local storage fallback (for adblockers / offline)
   const loadProject = async (id: string) => {
     setLoading(true);
     setErrorMsg(null);
     try {
+      // Check for local mock fallback first (Item 2 offline simulation)
+      if (id.startsWith('mock_proj_')) {
+        const fallbackData = localStorage.getItem('fallback_project_' + id);
+        if (fallbackData) {
+          const parsed = JSON.parse(fallbackData);
+          setData(parsed);
+          setProjectId(id);
+          setLoading(false);
+          return;
+        }
+      }
+
       // 1. Fetch project details
       const { data: project, error: pError } = await supabase
         .from('projects')
@@ -102,9 +114,17 @@ export default function MinhaInscricaoPage() {
 
       setProjectId(id);
     } catch (err: any) {
-      console.error(err);
-      setErrorMsg(err.message || "Erro de conexão ao carregar inscrição.");
-      setData(null);
+      console.warn("Database lookup issue. Trying local storage cache as fail-safe:", err);
+      
+      // Fallback check on standard local storage cache
+      const cachedProject = localStorage.getItem('fallback_project_' + id);
+      if (cachedProject) {
+        setData(JSON.parse(cachedProject));
+        setProjectId(id);
+      } else {
+        setErrorMsg(err.message || "Erro de conexão ao carregar inscrição.");
+        setData(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -132,7 +152,31 @@ export default function MinhaInscricaoPage() {
     setErrorMsg(null);
 
     try {
-      // Find the responsible member with this CPF
+      // First, scan local backup storages for offline matched candidates
+      let localFoundId = null;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('fallback_project_')) {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            const matchedLeader = parsed.members?.find((m: any) => m.cpf === searchCpf && m.is_responsible);
+            if (matchedLeader) {
+              localFoundId = parsed.id;
+              break;
+            }
+          }
+        }
+      }
+
+      if (localFoundId) {
+        localStorage.setItem('current_project_id', localFoundId);
+        await loadProject(localFoundId);
+        setSearching(false);
+        return;
+      }
+
+      // 1. Scan online Supabase database if no offline match
       const { data: member, error: mError } = await supabase
         .from('members')
         .select('project_id')
@@ -173,7 +217,7 @@ export default function MinhaInscricaoPage() {
     return (
       <div className="min-h-screen bg-[#05070B] text-[#F0EAE0] flex flex-col items-center justify-center space-y-4">
         <span className="w-10 h-10 rounded-full border-2 border-[#F0C265] border-t-transparent animate-spin"></span>
-        <span className="font-mono text-xs uppercase tracking-widest text-[#F0C265] font-bold">Consultando Supabase em tempo real...</span>
+        <span className="font-mono text-xs uppercase tracking-widest text-[#F0C265] font-bold">Consultando inscrições em tempo real...</span>
       </div>
     );
   }
