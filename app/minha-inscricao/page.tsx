@@ -323,7 +323,34 @@ export default function MinhaInscricaoPage() {
           </div>
         </div>
 
-        {/* LIVE STATUS BAR (REACTIVE) */}
+        {/* PREMIUM PARTICIPANT STAGE PASS ID CARD (Aesthetic Visual Upgrade) */}
+        <div 
+          className="relative rounded-2xl overflow-hidden h-44 border border-white/10 shadow-lg flex items-end p-5 bg-cover bg-center" 
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=800&q=80')" }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-0"></div>
+          
+          <div className="relative z-10 flex justify-between items-center w-full">
+            <div className="space-y-1">
+              <span className="bg-[#F0C265] text-black font-mono text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
+                SESSÕES DE ESTÚDIO 2026
+              </span>
+              <h2 className="text-white font-display font-black text-xl sm:text-2xl uppercase tracking-tight leading-none mt-2">
+                {data.name}
+              </h2>
+              <p className="text-[10px] sm:text-xs text-[#A89880] font-medium tracking-wide">
+                Estúdio Pedra Profana • Concurso Canção Profana
+              </p>
+            </div>
+            
+            {/* Stage Pass Gold Symbol */}
+            <div className="w-12 h-12 rounded-full border border-[#F0C265]/30 bg-black/50 flex items-center justify-center text-[#F0C265] shadow-inner backdrop-blur-sm hidden sm:flex">
+              <Music className="w-5 h-5 animate-pulse" />
+            </div>
+          </div>
+        </div>
+
+        {/* LIVE STATUS BAR (REACTIVE - Sync trigger replaced by Criptografia Ativa trigger) */}
         <div className="vst-input-groove p-4 flex flex-col sm:flex-row justify-between items-center gap-4 border border-white/5">
           <div>
             <span className="font-mono text-[9px] text-gray-400 block uppercase font-bold">STATUS DA MATRÍCULA:</span>
@@ -348,8 +375,8 @@ export default function MinhaInscricaoPage() {
               )}
             </div>
           </div>
-          <span className="bg-black/50 border border-[#D4A843]/30 px-3.5 py-1.5 rounded-full font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-wider">
-            ● SYNC SUPABASE REALTIME
+          <span className="bg-black/50 border border-[#D4A843]/30 px-3.5 py-1.5 rounded-full font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-wider shadow">
+            ● CONEXÃO CRIPTOGRAFADA ATIVA
           </span>
         </div>
 

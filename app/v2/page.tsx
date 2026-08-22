@@ -420,17 +420,17 @@ export default function Page() {
     }
   };
 
-  const handleLaunchCheckout = async () => {
+  // Instant optimistic checkout launcher - absolute zero delay (Item 2)
+  const handleLaunchCheckout = () => {
     if (!acceptRules) {
       alert('Declare concordar com as regras regulamentares para prosseguir.'); return;
     }
-    setIsSaving(true);
-    const pId = await saveRegistrationToSupabase();
-    setIsSaving(false);
-    if (pId) {
-      setIsQuizOpen(false);
-      setIsCheckoutOpen(true);
-    }
+    // Launch popup instantly!
+    setIsQuizOpen(false);
+    setIsCheckoutOpen(true);
+    
+    // Process heavy background writes asynchronously in the background
+    saveRegistrationToSupabase();
   };
 
   const handleSimulateWebhook = async () => {
@@ -1331,15 +1331,6 @@ export default function Page() {
               <div className="text-center space-y-2 pt-2">
                 <span className="font-mono text-sm text-lime font-bold bg-lime/10 border border-lime/20 px-3 py-1 rounded-full w-max mx-auto block uppercase">● Servidor Autenticado</span>
                 <h3 className="font-display font-bold text-xl text-white uppercase tracking-tight">PIX DE INSCRIÇÃO</h3>
-                
-                {/* 10m countdown with yellow pulsating dot */}
-                <div className="flex items-center justify-center gap-2 font-mono text-[11px] text-[#FFF2D4] bg-[#8B1E1E]/20 border border-[#8B1E1E]/40 py-2 px-3 rounded-full w-max mx-auto">
-                  <span className="relative flex h-2 w-2 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F0C265] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#F0C265]"></span>
-                  </span>
-                  <span>Vaga reservada por: {formatCheckoutTime(checkoutTimeLeft)}</span>
-                </div>
               </div>
 
               <div className="bg-[#030407] p-4 rounded-xl flex flex-col items-center space-y-4 border border-white/5">
@@ -1363,9 +1354,20 @@ export default function Page() {
                   )}
                 </div>
 
-                <div className="text-center">
-                  <span className="font-mono text-sm text-gray-400 block uppercase font-bold">TOTAL CONVERSÃO:</span>
-                  <span className="text-2xl font-mono font-black text-lime block mt-1">R$ {totalCost},00</span>
+                <div className="text-center space-y-3 w-full">
+                  <div>
+                    <span className="font-mono text-[10px] text-gray-500 block uppercase font-bold">TOTAL CONVERSÃO:</span>
+                    <span className="text-2xl font-mono font-black text-lime block mt-0.5">R$ {totalCost},00</span>
+                  </div>
+
+                  {/* 10m countdown with yellow pulsating dot positioned dynamically below green total value */}
+                  <div className="flex items-center justify-center gap-2 font-mono text-[10px] text-[#FFF2D4] bg-[#8B1E1E]/20 border border-[#8B1E1E]/30 py-1.5 px-3 rounded-full w-max mx-auto shadow-inner">
+                    <span className="relative flex h-1.5 w-1.5 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F0C265] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#F0C265]"></span>
+                    </span>
+                    <span>Vaga reservada por: {formatCheckoutTime(checkoutTimeLeft)}</span>
+                  </div>
                 </div>
               </div>
 
