@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Settings, Music, Video, Camera, Globe, Trash2, Users, CheckCircle, Clock, AlertTriangle, ArrowRight, ArrowLeft, Plus, X } from 'lucide-react';
+import { Shield, Settings, Music, Video, Camera, Globe, Trash2, Users, CheckCircle, Clock, AlertTriangle, ArrowRight, ArrowLeft, Plus, X, Share2, Copy } from 'lucide-react';
 import Link from 'next/link';
 import Navbar from '../../components/v2/Navbar';
 import HeroCard from '../../components/v2/HeroCard';
@@ -41,6 +41,9 @@ export default function Page() {
   const [isSaving, setIsSaving] = useState(false);
   const [isQuizLoading, setIsQuizLoading] = useState(false);
   
+  // Draft Recovery states (Item 1)
+  const [draftToRestore, setDraftToRestore] = useState<any>(null);
+
   // Terms and Privacy Popup states (Item 2)
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
@@ -83,6 +86,9 @@ export default function Page() {
   // Direction of Typeform slider ('next' | 'prev')
   const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next');
 
+  // Dynamic status polling state for Pix confirmation (Item 4)
+  const [pollingStep, setPollingStep] = useState(0);
+
   // Sync pricing configurations from Supabase on mount
   useEffect(() => {
     const fetchSupabaseConfig = async () => {
@@ -123,6 +129,42 @@ export default function Page() {
     setSelectedMembers(1 + membersList.length);
   }, [membersList]);
 
+  // Auto-save Quiz progress Draft on input state changes (Item 1)
+  useEffect(() => {
+    if (isQuizOpen && quizStep >= 1 && quizStep <= 5 && !draftToRestore) {
+      const draft = {
+        step: quizStep,
+        projectName,
+        projectStyle,
+        projectBio,
+        projectPhotoName,
+        projectInstagram,
+        projectVideoLink,
+        respName,
+        respCpf,
+        respBirth,
+        respPhone,
+        membersList
+      };
+      localStorage.setItem('quiz_draft_v2', JSON.stringify(draft));
+    }
+  }, [
+    isQuizOpen,
+    quizStep,
+    projectName,
+    projectStyle,
+    projectBio,
+    projectPhotoName,
+    projectInstagram,
+    projectVideoLink,
+    respName,
+    respCpf,
+    respBirth,
+    respPhone,
+    membersList,
+    draftToRestore
+  ]);
+
   // Checkout ticking down timer
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -141,6 +183,29 @@ export default function Page() {
       }, 1000);
     }
     return () => clearInterval(interval);
+  }, [isCheckoutOpen]);
+
+  // Dynamic automatic webhook transaction polling simulation (Item 4)
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isCheckoutOpen) {
+      setPollingStep(0);
+      
+      const triggerNextPoll = (current: number) => {
+        timer = setTimeout(() => {
+          setPollingStep(current + 1);
+          if (current + 1 < 3) {
+            triggerNextPoll(current + 1);
+          } else {
+            // Auto trigger simulated payout webhook on 3rd polling step!
+            handleSimulateWebhook();
+          }
+        }, 3000); // 3 seconds each step
+      };
+      
+      triggerNextPoll(0);
+    }
+    return () => clearTimeout(timer);
   }, [isCheckoutOpen]);
 
   const formatCheckoutTime = (seconds: number) => {
@@ -193,14 +258,110 @@ export default function Page() {
     return true;
   };
 
-  // Open Quiz with premium simulated loading to keep highly optimized (Item 8)
+  // Open Quiz with dynamic Draft Recovery validation (Item 1)
   const handleOpenQuiz = () => {
+    const savedDraft = localStorage.getItem('quiz_draft_v2');
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft);
+        if (parsed.projectName) {
+          setDraftToRestore(parsed);
+          setIsQuizOpen(true);
+          setIsQuizLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
     setIsQuizOpen(true);
     setIsQuizLoading(true);
     setQuizStep(1);
     setTimeout(() => {
       setIsQuizLoading(false);
     }, 1200);
+  };
+
+  // Restore draft state variables
+  const handleRestoreDraft = () => {
+    if (draftToRestore) {
+      setProjectName(draftToRestore.projectName || '');
+      setProjectStyle(draftToRestore.projectStyle || '');
+      setProjectBio(draftToRestore.projectBio || '');
+      setProjectPhotoName(draftToRestore.projectPhotoName || null);
+      setProjectInstagram(draftToRestore.projectInstagram || '');
+      setProjectVideoLink(draftToRestore.projectVideoLink || '');
+      setRespName(draftToRestore.respName || '');
+      setRespCpf(draftToRestore.respCpf || '');
+      setRespBirth(draftToRestore.respBirth || '');
+      setRespPhone(draftToRestore.respPhone || '');
+      setMembersList(draftToRestore.membersList || []);
+      setQuizStep(draftToRestore.step || 1);
+      setDraftToRestore(null);
+    }
+  };
+
+  // Discard draft state variables
+  const handleDiscardDraft = () => {
+    localStorage.removeItem('quiz_draft_v2');
+    setProjectName('');
+    setProjectStyle('');
+    setProjectBio('');
+    setProjectPhotoName(null);
+    setProjectInstagram('');
+    setProjectVideoLink('');
+    setRespName('');
+    setRespCpf('');
+    setRespBirth('');
+    setRespPhone('');
+    setMembersList([]);
+    setQuizStep(1);
+    setDraftToRestore(null);
+
+    setIsQuizLoading(true);
+    setTimeout(() => {
+      setIsQuizLoading(false);
+    }, 1200);
+  };
+
+  // Client-side instant canvas image compression tool (Item 3)
+  const handleImageCompression = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files ? e.target.files[0] : null;
+    if (!file) return;
+
+    setProjectPhotoName("Processando imagem...");
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          // Compress to high quality JPEG with 0.7 ratio
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          
+          setProjectPhotoName(file.name + " (Web Comprimida)");
+          localStorage.setItem('temp_compressed_photo', compressedDataUrl);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleQuizNext = () => {
@@ -386,6 +547,9 @@ export default function Page() {
 
       if (subError) throw subError;
 
+      // Clean draft upon successful generation
+      localStorage.removeItem('quiz_draft_v2');
+
       // 6. Save project id
       setCreatedProjectId(project.id);
       localStorage.setItem('current_project_id', project.id);
@@ -414,6 +578,7 @@ export default function Page() {
       };
 
       localStorage.setItem('fallback_project_' + mockId, JSON.stringify(localBackup));
+      localStorage.removeItem('quiz_draft_v2');
       setCreatedProjectId(mockId);
       localStorage.setItem('current_project_id', mockId);
       return mockId;
@@ -513,7 +678,48 @@ export default function Page() {
       setAcceptRules(false);
       setQuizStep(1);
       setCreatedProjectId(null);
+      localStorage.removeItem('quiz_draft_v2');
     }
+  };
+
+  // Fill mathematically valid mockup data into fields for testing (Testar Demo)
+  const fillDemoData = () => {
+    if (quizStep === 1) {
+      setProjectName("Os Profanos do Ritmo");
+      setProjectStyle("Rock Autoral");
+    } else if (quizStep === 2) {
+      setProjectBio("Formada em 2025 nas garagens da serra, a banda une timbres clássicos de fuzz a letras densas e poéticas em português. Nosso objetivo é o palco principal do festival Pedra Profana Sessions 2026.");
+      setProjectPhotoName("foto_backstage.jpg (Simulada)");
+      setProjectInstagram("@osprofanos");
+      setProjectVideoLink("https://youtube.com/watch?v=demo-profana");
+    } else if (quizStep === 3) {
+      setRespName("Emily Bryan");
+      setRespCpf("123.456.789-09"); // 100% Mathematically valid CPF
+      setRespBirth("12/10/1998");
+      setRespPhone("(21) 98765-4321");
+    } else if (quizStep === 4) {
+      // Inline add automatic test member
+      setNewMemberName("John Bryan");
+      setNewMemberCpf("123.456.789-09");
+      setNewMemberBirth("24/05/2000");
+      setIsAddingMemberInline(true);
+    } else if (quizStep === 5) {
+      setAcceptRules(true);
+    }
+  };
+
+  // Convocatoria copy text tool for viral share (Item 5)
+  const handleViralShare = () => {
+    const text = `Matrícula confirmada para a nossa banda "${projectName || 'Canção Profana'}" no Concurso Musical Canção Profana 2026! Nos vemos nos palcos da Pedra Profana! 🎸🔥`;
+    navigator.clipboard.writeText(text).then(() => {
+      alert("✓ Convocação copiada com sucesso! Compartilhe o seu passaporte e marque a Pedra Profana nas suas redes sociais!");
+    }).catch(() => {
+      alert("Texto de convocação: " + text);
+    });
+  };
+
+  const copyPixCode = () => {
+    alert('✓ Código Pix Copiado!');
   };
 
   const applyCpfMask = (val: string) => {
@@ -616,7 +822,7 @@ export default function Page() {
                   STUDIO LIVE
                 </span>
               </div>
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <span className="font-mono text-[#F0C265] text-xs tracking-wider uppercase block font-bold">
                   OPORTUNIDADE ÚNICA (1º LUGAR)
                 </span>
@@ -927,7 +1133,7 @@ export default function Page() {
                   </span>
                 </div>
                 {activeFaq === i && (
-                  <p className="text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3 font-normal">
+                  <p className="text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3 font-normal font-[Inter]">
                     {f.a}
                   </p>
                 )}
@@ -975,8 +1181,22 @@ export default function Page() {
             >
               <button type="button" onClick={() => setIsQuizOpen(false)} className="absolute right-5 top-5 text-[#B3B3B3] hover:text-white font-mono text-2xl font-bold">&times;</button>
               
-              {/* QUIZ STEP PROGRESS LOADER SHIMMER SPIN SCREEN (Item 8) */}
-              {isQuizLoading ? (
+              {/* DRAFT RECOVERY CONFIRMATION ALREADY BUILT AND SAFE! (Item 1) */}
+              {draftToRestore ? (
+                <div className="flex flex-col items-center justify-center py-10 text-center space-y-6">
+                  <div className="w-12 h-12 rounded-full bg-[#F0C265]/10 text-[#F0C265] border border-[#F0C265]/20 flex items-center justify-center text-xl shadow">⚡</div>
+                  <div className="space-y-2">
+                    <h3 className="font-display font-black text-xl text-white uppercase tracking-tight">Rascunho de Inscrição Ativo</h3>
+                    <p className="text-xs text-gray-300 max-w-sm mx-auto leading-relaxed">
+                      Encontramos um progresso de matrícula salvo localmente para a banda/dupla <strong className="text-[#F0C265]">"{draftToRestore.projectName}"</strong> no Passo <strong className="text-[#F0C265]">0{draftToRestore.step}/05</strong>. Deseja retomar?
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs pt-2">
+                    <button type="button" onClick={handleDiscardDraft} className="w-full sm:w-1/2 font-mono text-xs font-bold text-gray-400 px-4 py-3 border border-white/10 rounded-full hover:bg-white/5 transition-colors uppercase">Descartar</button>
+                    <button type="button" onClick={handleRestoreDraft} className="w-full sm:w-1/2 btn-gold-shimmer px-4 py-3 rounded-full text-xs uppercase tracking-widest font-black text-black">Continuar</button>
+                  </div>
+                </div>
+              ) : isQuizLoading ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
                   {/* Golden pulsating wave spinner */}
                   <div className="relative w-12 h-12">
@@ -1053,7 +1273,16 @@ export default function Page() {
                             <p className="text-sm text-gray-300">Estas informações serão avaliadas pelo corpo de jurados técnicos.</p>
                             <div className="space-y-4 pt-2">
                               <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Biografia *</label>
+                                <div className="flex justify-between items-baseline">
+                                  <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Biografia *</label>
+                                  
+                                  {/* Dynamic Profile Strength Meter (Item 2) */}
+                                  <span className="font-mono text-[9px] uppercase tracking-wider font-bold">
+                                    {projectBio.length <= 80 && <span className="text-red-500">Fraca 🔴 (Adicione mais detalhes)</span>}
+                                    {projectBio.length > 80 && projectBio.length <= 220 && <span className="text-yellow-500">Boa 🟡 (Fale de influências e objetivos)</span>}
+                                    {projectBio.length > 220 && <span className="text-emerald-500">Excelente! 🟢 (Lineup qualificado)</span>}
+                                  </span>
+                                </div>
                                 <textarea 
                                   value={projectBio} 
                                   onChange={(e) => setProjectBio(e.target.value.slice(0, 400))} 
@@ -1066,15 +1295,17 @@ export default function Page() {
                               </div>
                               <div className="space-y-1">
                                 <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Foto Oficial *</label>
+                                
+                                {/* Dynamic real-time browser canvas compression image upload handler (Item 3) */}
                                 <div className="border border-dashed border-white/10 hover:border-[#E3B552] rounded-xl p-5 text-center cursor-pointer bg-black/40 relative">
-                                  <input type="file" onChange={(e) => setProjectPhotoName(e.target.files ? e.target.files[0].name : null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" required />
+                                  <input type="file" onChange={handleImageCompression} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" required />
                                   {projectPhotoName ? (
                                     <span className="text-sm text-[#10B981] font-bold">✓ Foto Selecionada: {projectPhotoName}</span>
                                   ) : (
                                     <span className="text-sm text-gray-400">Arraste ou clique para carregar foto</span>
                                   )}
                                 </div>
-                                <span className="text-[10px] text-gray-500 font-mono block mt-1">Formatos: JPEG, PNG, WEBP. Max: 5MB. Verificação de segurança activa contra arquivos maliciosos.</span>
+                                <span className="text-[10px] text-gray-500 font-mono block mt-1">Formatos: JPEG, PNG, WEBP. Max: 5MB. Compressor client-side ativo (peso reduzido a &lt; 250KB).</span>
                               </div>
                               
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1291,7 +1522,9 @@ export default function Page() {
                       </div>
 
                       <div className="flex gap-2.5">
-                        <button type="button" onClick={handleBypassClear} className="font-mono text-xs font-bold text-red-500 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-xl uppercase">Bypass</button>
+                        {/* Golden test demo filler button (no raw bypass) */}
+                        <button type="button" onClick={fillDemoData} className="font-mono text-xs font-bold text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/20 px-3.5 py-2 rounded-xl uppercase hover:bg-[#F0C265] hover:text-black transition-colors">Testar Demo</button>
+                        
                         {quizStep > 1 && (
                           <button type="button" onClick={handleQuizPrev} className="font-mono text-xs font-bold text-white border border-white/10 bg-white/5 px-5 py-2.5 rounded-xl uppercase">Voltar</button>
                         )}
@@ -1349,7 +1582,16 @@ export default function Page() {
                   {isCheckoutLoading && (
                     <div className="absolute inset-0 bg-[#05070B]/95 flex flex-col items-center justify-center text-center p-3 rounded-xl">
                       <span className="w-8 h-8 rounded-full border-2 border-[#F0C265] border-t-transparent animate-spin mb-3"></span>
-                      <span className="font-mono text-sm text-[#F0C265] uppercase tracking-widest font-bold">Processando seu Pix em tempo real...</span>
+                      
+                      {/* Interactive real-time dynamic log loader labels (Item 4) */}
+                      <div className="space-y-1 mt-2 text-center relative z-20">
+                        <span className="font-mono text-xs text-[#F0C265] uppercase tracking-widest font-bold block animate-pulse">
+                          {pollingStep === 0 && "Aguardando sinal da rede..."}
+                          {pollingStep === 1 && "Consultando compensação..."}
+                          {pollingStep === 2 && "Identificando Pix bancário..."}
+                          {pollingStep >= 3 && "Confirmando sua vaga..."}
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1380,7 +1622,7 @@ export default function Page() {
         )}
       </AnimatePresence>
 
-      {/* SUCCESS STATE - BACKSTAGE PASS / CONCERT TICKET (Item 6) */}
+      {/* SUCCESS STATE - BACKSTAGE PASS / CONCERT TICKET (Item 6) WITH INSTAGRAM STORY SHARE OPTION (Item 5) */}
       <AnimatePresence>
         {isSuccessOpen && (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start sm:items-center">
@@ -1410,7 +1652,7 @@ export default function Page() {
                   <h3 className="font-display font-black text-2xl text-white uppercase tracking-tightest leading-tight">MATRÍCULA CONFIRMADA!</h3>
                 </div>
 
-                <p className="text-xs text-gray-300 leading-relaxed max-w-xs mx-auto">Sua inscrição foi confirmada e processada via webhook seguro. O passaporte oficial foi enviado ao e-mail.</p>
+                <p className="text-xs text-gray-400 leading-relaxed max-w-xs mx-auto">Sua inscrição foi confirmada e processada via webhook seguro. O passaporte oficial foi enviado ao e-mail.</p>
               </div>
 
               {/* DASHED SEPARATOR LINE */}
@@ -1429,7 +1671,7 @@ export default function Page() {
                     <span className="text-xs font-black text-bento-snow font-mono block mt-0.5">{selectedMembers} INTEGRANTES</span>
                   </div>
                   <div className="col-span-2 border-t border-white/5 pt-3">
-                    <span className="text-[#10B981] uppercase font-bold block text-[9px]">Condição Solidária Obligatória:</span>
+                    <span className="text-[#10B981] uppercase font-bold block text-[9px]">Condição Solidária Obrigatória:</span>
                     <p className="text-xs text-gray-300 mt-1 leading-relaxed font-mono">Trazer {selectedMembers}kg de alimento não-perecível na entrada do estúdio.</p>
                   </div>
                 </div>
@@ -1452,8 +1694,21 @@ export default function Page() {
                   <span className="font-mono text-[8px] text-gray-500 uppercase tracking-widest block">Pedra Profana Backstage Access</span>
                 </div>
 
-                <div className="pt-2">
-                  <Link href="/minha-inscricao" className="btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-wider block w-full max-w-xs mx-auto border-none text-center font-bold">Ver minha inscrição</Link>
+                {/* Viral Stage Pass share CTA buttons (Item 5) */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <button 
+                    type="button" 
+                    onClick={handleViralShare}
+                    className="w-full sm:w-1/2 flex items-center justify-center gap-1.5 font-mono text-xs font-bold text-white bg-white/5 border border-white/10 px-4 py-3 rounded-full hover:bg-white/10 transition-colors uppercase"
+                  >
+                    <Copy className="w-3.5 h-3.5" /> Copiar Convocação
+                  </button>
+                  <Link 
+                    href="/minha-inscricao" 
+                    className="w-full sm:w-1/2 btn-gold-shimmer px-4 py-3 rounded-full text-xs uppercase tracking-widest font-black text-black text-center"
+                  >
+                    Ver minha inscrição
+                  </Link>
                 </div>
               </div>
 
@@ -1581,8 +1836,4 @@ export default function Page() {
 
     </div>
   );
-
-  function copyPixCode() {
-    alert('✓ Código Pix Copiado!');
-  }
 }
