@@ -58,8 +58,9 @@ export default function Page() {
   const [respBirth, setRespBirth] = useState('');
   const [respPhone, setRespPhone] = useState('');
   
-  const [selectedMembers, setSelectedMembers] = useState(2);
+  // Natural dynamic list of additional members (Item 3)
   const [membersList, setMembersList] = useState<Array<{ name: string; cpf: string; birth: string }>>([]);
+  const [selectedMembers, setSelectedMembers] = useState(1);
   const [acceptRules, setAcceptRules] = useState(false);
 
   // Form interactive state for adding member inline
@@ -117,6 +118,11 @@ export default function Page() {
     fetchSupabaseConfig();
   }, []);
 
+  // Sync total selectedMembers dynamically to prevent logic empty slots bug!
+  useEffect(() => {
+    setSelectedMembers(1 + membersList.length);
+  }, [membersList]);
+
   // Checkout ticking down timer
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -142,20 +148,6 @@ export default function Page() {
     const secs = seconds % 60;
     return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
-
-  // Sync additional members lists based on selection
-  useEffect(() => {
-    const additionalCount = selectedMembers - 1;
-    if (membersList.length < additionalCount) {
-      const copy = [...membersList];
-      while (copy.length < additionalCount) {
-        copy.push({ name: '', cpf: '', birth: '' });
-      }
-      setMembersList(copy);
-    } else if (membersList.length > additionalCount) {
-      setMembersList(membersList.slice(0, additionalCount));
-    }
-  }, [selectedMembers]);
 
   const activePrice = lotesConfig.lote1.status === 'ativo' ? lotesConfig.lote1.valor : (lotesConfig.lote2.status === 'ativo' ? lotesConfig.lote2.valor : lotesConfig.lote3.valor);
   const activeLoteName = lotesConfig.lote1.status === 'ativo' ? 'LOTE 1' : (lotesConfig.lote2.status === 'ativo' ? 'LOTE 2' : 'LOTE 3');
@@ -237,6 +229,11 @@ export default function Page() {
         alert('Por favor, confirme ou descarte o integrante em preenchimento antes de avançar.');
         return;
       }
+      // Rule validation: total members (including leader) must be at least 2!
+      if (membersList.length < 1) {
+        alert('⚠️ O lineup da banda / dupla deve ter no mínimo 2 participantes (o líder + pelo menos 1 integrante). Adicione um integrante utilizando o botão "+ Escalar Integrante".');
+        return;
+      }
       for (let i = 0; i < membersList.length; i++) {
         const m = membersList[i];
         if (!m.name || m.cpf.length < 14 || m.birth.length < 10) {
@@ -269,6 +266,10 @@ export default function Page() {
 
   // Add Member inline directly with state verification
   const saveMemberInline = () => {
+    if (selectedMembers >= 7) {
+      alert("O limite máximo do regulamento é de 7 integrantes por projeto.");
+      return;
+    }
     if (!newMemberName || newMemberCpf.length < 14 || newMemberBirth.length < 10) {
       alert("Por favor, preencha todas as informações do integrante.");
       return;
@@ -282,11 +283,6 @@ export default function Page() {
       return;
     }
 
-    if (selectedMembers >= 7) {
-      alert("O limite máximo do regulamento é de 7 integrantes por projeto.");
-      return;
-    }
-
     // Append inline member directly
     const copy = [...membersList];
     copy.push({
@@ -295,7 +291,6 @@ export default function Page() {
       birth: newMemberBirth
     });
     setMembersList(copy);
-    setSelectedMembers(selectedMembers + 1);
 
     // Reset inline form fields
     setNewMemberName('');
@@ -305,11 +300,6 @@ export default function Page() {
   };
 
   const removeQuizMember = (index: number) => {
-    if (selectedMembers <= 2) {
-      alert("O limite mínimo do regulamento é de 2 integrantes por projeto.");
-      return;
-    }
-    setSelectedMembers(selectedMembers - 1);
     const copy = [...membersList];
     copy.splice(index, 1);
     setMembersList(copy);
@@ -483,7 +473,11 @@ export default function Page() {
       setRespCpf('');
       setRespBirth('');
       setRespPhone('');
-      setSelectedMembers(2);
+      setMembersList([]);
+      setIsAddingMemberInline(false);
+      setNewMemberName('');
+      setNewMemberCpf('');
+      setNewMemberBirth('');
       setAcceptRules(false);
       setQuizStep(1);
       setCreatedProjectId(null);
@@ -1015,7 +1009,7 @@ export default function Page() {
                                   placeholder="Ex: R&B" 
                                   className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" 
                                   required 
-                            />
+                                />
                               </div>
                             </div>
                           </div>
@@ -1382,7 +1376,7 @@ export default function Page() {
                   <h3 className="font-display font-black text-2xl text-white uppercase tracking-tightest leading-tight">MATRÍCULA CONFIRMADA!</h3>
                 </div>
 
-                <p className="text-xs text-gray-400 leading-relaxed max-w-xs mx-auto">Sua inscrição foi confirmada e processada via webhook seguro. O passaporte oficial foi enviado ao e-mail.</p>
+                <p className="text-xs text-gray-300 leading-relaxed max-w-xs mx-auto">Sua inscrição foi confirmada e processada via webhook seguro. O passaporte oficial foi enviado ao e-mail.</p>
               </div>
 
               {/* DASHED SEPARATOR LINE */}
@@ -1532,7 +1526,7 @@ export default function Page() {
                 <div className="space-y-1">
                   <h2 className="font-display font-bold text-sm text-white">3. COMPARTILHAMENTO DE DADOS</h2>
                   <p>3.1. O Estúdio Pedra Profana **não vende, não aluga e não cede** os dados pessoais cadastrados para fins de publicidade de terceiros.</p>
-                  <p>3.2. Os dados de faturamento podem ser processados por parceiros e gateways de pagamento (como Supabase, Asaas ou Mercado Pago) de forma criptografada para consolidação do Pix de inscrição.</p>
+                  <p>3.2. Os dados de faturamento podem ser processados por gateways de pagamento (como Supabase, Asaas ou Mercado Pago) de forma criptografada para consolidação do Pix de inscrição.</p>
                 </div>
 
                 <div className="space-y-1">
