@@ -233,7 +233,7 @@ export default function MinhaInscricaoPage() {
         <div className="absolute -right-32 -top-32 w-80 h-80 bg-[#E3B552]/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute -left-32 -bottom-32 w-80 h-80 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div className="glass-card-2 max-w-md w-full p-6 md:p-8 rounded-[32px] relative space-y-8 shadow-2xl">
+        <div className="glass-card-2 fade-up-800 max-w-md w-full p-6 md:p-8 rounded-[32px] relative space-y-8 shadow-2xl">
           <div className="text-center space-y-3">
             <div className="w-12 h-12 rounded bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] flex items-center justify-center font-display font-black text-black text-2xl border border-black shadow-md mx-auto">
               P
@@ -299,7 +299,7 @@ export default function MinhaInscricaoPage() {
       <div className="absolute -right-32 -top-32 w-80 h-80 bg-[#E3B552]/10 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute -left-32 -bottom-32 w-80 h-80 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="glass-card-2 max-w-2xl w-full p-6 md:p-8 rounded-[32px] relative space-y-8 shadow-2xl">
+      <div className="glass-card-2 fade-up-800 max-w-2xl w-full p-6 md:p-8 rounded-[32px] relative space-y-8 shadow-2xl">
         
         {/* HEADER BAR */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/5 pb-4">

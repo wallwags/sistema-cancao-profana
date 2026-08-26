@@ -275,3 +275,11 @@
   .reveal-hidden { opacity: 1; transform: none; }
   .hover-scale, .hover-lift { transition: none; }
 }
+
+/* ---------- FAQ smooth height (grid-rows trick, zero JS) ---------- */
+.faq-collapse { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease; }
+.faq-collapse.faq-open { grid-template-rows: 1fr; }
+.faq-collapse > div { min-height: 0; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .faq-collapse { transition: none; }
+}

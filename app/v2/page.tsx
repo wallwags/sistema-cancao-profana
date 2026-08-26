@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import gsap from 'gsap';
 import { Settings, Music, Users, Shield } from 'lucide-react';
 import Link from 'next/link';
 import Navbar from '../../components/v2/Navbar';
@@ -50,6 +51,8 @@ export default function Page() {
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
 
+  const headerRef = useRef<HTMLDivElement | null>(null);
+
   // Sync pricing configurations from Supabase on mount
   useEffect(() => {
     const fetchSupabaseConfig = async () => {
@@ -88,6 +91,81 @@ export default function Page() {
   const activePrice = lotesConfig.lote1.status === 'ativo' ? lotesConfig.lote1.valor : (lotesConfig.lote2.status === 'ativo' ? lotesConfig.lote2.valor : lotesConfig.lote3.valor);
   const activeLoteName = lotesConfig.lote1.status === 'ativo' ? 'LOTE 1' : (lotesConfig.lote2.status === 'ativo' ? 'LOTE 2' : 'LOTE 3');
 
+  // Navbar retrátil: esconde ao rolar para baixo (devolve ~100px de viewport no mobile),
+  // volta ao subir ou perto do topo. rAF-throttled, transform only.
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    let lastY = window.scrollY;
+    let ticking = false;
+
+    const update = () => {
+      const y = window.scrollY;
+      if (y < 140) {
+        el.style.transform = 'translateY(0)';
+      } else if (y > lastY + 4) {
+        el.style.transform = 'translateY(-110%)';
+      } else if (y < lastY - 4) {
+        el.style.transform = 'translateY(0)';
+      }
+      lastY = y;
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Scroll FX engine — reveals de seção, grupos em stagger, linha da timeline
+  // desenhando e barra de vagas animando ao entrarem na viewport (uma vez só).
+  useEffect(() => {
+    const revealEls = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
+    const groups = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal-group]'));
+    const line = document.querySelector<HTMLElement>('[data-fx="timeline-line"]');
+    const bars = Array.from(document.querySelectorAll<HTMLElement>('[data-vagas-fill]'));
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (reduce || !('IntersectionObserver' in window)) {
+      gsap.set('[data-reveal]', { opacity: 1, y: 0 });
+      revealEls.forEach(() => undefined);
+      groups.forEach((g) => gsap.set(g.querySelectorAll('.reveal-hidden'), { opacity: 1, y: 0 }));
+      if (line) gsap.set(line, { scaleX: 1 });
+      bars.forEach((b) => gsap.set(b, { width: (b.dataset.pct || '0') + '%' }));
+      return;
+    }
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const el = entry.target as HTMLElement;
+
+        if (el.hasAttribute('data-reveal')) {
+          gsap.to(el, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' });
+        } else if (el.hasAttribute('data-reveal-group')) {
+          gsap.to(el.querySelectorAll('.reveal-hidden'), {
+            opacity: 1, y: 0, duration: 0.55, stagger: 0.12, ease: 'power2.out'
+          });
+        } else if (el.dataset.fx === 'timeline-line') {
+          gsap.fromTo(el, { scaleX: 0 }, { scaleX: 1, duration: 0.9, ease: 'power2.inOut', transformOrigin: 'left center' });
+        } else if (el.dataset.vagasFill !== undefined) {
+          gsap.fromTo(el, { width: '0%' }, { width: (el.dataset.pct || '0') + '%', duration: 0.9, ease: 'power2.out' });
+        }
+
+        io.unobserve(el);
+      });
+    }, { rootMargin: '0px 0px -80px 0px', threshold: 0 });
+
+    [...revealEls, ...groups, ...(line ? [line] : []), ...bars].forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   // Open quiz instantly (no artificial loading) — chunk is code-split and pre-warmed on hover
   const preloadQuiz = () => {
     import('../../components/v2/QuizFlow');
@@ -125,8 +203,8 @@ export default function Page() {
   return (
     <div className="bg-[#05070B] text-[#F0EAE0] min-h-screen relative font-sans antialiased">
 
-      {/* UNIFIED FIXED CONTAINER FOR COUNTDOWN AND NAVBAR (Resolves overlap bug!) */}
-      <div className="fixed top-0 left-0 right-0 z-50 w-full bg-[#05070B]/95 backdrop-blur-md">
+      {/* UNIFIED FIXED CONTAINER FOR COUNTDOWN AND NAVBAR — retrátil ao rolar */}
+      <div ref={headerRef} className="fixed top-0 left-0 right-0 z-50 w-full bg-[#05070B]/95 backdrop-blur-md transition-transform duration-300 will-change-transform">
         <CountdownBar />
         <Navbar onOpenQuiz={handleOpenQuiz} />
       </div>
@@ -137,18 +215,18 @@ export default function Page() {
         {/* HERO SECTION */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-center py-2 md:py-6">
           <div className="lg:col-span-7 space-y-4">
-            <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-white leading-[1.08] uppercase tracking-tightest">
+            <h1 className="fade-up-800 font-display font-black text-4xl sm:text-5xl lg:text-6xl text-white leading-[1.08] uppercase tracking-tightest">
               Grave seu som. Concorra à produção da sua <span className="bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(240,194,101,0.45)]">carreira</span>.
             </h1>
-            <p className="text-xs sm:text-sm md:text-base text-white/75 leading-relaxed max-w-xl font-normal font-[Inter]">
+            <p className="fade-up-800 [animation-delay:120ms] text-xs sm:text-sm md:text-base text-white/75 leading-relaxed max-w-xl font-normal font-[Inter]">
               A maior vitrine de revelação musical autoral. Grave sua apresentação ao vivo com áudio e vídeo de alta fidelidade de graça e dispute uma produção completa de carreira que mudará sua história.
             </p>
-            <div className="flex flex-wrap gap-x-5 gap-y-2 pt-2 text-[10px] sm:text-xs font-mono text-[#F0C265] uppercase tracking-widest font-black">
+            <div className="fade-up-800 [animation-delay:200ms] flex flex-wrap gap-x-5 gap-y-2 pt-2 text-[10px] sm:text-xs font-mono text-[#F0C265] uppercase tracking-widest font-black">
               <span>• AUTORAL PORTUGUÊS</span>
               <span>• TRANSMISSÃO DIGITAL</span>
               <span>• GRAVAÇÃO INCLUÍDA</span>
             </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3">
+            <div className="fade-up-800 [animation-delay:260ms] flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3">
               <button
                 type="button"
                 onClick={handleOpenQuiz}
@@ -198,7 +276,7 @@ export default function Page() {
 
         {/* B. AS 3 REGRAS DE MATRÍCULA */}
         <section id="principios" className="space-y-12">
-          <div className="space-y-2 border-b border-white/5 pb-4">
+          <div data-reveal className="reveal-hidden space-y-2 border-b border-white/5 pb-4">
             <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono">
               # REGRAS INVIOLÁVEIS DO CONCURSO
             </span>
@@ -206,22 +284,22 @@ export default function Page() {
               AS 3 REGRAS DE MATRÍCULA
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 hover:border-[#E3B552]/30 rounded-2xl p-6 space-y-4 shadow-lg transition-colors">
+          <div data-reveal-group className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="reveal-hidden bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 hover:border-[#E3B552]/30 rounded-2xl p-6 space-y-4 shadow-lg transition-colors">
               <span className="font-display font-black text-5xl text-[#F0C265] block select-none">01</span>
               <h3 className="font-display font-bold text-lg text-white uppercase">Repertório & Música Autoral</h3>
               <p className="text-sm text-gray-300">
                 Seu repertório deve ter no máximo 3 músicas, com pelo menos uma música original (autoral) escrita majoritariamente em português ou instrumental.
               </p>
             </div>
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 hover:border-[#E3B552]/30 rounded-2xl p-6 space-y-4 shadow-lg transition-colors">
+            <div className="reveal-hidden bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 hover:border-[#E3B552]/30 rounded-2xl p-6 space-y-4 shadow-lg transition-colors">
               <span className="font-display font-black text-5xl text-[#F0C265] block select-none">02</span>
               <h3 className="font-display font-bold text-lg text-white uppercase">Alinhamento de Lineup</h3>
               <p className="text-sm text-gray-300">
                 As apresentações e gravações devem ser compostas por grupos contendo no mínimo 2 e no máximo 7 integrantes por projeto.
               </p>
             </div>
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 hover:border-[#E3B552]/30 rounded-2xl p-6 space-y-4 shadow-lg transition-colors">
+            <div className="reveal-hidden bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 hover:border-[#E3B552]/30 rounded-2xl p-6 space-y-4 shadow-lg transition-colors">
               <span className="font-display font-black text-5xl text-[#F0C265] block select-none">03</span>
               <h3 className="font-display font-bold text-lg text-white uppercase">Compromisso Solidário</h3>
               <p className="text-sm text-gray-300">
@@ -233,13 +311,13 @@ export default function Page() {
 
         {/* NEW INFOGRAPHIC SECTION: REGRA DE FORMAÇÃO DO GRUPO (Roster Rule) */}
         <section id="formacao" className="space-y-12">
-          <div className="space-y-2 border-b border-white/5 pb-4">
+          <div data-reveal className="reveal-hidden space-y-2 border-b border-white/5 pb-4">
             <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono"># REGRA DE FORMAÇÃO DE GRUPO</span>
             <h2 className="font-display font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white uppercase tracking-tight">COMO DEVE SER SUA FORMAÇÃO?</h2>
           </div>
 
           {/* Premium Infographic Banner Box */}
-          <div className="bg-gradient-to-r from-[#8B1E1E]/20 via-[#0B0F19]/80 to-[#8B1E1E]/20 border border-white/10 py-6 px-8 rounded-3xl text-center space-y-3 shadow-lg">
+          <div data-reveal className="reveal-hidden bg-gradient-to-r from-[#8B1E1E]/20 via-[#0B0F19]/80 to-[#8B1E1E]/20 border border-white/10 py-6 px-8 rounded-3xl text-center space-y-3 shadow-lg">
             <h3 className="font-mono text-xs text-[#F0C265] font-black uppercase tracking-widest">DIRETRIZ DE INTEGRANTES DO PALCO</h3>
             <div className="flex flex-wrap justify-center items-center gap-4 text-white font-display font-black text-xl sm:text-2xl md:text-3xl">
               <span>MÍNIMO DE 2 INTEGRANTES</span>
@@ -251,9 +329,9 @@ export default function Page() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div data-reveal-group className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#F0C265]/40 transition-all duration-300">
+            <div className="reveal-hidden bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#F0C265]/40 transition-all duration-300">
               <div className="w-10 h-10 rounded bg-[#E3B552]/10 border border-[#E3B552]/30 flex items-center justify-center text-[#F0C265]">
                 <Music className="w-5 h-5 stroke-[2.2]" />
               </div>
@@ -263,7 +341,7 @@ export default function Page() {
               </p>
             </div>
 
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#F0C265]/40 transition-all duration-300">
+            <div className="reveal-hidden bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#F0C265]/40 transition-all duration-300">
               <div className="w-10 h-10 rounded bg-[#E3B552]/10 border border-[#E3B552]/30 flex items-center justify-center text-[#F0C265]">
                 <Users className="w-5 h-5 stroke-[2.2]" />
               </div>
@@ -273,7 +351,7 @@ export default function Page() {
               </p>
             </div>
 
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#F0C265]/40 transition-all duration-300">
+            <div className="reveal-hidden bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#F0C265]/40 transition-all duration-300">
               <div className="w-10 h-10 rounded bg-[#E3B552]/10 border border-[#E3B552]/30 flex items-center justify-center text-[#F0C265]">
                 <Shield className="w-5 h-5 stroke-[2.2]" />
               </div>
@@ -288,7 +366,7 @@ export default function Page() {
 
         {/* C. FASES DO CONCURSO (Timeline) */}
         <section id="cronograma" className="space-y-12">
-          <div className="space-y-2 border-b border-white/5 pb-4">
+          <div data-reveal className="reveal-hidden space-y-2 border-b border-white/5 pb-4">
             <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono">
               # FLUXO DO PROCESSO
             </span>
@@ -296,15 +374,15 @@ export default function Page() {
               FASES DE EXECUÇÃO DO CONCURSO
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
-            <div className="hidden md:block absolute top-1/2 left-0 right-0 h-[1.5px] bg-white/5 -translate-y-1/2 z-0"></div>
+          <div data-reveal-group className="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
+            <div data-fx="timeline-line" className="hidden md:block absolute top-1/2 left-0 right-0 h-[1.5px] bg-white/5 z-0 will-change-transform"></div>
             {[
               { f: 'F1', t: 'Inscrição Expressa', d: 'Matrícula no Quiz, lineup e upload da foto de divulgação.' },
               { f: 'F2', t: 'Transmissão ao Vivo', d: 'Gravação no estúdio com live e QR code para arrecadação.' },
               { f: 'F3', t: 'Mídias Ativas', d: 'Podcast especial de apresentação e abertura de voto popular.' },
               { f: 'F4', t: 'Grande Final', d: 'Apresentação presencial e revelação dos vencedores pela média final.' }
             ].map((p, i) => (
-              <div key={i} className="bg-[#05070B] border border-white/5 p-5 rounded-xl space-y-3 relative z-10">
+              <div key={i} className="reveal-hidden bg-[#05070B] border border-white/5 p-5 rounded-xl space-y-3 relative z-10">
                 <div className="flex justify-between items-center">
                   <span className="bg-[#121215] text-white font-mono text-sm uppercase px-2.5 py-1 rounded font-bold border border-white/10">{p.f}</span>
                   <span className="font-mono text-sm md:text-base text-gray-400 uppercase tracking-wider">Etapa</span>
@@ -318,7 +396,7 @@ export default function Page() {
 
         {/* E. DELIVERABLES GRAPH FEATURE GRID - PLACED ABOVE PRICING */}
         <section id="premios" className="space-y-12">
-          <div className="space-y-2 border-b border-white/5 pb-4">
+          <div data-reveal className="reveal-hidden space-y-2 border-b border-white/5 pb-4">
             <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono">
               # VITRINE DE ENTREGÁVEIS
             </span>
@@ -336,7 +414,7 @@ export default function Page() {
 
         {/* D. LOTES TABLE WITH CONFIG STATES */}
         <section id="lotes" className="space-y-12">
-          <div className="space-y-4 border-b border-white/5 pb-4">
+          <div data-reveal className="reveal-hidden space-y-4 border-b border-white/5 pb-4">
             <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono">
               # INVESTIMENTO E CRONOGRAMA DE PREÇOS
             </span>
@@ -371,7 +449,7 @@ export default function Page() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div data-reveal-group className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
               { key: 'dia0', title: 'Dia 0 (Live)', status: 'encerrado', desc: 'Apenas durante a transmissão ao vivo.', valor: 25 },
               { key: 'lote1', title: 'Lote 1', status: lotesConfig.lote1.status, desc: 'Primeiras inscrições. Menor preço histórico.', valor: 35, vagas: lotesConfig.lote1.vagasRestantes },
@@ -384,7 +462,7 @@ export default function Page() {
               return (
                 <div
                   key={i}
-                  className={`bg-[#0B0F19]/60 backdrop-blur-xl border-2 rounded-[24px] p-5 flex flex-col justify-between shadow transition-all duration-300 ${
+                  className={`reveal-hidden bg-[#0B0F19]/60 backdrop-blur-xl border-2 rounded-[24px] p-5 flex flex-col justify-between shadow transition-all duration-300 ${
                     isActive
                       ? 'border-[#10B981] scale-[1.02] shadow-[0_0_20px_rgba(16,185,129,0.15)] bg-[#0B0F19]/90'
                       : 'border-white/5 opacity-50 bg-[#0B0F19]/30'
@@ -432,7 +510,7 @@ export default function Page() {
                       <div className="space-y-1 bg-black/40 p-2.5 rounded-xl border border-white/5">
                         <span className="font-mono text-sm text-gray-300 block font-bold">VAGAS RESTANTES: {l.vagas}</span>
                         <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden flex items-center">
-                          <div className="h-full bg-gradient-to-r from-[#10B981] to-[#34D399]" style={{ width: `${(l.vagas / 30) * 100}%` }}></div>
+                          <div data-vagas-fill data-pct={String((l.vagas / 30) * 100)} className="h-full w-0 bg-gradient-to-r from-[#10B981] to-[#34D399]"></div>
                         </div>
                       </div>
                     )}
@@ -468,7 +546,7 @@ export default function Page() {
 
         {/* F. FAQ ACCORDION SECTION */}
         <section id="faq" className="space-y-12">
-          <div className="space-y-2 border-b border-white/5 pb-4">
+          <div data-reveal className="reveal-hidden space-y-2 border-b border-white/5 pb-4">
             <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-[#F0C265] block font-mono">
               # PERGUNTAS FREQUENTES
             </span>
@@ -477,11 +555,11 @@ export default function Page() {
             </h2>
           </div>
 
-          <div className="space-y-4 max-w-4xl mx-auto">
+          <div data-reveal-group className="space-y-4 max-w-4xl mx-auto">
             {faqs.map((f, i) => (
               <div
                 key={i}
-                className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-xl p-5 sm:p-6 cursor-pointer hover:border-[#E3B552]/40 transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B]"
+                className="reveal-hidden bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-xl p-5 sm:p-6 cursor-pointer hover:border-[#E3B552]/40 transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B]"
                 onClick={() => setActiveFaq(activeFaq === i ? null : i)}
               >
                 <div className="flex justify-between items-center">
@@ -492,11 +570,13 @@ export default function Page() {
                     {activeFaq === i ? '−' : '+'}
                   </span>
                 </div>
-                {activeFaq === i && (
-                  <p className="text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3 font-normal font-[Inter]">
-                    {f.a}
-                  </p>
-                )}
+                <div className={`faq-collapse ${activeFaq === i ? 'faq-open' : ''}`}>
+                  <div>
+                    <p className="text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3 font-normal font-[Inter]">
+                      {f.a}
+                    </p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
