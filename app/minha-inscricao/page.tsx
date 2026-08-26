@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
 import { 
   Shield, Music, Users, Calendar, CheckCircle, Clock, 
@@ -13,6 +14,7 @@ interface Member {
   cpf: string;
   birth_date: string;
   phone: string | null;
+  email?: string | null;
   is_responsible: boolean;
 }
 
@@ -95,6 +97,7 @@ export default function MinhaInscricaoPage() {
         cpf: m.cpf,
         birth_date: m.birth_date,
         phone: m.phone,
+        email: m.email ?? null,
         is_responsible: m.is_responsible
       }));
 
@@ -144,7 +147,7 @@ export default function MinhaInscricaoPage() {
   const handleCpfLookup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (searchCpf.length < 14) {
-      alert("Por favor, digite um CPF válido completo.");
+      setErrorMsg("Por favor, digite um CPF válido completo.");
       return;
     }
 
@@ -324,10 +327,15 @@ export default function MinhaInscricaoPage() {
         </div>
 
         {/* PREMIUM PARTICIPANT STAGE PASS ID CARD (Aesthetic Visual Upgrade) */}
-        <div 
-          className="relative rounded-2xl overflow-hidden h-44 border border-white/10 shadow-lg flex items-end p-5 bg-cover bg-center" 
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=800&q=80')" }}
-        >
+        <div className="relative rounded-2xl overflow-hidden h-44 border border-white/10 shadow-lg flex items-end p-5">
+          <Image
+            src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=800&q=80"
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 768px) 100vw, 896px"
+            className="object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-0"></div>
           
           <div className="relative z-10 flex justify-between items-center w-full">
@@ -430,6 +438,12 @@ export default function MinhaInscricaoPage() {
                 <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">CPF LÍDER:</span>
                 <span className="text-white font-bold text-xs block font-mono">{leader.cpf}</span>
               </div>
+              {leader.email && (
+                <div className="space-y-1">
+                  <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">E-MAIL:</span>
+                  <span className="text-white font-bold text-xs block font-mono truncate">{leader.email}</span>
+                </div>
+              )}
               {data.amount_paid !== undefined && (
                 <div className="space-y-1">
                   <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">VALOR PAGO ({data.batch_name || 'LOTE'}):</span>

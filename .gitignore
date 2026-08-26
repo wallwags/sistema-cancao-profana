@@ -36,3 +36,6 @@ node_modules/
 *.njsproj
 *.sln
 *.swp
+
+# Type/build artifacts
+*.tsbuildinfo

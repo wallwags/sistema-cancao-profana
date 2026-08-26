@@ -1,14 +1,19 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Settings, Music, Video, Camera, Globe, Trash2, Users, CheckCircle, Clock, AlertTriangle, ArrowRight, ArrowLeft, Plus, X, Share2, Copy } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
+import { Settings, Music, Users, Shield } from 'lucide-react';
 import Link from 'next/link';
 import Navbar from '../../components/v2/Navbar';
 import HeroCard from '../../components/v2/HeroCard';
 import FeatureGrid from '../../components/v2/FeatureGrid';
 import CountdownBar from '../../components/v2/CountdownBar';
+import { TermsModal, PrivacyModal } from '../../components/v2/LegalModals';
 import { supabase } from '../../lib/supabase';
+
+// Quiz + checkout + success load on demand (keeps landing First Load JS lean)
+const QuizFlow = dynamic(() => import('../../components/v2/QuizFlow'), { ssr: false });
 
 interface LoteState {
   status: 'ativo' | 'encerrado' | 'em_breve';
@@ -36,58 +41,14 @@ export default function Page() {
   });
 
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
-  const [isQuizOpen, setIsQuizOpen] = useState(false);
-  const [quizStep, setQuizStep] = useState(1);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isQuizLoading, setIsQuizLoading] = useState(false);
-  
-  // Draft Recovery states (Item 1)
-  const [draftToRestore, setDraftToRestore] = useState<any>(null);
 
-  // Terms and Privacy Popup states (Item 2)
+  // Quiz modal: mounted on demand, kept mounted afterwards so state/draft persists
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [quizMounted, setQuizMounted] = useState(false);
+
+  // Terms and Privacy footer popups
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
-
-  // Quiz form states
-  const [projectName, setProjectName] = useState('');
-  const [projectStyle, setProjectStyle] = useState('');
-  const [projectBio, setProjectBio] = useState('');
-  const [projectPhotoName, setProjectPhotoName] = useState<string | null>(null);
-  const [projectInstagram, setProjectInstagram] = useState('');
-  const [projectVideoLink, setProjectVideoLink] = useState('');
-  
-  const [respName, setRespName] = useState('');
-  const [respCpf, setRespCpf] = useState('');
-  const [respBirth, setRespBirth] = useState('');
-  const [respPhone, setRespPhone] = useState('');
-  
-  // Natural dynamic list of additional members (Item 3)
-  const [membersList, setMembersList] = useState<Array<{ name: string; cpf: string; birth: string }>>([]);
-  const [selectedMembers, setSelectedMembers] = useState(1);
-  const [acceptRules, setAcceptRules] = useState(false);
-
-  // Form interactive state for adding member inline
-  const [isAddingMemberInline, setIsAddingMemberInline] = useState(false);
-  const [newMemberName, setNewMemberName] = useState('');
-  const [newMemberCpf, setNewMemberCpf] = useState('');
-  const [newMemberBirth, setNewMemberBirth] = useState('');
-
-  // Database saved states
-  const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
-
-  // Popups states
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
-  const [isSuccessOpen, setIsSuccessOpen] = useState(false);
-  
-  // Checkout Simulated Timer (10m countdown)
-  const [checkoutTimeLeft, setCheckoutTimeLeft] = useState(600);
-
-  // Direction of Typeform slider ('next' | 'prev')
-  const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next');
-
-  // Dynamic status polling state for Pix confirmation (Item 4)
-  const [pollingStep, setPollingStep] = useState(0);
 
   // Sync pricing configurations from Supabase on mount
   useEffect(() => {
@@ -108,7 +69,7 @@ export default function Page() {
           const b1 = batches[0];
           const b2 = batches[1];
           const b3 = batches[2];
-          
+
           setLotesConfig({
             lote1: { status: b1.status, vagasRestantes: b1.vagas_restantes, valor: Number(b1.price_per_member), desc: 'Primeiras inscrições. Menor preço histórico.' },
             lote2: { status: b2.status, vagasRestantes: b2.vagas_restantes, valor: Number(b2.price_per_member), desc: 'Disponível na fase intermediária.' },
@@ -124,634 +85,28 @@ export default function Page() {
     fetchSupabaseConfig();
   }, []);
 
-  // Sync total selectedMembers dynamically to prevent logic empty slots bug!
-  useEffect(() => {
-    setSelectedMembers(1 + membersList.length);
-  }, [membersList]);
-
-  // Auto-save Quiz progress Draft on input state changes (Item 1)
-  useEffect(() => {
-    if (isQuizOpen && quizStep >= 1 && quizStep <= 5 && !draftToRestore) {
-      const draft = {
-        step: quizStep,
-        projectName,
-        projectStyle,
-        projectBio,
-        projectPhotoName,
-        projectInstagram,
-        projectVideoLink,
-        respName,
-        respCpf,
-        respBirth,
-        respPhone,
-        membersList
-      };
-      localStorage.setItem('quiz_draft_v2', JSON.stringify(draft));
-    }
-  }, [
-    isQuizOpen,
-    quizStep,
-    projectName,
-    projectStyle,
-    projectBio,
-    projectPhotoName,
-    projectInstagram,
-    projectVideoLink,
-    respName,
-    respCpf,
-    respBirth,
-    respPhone,
-    membersList,
-    draftToRestore
-  ]);
-
-  // Checkout ticking down timer
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isCheckoutOpen) {
-      setCheckoutTimeLeft(600); // Reset timer to 10 mins
-      interval = setInterval(() => {
-        setCheckoutTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            setIsCheckoutOpen(false);
-            alert("⏰ O prazo de 10 minutos para reserva expirou. Reinicie sua inscrição para garantir sua vaga.");
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isCheckoutOpen]);
-
-  // Dynamic automatic webhook transaction polling simulation (Item 4)
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isCheckoutOpen) {
-      setPollingStep(0);
-      
-      const triggerNextPoll = (current: number) => {
-        timer = setTimeout(() => {
-          setPollingStep(current + 1);
-          if (current + 1 < 3) {
-            triggerNextPoll(current + 1);
-          } else {
-            // Auto trigger simulated payout webhook on 3rd polling step!
-            handleSimulateWebhook();
-          }
-        }, 3000); // 3 seconds each step
-      };
-      
-      triggerNextPoll(0);
-    }
-    return () => clearTimeout(timer);
-  }, [isCheckoutOpen]);
-
-  const formatCheckoutTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
-
   const activePrice = lotesConfig.lote1.status === 'ativo' ? lotesConfig.lote1.valor : (lotesConfig.lote2.status === 'ativo' ? lotesConfig.lote2.valor : lotesConfig.lote3.valor);
   const activeLoteName = lotesConfig.lote1.status === 'ativo' ? 'LOTE 1' : (lotesConfig.lote2.status === 'ativo' ? 'LOTE 2' : 'LOTE 3');
-  const totalCost = selectedMembers * activePrice;
 
-  // Active Mask/Validations
-  const isValidCPF = (cpf: string) => {
-    const raw = cpf.replace(/[^\d]+/g, '');
-    if (raw.length !== 11 || /^(\d)\1{10}$/.test(raw)) return false;
-    let sum = 0, rest;
-    for (let i = 1; i <= 9; i++) sum += parseInt(raw.substring(i - 1, i)) * (11 - i);
-    rest = (sum * 10) % 11;
-    if (rest === 10 || rest === 11) rest = 0;
-    if (rest !== parseInt(raw.substring(9, 10))) return false;
-    sum = 0;
-    for (let i = 1; i <= 10; i++) sum += parseInt(raw.substring(i - 1, i)) * (12 - i);
-    rest = (sum * 10) % 11;
-    if (rest === 10 || rest === 11) rest = 0;
-    if (rest !== parseInt(raw.substring(10, 11))) return false;
-    return true;
+  // Open quiz instantly (no artificial loading) — chunk is code-split and pre-warmed on hover
+  const preloadQuiz = () => {
+    import('../../components/v2/QuizFlow');
   };
 
-  const isValidBirthDate = (dateStr: string) => {
-    const parts = dateStr.split("/");
-    if (parts.length !== 3) return false;
-    const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10);
-    const year = parseInt(parts[2], 10);
-    if (isNaN(day) || isNaN(month) || isNaN(year)) return false;
-    if (month < 1 || month > 12) return false;
-    if (year < 1920 || year > 2016) return false; 
-    const daysInMonth = new Date(year, month, 0).getDate();
-    if (day < 1 || day > daysInMonth) return false;
-    return true;
-  };
-
-  const isValidWhatsApp = (phoneStr: string) => {
-    const raw = phoneStr.replace(/[^\d]+/g, '');
-    if (raw.length !== 11) return false;
-    if (raw[2] !== '9') return false; 
-    const ddd = parseInt(raw.substring(0, 2), 10);
-    if (ddd < 11 || ddd > 99) return false;
-    return true;
-  };
-
-  // Open Quiz with dynamic Draft Recovery validation (Item 1)
   const handleOpenQuiz = () => {
-    const savedDraft = localStorage.getItem('quiz_draft_v2');
-    if (savedDraft) {
-      try {
-        const parsed = JSON.parse(savedDraft);
-        if (parsed.projectName) {
-          setDraftToRestore(parsed);
-          setIsQuizOpen(true);
-          setIsQuizLoading(false);
-          return;
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
+    setQuizMounted(true);
     setIsQuizOpen(true);
-    setIsQuizLoading(true);
-    setQuizStep(1);
-    setTimeout(() => {
-      setIsQuizLoading(false);
-    }, 1200);
   };
 
-  // Restore draft state variables
-  const handleRestoreDraft = () => {
-    if (draftToRestore) {
-      setProjectName(draftToRestore.projectName || '');
-      setProjectStyle(draftToRestore.projectStyle || '');
-      setProjectBio(draftToRestore.projectBio || '');
-      setProjectPhotoName(draftToRestore.projectPhotoName || null);
-      setProjectInstagram(draftToRestore.projectInstagram || '');
-      setProjectVideoLink(draftToRestore.projectVideoLink || '');
-      setRespName(draftToRestore.respName || '');
-      setRespCpf(draftToRestore.respCpf || '');
-      setRespBirth(draftToRestore.respBirth || '');
-      setRespPhone(draftToRestore.respPhone || '');
-      setMembersList(draftToRestore.membersList || []);
-      setQuizStep(draftToRestore.step || 1);
-      setDraftToRestore(null);
-    }
-  };
-
-  // Discard draft state variables
-  const handleDiscardDraft = () => {
-    localStorage.removeItem('quiz_draft_v2');
-    setProjectName('');
-    setProjectStyle('');
-    setProjectBio('');
-    setProjectPhotoName(null);
-    setProjectInstagram('');
-    setProjectVideoLink('');
-    setRespName('');
-    setRespCpf('');
-    setRespBirth('');
-    setRespPhone('');
-    setMembersList([]);
-    setQuizStep(1);
-    setDraftToRestore(null);
-
-    setIsQuizLoading(true);
-    setTimeout(() => {
-      setIsQuizLoading(false);
-    }, 1200);
-  };
-
-  // Client-side instant canvas image compression tool (Item 3)
-  const handleImageCompression = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files ? e.target.files[0] : null;
-    if (!file) return;
-
-    setProjectPhotoName("Processando imagem...");
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1200;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > MAX_WIDTH) {
-          height = Math.round((height * MAX_WIDTH) / width);
-          width = MAX_WIDTH;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          // Compress to high quality JPEG with 0.7 ratio
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-          
-          setProjectPhotoName(file.name + " (Web Comprimida)");
-          localStorage.setItem('temp_compressed_photo', compressedDataUrl);
-        }
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleQuizNext = () => {
-    if (quizStep === 1 && (!projectName || !projectStyle)) {
-      alert('Por favor, preencha todos os campos obrigatórios.'); return;
-    }
-    if (quizStep === 2 && (!projectBio || !projectPhotoName)) {
-      alert('Por favor, complete a biografia e envie a foto oficial.'); return;
-    }
-    if (quizStep === 3) {
-      if (!respName || respCpf.length < 14 || respBirth.length < 10 || respPhone.length < 14) {
-        alert('Por favor, preencha todos os campos do responsável.'); return;
+  // Reflected locally when a payment is confirmed inside the quiz flow
+  const handlePaymentSuccess = () => {
+    setLotesConfig(prev => ({
+      ...prev,
+      lote1: {
+        ...prev.lote1,
+        vagasRestantes: Math.max(0, prev.lote1.vagasRestantes - 1)
       }
-      if (!isValidCPF(respCpf)) {
-        alert('⚠️ CPF do responsável inválido!'); return;
-      }
-      if (!isValidBirthDate(respBirth)) {
-        alert('⚠️ Data de nascimento do responsável inválida (deve ser entre 1920 e 2016).'); return;
-      }
-      if (!isValidWhatsApp(respPhone)) {
-        alert('⚠️ Número do WhatsApp inválido! Deve ser celular brasileiro existente.'); return;
-      }
-    }
-    if (quizStep === 4) {
-      if (isAddingMemberInline) {
-        alert('Por favor, confirme ou descarte o integrante em preenchimento antes de avançar.');
-        return;
-      }
-      // Rule validation: total members (including leader) must be at least 2!
-      if (membersList.length < 1) {
-        alert('⚠️ O lineup da banda / dupla deve ter no mínimo 2 participantes (o líder + pelo menos 1 integrante). Adicione um integrante utilizando o botão "+ Escalar Integrante".');
-        return;
-      }
-      for (let i = 0; i < membersList.length; i++) {
-        const m = membersList[i];
-        if (!m.name || m.cpf.length < 14 || m.birth.length < 10) {
-          alert(`Por favor, preencha todos os dados obrigatórios do Integrante ${i+2}.`); return;
-        }
-        if (!isValidCPF(m.cpf)) {
-          alert(`⚠️ CPF do Integrante ${i+2} inválido!`); return;
-        }
-        if (!isValidBirthDate(m.birth)) {
-          alert(`⚠️ Data de nascimento do Integrante ${i+2} inválida!`); return;
-        }
-      }
-    }
-    setSlideDirection('next');
-    setQuizStep(quizStep + 1);
-  };
-
-  const handleQuizPrev = () => {
-    if (quizStep > 1) {
-      setSlideDirection('prev');
-      setQuizStep(quizStep - 1);
-    }
-  };
-
-  const handleMemberFieldChange = (index: number, field: string, value: string) => {
-    const copy = [...membersList];
-    copy[index] = { ...copy[index], [field]: value };
-    setMembersList(copy);
-  };
-
-  // Add Member inline directly with state verification
-  const saveMemberInline = () => {
-    if (selectedMembers >= 7) {
-      alert("O limite máximo do regulamento é de 7 integrantes por projeto.");
-      return;
-    }
-    if (!newMemberName || newMemberCpf.length < 14 || newMemberBirth.length < 10) {
-      alert("Por favor, preencha todas as informações do integrante.");
-      return;
-    }
-    if (!isValidCPF(newMemberCpf)) {
-      alert("⚠️ CPF do integrante inválido!");
-      return;
-    }
-    if (!isValidBirthDate(newMemberBirth)) {
-      alert("⚠️ Data de nascimento inválida!");
-      return;
-    }
-
-    // Append inline member directly
-    const copy = [...membersList];
-    copy.push({
-      name: newMemberName,
-      cpf: newMemberCpf,
-      birth: newMemberBirth
-    });
-    setMembersList(copy);
-
-    // Reset inline form fields
-    setNewMemberName('');
-    setNewMemberCpf('');
-    setNewMemberBirth('');
-    setIsAddingMemberInline(false);
-  };
-
-  const removeQuizMember = (index: number) => {
-    const copy = [...membersList];
-    copy.splice(index, 1);
-    setMembersList(copy);
-  };
-
-  // Insert candidate registration records with full try-catch network/adblocker protection! (Saves locally as fail-safe fallback)
-  const saveRegistrationToSupabase = async () => {
-    try {
-      // 1. Fetch active batch id from the database
-      const { data: activeBatch } = await supabase
-        .from('batches')
-        .select('*')
-        .eq('status', 'ativo')
-        .single();
-      
-      const batchId = activeBatch?.id || 'f68532e8-68c9-4cc4-bd38-976f4083e628';
-      const batchPrice = activeBatch ? Number(activeBatch.price_per_member) : 35;
-      
-      // 2. Insert into projects
-      const { data: project, error: pError } = await supabase
-        .from('projects')
-        .insert({
-          name: projectName,
-          style: projectStyle,
-          bio: projectBio,
-          photo_url: projectPhotoName || 'default_photo.png',
-          instagram: projectInstagram || null,
-          video_link: projectVideoLink || null,
-          status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (pError || !project) {
-        throw new Error(pError?.message || "Não foi possível criar o projeto no banco de dados.");
-      }
-
-      // 3. Insert responsible leader into members
-      const { error: leaderError } = await supabase
-        .from('members')
-        .insert({
-          project_id: project.id,
-          name: respName,
-          cpf: respCpf,
-          birth_date: respBirth,
-          phone: respPhone,
-          is_responsible: true
-        });
-
-      if (leaderError) throw leaderError;
-
-      // 4. Insert other members
-      if (membersList && membersList.length > 0) {
-        const otherMembers = membersList
-          .filter(m => m.name.trim() !== '')
-          .map((m) => ({
-            project_id: project.id,
-            name: m.name,
-            cpf: m.cpf,
-            birth_date: m.birth,
-            phone: '',
-            is_responsible: false
-          }));
-
-        if (otherMembers.length > 0) {
-          const { error: membersError } = await supabase
-            .from('members')
-            .insert(otherMembers);
-
-          if (membersError) throw membersError;
-        }
-      }
-
-      // 5. Insert pending subscription
-      const { error: subError } = await supabase
-        .from('subscriptions')
-        .insert({
-          project_id: project.id,
-          batch_id: batchId,
-          amount_paid: batchPrice * selectedMembers,
-          status: 'pending',
-          charge_id: 'pix_simulation_' + Math.random().toString(36).substring(2, 9)
-        });
-
-      if (subError) throw subError;
-
-      // Clean draft upon successful generation
-      localStorage.removeItem('quiz_draft_v2');
-
-      // 6. Save project id
-      setCreatedProjectId(project.id);
-      localStorage.setItem('current_project_id', project.id);
-      return project.id;
-    } catch (err: any) {
-      console.warn("Supabase connection issue (possibly blocked by adblocker, CORS, or connection outage). Triggering robust local simulation fallback:", err);
-      
-      const mockId = 'mock_proj_' + Math.random().toString(36).substring(2, 9);
-      
-      // Save full registration locally as backup
-      const localBackup = {
-        id: mockId,
-        name: projectName,
-        style: projectStyle,
-        bio: projectBio,
-        photo_url: projectPhotoName || 'default_photo.png',
-        instagram: projectInstagram || null,
-        video_link: projectVideoLink || null,
-        status: 'pending',
-        members: [
-          { name: respName, cpf: respCpf, birth_date: respBirth, phone: respPhone, is_responsible: true },
-          ...membersList.map(m => ({ name: m.name, cpf: m.cpf, birth_date: m.birth, phone: '', is_responsible: false }))
-        ],
-        amount_paid: selectedMembers * activePrice,
-        batch_name: activeLoteName
-      };
-
-      localStorage.setItem('fallback_project_' + mockId, JSON.stringify(localBackup));
-      localStorage.removeItem('quiz_draft_v2');
-      setCreatedProjectId(mockId);
-      localStorage.setItem('current_project_id', mockId);
-      return mockId;
-    }
-  };
-
-  // Instant optimistic checkout launcher - absolute zero delay (Item 2)
-  const handleLaunchCheckout = () => {
-    if (!acceptRules) {
-      alert('Declare concordar com as regras regulamentares para prosseguir.'); return;
-    }
-    // Launch popup instantly!
-    setIsQuizOpen(false);
-    setIsCheckoutOpen(true);
-    
-    // Process heavy background writes asynchronously in the background
-    saveRegistrationToSupabase();
-  };
-
-  const handleSimulateWebhook = async () => {
-    setIsCheckoutLoading(true);
-    try {
-      if (createdProjectId) {
-        if (createdProjectId.startsWith('mock_proj_')) {
-          const fallbackData = localStorage.getItem('fallback_project_' + createdProjectId);
-          if (fallbackData) {
-            const parsed = JSON.parse(fallbackData);
-            parsed.status = 'paid';
-            localStorage.setItem('fallback_project_' + createdProjectId, JSON.stringify(parsed));
-          }
-        } else {
-          // 1. Update project status to 'paid' (active)
-          await supabase
-            .from('projects')
-            .update({ status: 'paid' })
-            .eq('id', createdProjectId);
-
-          // 2. Update subscription status to 'paid' and set paid_at
-          await supabase
-            .from('subscriptions')
-            .update({ status: 'paid', paid_at: new Date().toISOString() })
-            .eq('project_id', createdProjectId);
-
-          // 3. Decrement active batch seats
-          const { data: activeBatch } = await supabase
-            .from('batches')
-            .select('*')
-            .eq('status', 'ativo')
-            .single();
-
-          if (activeBatch) {
-            await supabase
-              .from('batches')
-              .update({ vagas_restantes: Math.max(0, activeBatch.vagas_restantes - 1) })
-              .eq('id', activeBatch.id);
-          }
-        }
-        
-        // Reflect locally in our state immediately
-        setLotesConfig(prev => ({
-          ...prev,
-          lote1: {
-            ...prev.lote1,
-            vagasRestantes: Math.max(0, prev.lote1.vagasRestantes - 1)
-          }
-        }));
-      }
-      setTimeout(() => {
-        setIsCheckoutOpen(false);
-        setIsCheckoutLoading(false);
-        setIsSuccessOpen(true);
-      }, 1500);
-    } catch (err) {
-      console.error(err);
-      setIsCheckoutLoading(false);
-      alert("Erro ao processar confirmação de pagamento.");
-    }
-  };
-
-  const handleBypassClear = () => {
-    if (confirm('Deseja redefinir todo o chassi e limpar o formulário?')) {
-      setProjectName('');
-      setProjectStyle('');
-      setProjectBio('');
-      setProjectPhotoName(null);
-      setProjectInstagram('');
-      setProjectVideoLink('');
-      setRespName('');
-      setRespCpf('');
-      setRespBirth('');
-      setRespPhone('');
-      setMembersList([]);
-      setIsAddingMemberInline(false);
-      setNewMemberName('');
-      setNewMemberCpf('');
-      setNewMemberBirth('');
-      setAcceptRules(false);
-      setQuizStep(1);
-      setCreatedProjectId(null);
-      localStorage.removeItem('quiz_draft_v2');
-    }
-  };
-
-  // Fill mathematically valid mockup data into fields for testing (Testar Demo)
-  const fillDemoData = () => {
-    if (quizStep === 1) {
-      setProjectName("Os Profanos do Ritmo");
-      setProjectStyle("Rock Autoral");
-    } else if (quizStep === 2) {
-      setProjectBio("Formada em 2025 nas garagens da serra, a banda une timbres clássicos de fuzz a letras densas e poéticas em português. Nosso objetivo é o palco principal do festival Pedra Profana Sessions 2026.");
-      setProjectPhotoName("foto_backstage.jpg (Simulada)");
-      setProjectInstagram("@osprofanos");
-      setProjectVideoLink("https://youtube.com/watch?v=demo-profana");
-    } else if (quizStep === 3) {
-      setRespName("Emily Bryan");
-      setRespCpf("123.456.789-09"); // 100% Mathematically valid CPF
-      setRespBirth("12/10/1998");
-      setRespPhone("(21) 98765-4321");
-    } else if (quizStep === 4) {
-      // Inline add automatic test member
-      setNewMemberName("John Bryan");
-      setNewMemberCpf("123.456.789-09");
-      setNewMemberBirth("24/05/2000");
-      setIsAddingMemberInline(true);
-    } else if (quizStep === 5) {
-      setAcceptRules(true);
-    }
-  };
-
-  // Convocatoria copy text tool for viral share (Item 5)
-  const handleViralShare = () => {
-    const text = `Matrícula confirmada para a nossa banda "${projectName || 'Canção Profana'}" no Concurso Musical Canção Profana 2026! Nos vemos nos palcos da Pedra Profana! 🎸🔥`;
-    navigator.clipboard.writeText(text).then(() => {
-      alert("✓ Convocação copiada com sucesso! Compartilhe o seu passaporte e marque a Pedra Profana nas suas redes sociais!");
-    }).catch(() => {
-      alert("Texto de convocação: " + text);
-    });
-  };
-
-  const copyPixCode = () => {
-    alert('✓ Código Pix Copiado!');
-  };
-
-  const applyCpfMask = (val: string) => {
-    let value = val.replace(/\D/g, "");
-    if (value.length > 11) value = value.substring(0, 11);
-    value = value.replace(/(\d{3})(\d)/, "$1.$2");
-    value = value.replace(/(\d{3})(\d)/, "$1.$2");
-    value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-    return value;
-  };
-
-  const applyDateMask = (val: string) => {
-    let value = val.replace(/\D/g, "");
-    if (value.length > 8) value = value.substring(0, 8);
-    value = value.replace(/(\d{2})(\d)/, "$1/$2");
-    value = value.replace(/(\d{2})(\d)/, "$1/$2");
-    return value;
-  };
-
-  const applyPhoneMask = (val: string) => {
-    let value = val.replace(/\D/g, "");
-    if (value.length > 11) value = value.substring(0, 11);
-    if (value.length > 10) {
-      value = value.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
-    } else if (value.length > 5) {
-      value = value.replace(/^(\d{2})(\d{4})(\d{0,4})$/, "($1) $2-$3");
-    } else if (value.length > 2) {
-      value = value.replace(/^(\d{2})(\d{0,5})$/, "($1) $2");
-    } else {
-      value = value.replace(/^(\d*)$/, "($1");
-    }
-    return value;
+    }));
   };
 
   const faqs = [
@@ -760,7 +115,7 @@ export default function Page() {
     { q: 'Como funciona o sistema de votação durante a live?', a: 'A votação possui três canais complementares de avaliação: 1. Voto dos Jurados (Índio, Naraiane e Matheus T dão notas de 0 a 10 nos critérios de Apresentação, Composição e Estética); 2. Voto da Equipe do Estúdio (Nota baseada no envolvimento); 3. Voto Popular (Computado logo após cada live sessions, onde o volume absoluto de votos destrava as vagas de avanço).' },
     { q: 'Quantas músicas posso inscrever no concurso?', a: 'Cada grupo pode inscrever um repertório de no máximo 3 músicas para se apresentar e gravar nas transmissões oficiais.' },
     { q: 'Qual é o prazo final para inscrição?', a: 'A campanha completa de captação dura no máximo 28 dias. O Lote 1 vigora nos primeiros 10 dias de abertura; o Lote 2 nos dias 11 a 20; e o Lote 3 estende-se do dia 21 até o encerramento do prazo regulamentar.' },
-    { q: 'Como recebo a confirmação da minha inscrição?', a: 'Logo após a validação segura do pagamento PIX por nosso sistema de webhook, você receberá um e-mail transacional de confirmação com os detalhes da sua inscrição e as diretrizes completas de estúdio.' },
+    { q: 'Como recebo a confirmação da minha inscrição?', a: 'Assim que o Pix é validado, o status da sua matrícula aparece automaticamente no portal "Minha Inscrição", vinculado ao e-mail informado no cadastro. Leve o código do seu passe no dia da gravação.' },
     { q: 'O que acontece se eu me inscrever e não puder participar?', a: 'Caso ocorram imprevistos justificáveis, o grupo deve notificar a equipe de estúdio com no mínimo 5 dias de antecedência para realocação em novas datas sob disponibilidade. Em casos extremos, a inscrição pode ser transferida para outro projeto parceiro sob análise técnica.' },
     { q: 'Posso inscrever uma música em parceria ou coautoria?', a: 'Sim! Com certeza. Desde que a banda detranque os direitos autorais para as transmissões oficiais da gravação e pelo menos uma das faixas do repertório de 3 músicas seja de autoria e em língua portuguesa.' },
     { q: 'Como funciona cada fase do concurso?', a: 'O concurso possui 3 fases ativas: Etapa 1 (Transmissão ao Vivo): as bandas gravam ao vivo no estúdio e transmitem com arrecadação direta na tela. Etapa 2 (Podcast especial): as bandas selecionadas participam de um podcast de divulgação. Etapa 3 (Grande Final): Apresentação presencial ao vivo para o público e revelação dos vencedores pela média final de notas.' },
@@ -769,7 +124,7 @@ export default function Page() {
 
   return (
     <div className="bg-[#05070B] text-[#F0EAE0] min-h-screen relative font-sans antialiased">
-      
+
       {/* UNIFIED FIXED CONTAINER FOR COUNTDOWN AND NAVBAR (Resolves overlap bug!) */}
       <div className="fixed top-0 left-0 right-0 z-50 w-full bg-[#05070B]/95 backdrop-blur-md">
         <CountdownBar />
@@ -778,7 +133,7 @@ export default function Page() {
 
       {/* MAIN CONTAINER WITH FIXED NAVBAR ADJUSTMENT PT */}
       <main className="max-w-6xl mx-auto px-6 pt-32 sm:pt-40 pb-10 grow space-y-24 relative z-10">
-        
+
         {/* HERO SECTION */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-center py-2 md:py-6">
           <div className="lg:col-span-7 space-y-4">
@@ -797,6 +152,7 @@ export default function Page() {
               <button
                 type="button"
                 onClick={handleOpenQuiz}
+                onMouseEnter={preloadQuiz}
                 className="btn-gold-shimmer px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black shadow-[0_0_30px_rgba(227,181,82,0.35)] w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all"
               >
                 INSCREVER-SE
@@ -813,10 +169,13 @@ export default function Page() {
           <div className="lg:col-span-5 relative flex justify-center mt-4 lg:mt-0">
             <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-[32px] p-5 sm:p-6 w-full max-w-sm space-y-4 relative overflow-hidden shadow-2xl">
               <div className="w-full aspect-square rounded-2xl overflow-hidden border border-white/10 relative">
-                <img
+                <Image
                   src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=600&q=80"
                   alt="Gravação ao vivo"
-                  className="w-full h-full object-cover grayscale brightness-90"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 90vw, 380px"
+                  className="object-cover grayscale brightness-90"
                 />
                 <span className="absolute top-3 left-3 bg-[#F0C265] text-black font-mono text-xs uppercase tracking-widest px-3 py-1 rounded border border-black font-bold">
                   STUDIO LIVE
@@ -887,13 +246,13 @@ export default function Page() {
               <span className="text-[#F0C265]">•</span>
               <span>MÁXIMO DE 7 INTEGRANTES</span>
             </div>
-            <p className="text-xs text-bento-snow/60 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xs text-[#F0EAE0]/60 max-w-2xl mx-auto leading-relaxed">
               Para garantir a segurança física, qualidade acústica e colaboração mútua nas apresentações gravadas nos estúdios da Pedra Profana, as regras abaixo de lineup são estritas. Não são permitidos projetos solo sem acompanhantes.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
+
             <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#F0C265]/40 transition-all duration-300">
               <div className="w-10 h-10 rounded bg-[#E3B552]/10 border border-[#E3B552]/30 flex items-center justify-center text-[#F0C265]">
                 <Music className="w-5 h-5 stroke-[2.2]" />
@@ -967,7 +326,7 @@ export default function Page() {
               O QUE ESTÁ EM JOGO
             </h2>
           </div>
-          
+
           {/* Staggered Grid Deliverables */}
           <FeatureGrid />
 
@@ -984,7 +343,7 @@ export default function Page() {
             <h2 className="font-display font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white uppercase tracking-tight">
               TABELA PROGRESSIVA DE LOTES
             </h2>
-            
+
             {/* Live Status banner simulation */}
             {lotesConfig.live.status === 'ao_vivo' && (
               <div className="py-4 px-6 rounded-2xl border-2 border-red-500 bg-red-950/20 text-red-500 flex flex-col sm:flex-row justify-between items-center gap-4 animate-pulse">
@@ -1026,8 +385,8 @@ export default function Page() {
                 <div
                   key={i}
                   className={`bg-[#0B0F19]/60 backdrop-blur-xl border-2 rounded-[24px] p-5 flex flex-col justify-between shadow transition-all duration-300 ${
-                    isActive 
-                      ? 'border-[#10B981] scale-[1.02] shadow-[0_0_20px_rgba(16,185,129,0.15)] bg-[#0B0F19]/90' 
+                    isActive
+                      ? 'border-[#10B981] scale-[1.02] shadow-[0_0_20px_rgba(16,185,129,0.15)] bg-[#0B0F19]/90'
                       : 'border-white/5 opacity-50 bg-[#0B0F19]/30'
                   }`}
                 >
@@ -1068,7 +427,7 @@ export default function Page() {
                     ) : (
                       <p className="text-sm text-gray-300 leading-normal">{l.desc}</p>
                     )}
-                    
+
                     {isActive && l.vagas !== undefined && (
                       <div className="space-y-1 bg-black/40 p-2.5 rounded-xl border border-white/5">
                         <span className="font-mono text-sm text-gray-300 block font-bold">VAGAS RESTANTES: {l.vagas}</span>
@@ -1099,6 +458,7 @@ export default function Page() {
           <div className="pt-6 text-center">
             <button
               onClick={handleOpenQuiz}
+              onMouseEnter={preloadQuiz}
               className="btn-gold-shimmer px-10 py-4 rounded-2xl text-md shadow-[0_0_30px_rgba(240,194,101,0.3)]"
             >
               Garantir Inscrição Lote 1
@@ -1164,675 +524,20 @@ export default function Page() {
         </div>
       </footer>
 
-      {/* QUIZ INTERACTIVE POPUP MODAL - MODIFIED TO NOT HAVE INTERNAL SCROLL AND EXPAND EXTERNALLY ON THE WEB PAGE (Item 1 & 2) */}
-      <AnimatePresence>
-        {isQuizOpen && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start sm:items-center">
-            
-            {/* Modal Card Backdrop/Shadow wrapper */}
-            <div className="absolute inset-0 cursor-pointer" onClick={() => setIsQuizOpen(false)}></div>
+      {/* QUIZ + CHECKOUT + SUCCESS — code-split, loads only when opened */}
+      {quizMounted && (
+        <QuizFlow
+          isOpen={isQuizOpen}
+          onClose={() => setIsQuizOpen(false)}
+          activePrice={activePrice}
+          activeLoteName={activeLoteName}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
+      )}
 
-            <motion.div
-              initial={{ scale: 0.95, y: 30, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 30, opacity: 0 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="bg-black/95 border-2 border-[#E3B552] w-full max-w-xl rounded-[32px] p-6 md:p-8 my-8 relative space-y-6 shadow-[0_10px_50px_rgba(0,0,0,0.8)] flex flex-col justify-between z-10"
-            >
-              <button type="button" onClick={() => setIsQuizOpen(false)} className="absolute right-5 top-5 text-[#B3B3B3] hover:text-white font-mono text-2xl font-bold">&times;</button>
-              
-              {/* DRAFT RECOVERY CONFIRMATION ALREADY BUILT AND SAFE! (Item 1) */}
-              {draftToRestore ? (
-                <div className="flex flex-col items-center justify-center py-10 text-center space-y-6">
-                  <div className="w-12 h-12 rounded-full bg-[#F0C265]/10 text-[#F0C265] border border-[#F0C265]/20 flex items-center justify-center text-xl shadow">⚡</div>
-                  <div className="space-y-2">
-                    <h3 className="font-display font-black text-xl text-white uppercase tracking-tight">Rascunho de Inscrição Ativo</h3>
-                    <p className="text-xs text-gray-300 max-w-sm mx-auto leading-relaxed">
-                      Encontramos um progresso de matrícula salvo localmente para a banda/dupla <strong className="text-[#F0C265]">"{draftToRestore.projectName}"</strong> no Passo <strong className="text-[#F0C265]">0{draftToRestore.step}/05</strong>. Deseja retomar?
-                    </p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs pt-2">
-                    <button type="button" onClick={handleDiscardDraft} className="w-full sm:w-1/2 font-mono text-xs font-bold text-gray-400 px-4 py-3 border border-white/10 rounded-full hover:bg-white/5 transition-colors uppercase">Descartar</button>
-                    <button type="button" onClick={handleRestoreDraft} className="w-full sm:w-1/2 btn-gold-shimmer px-4 py-3 rounded-full text-xs uppercase tracking-widest font-black text-black">Continuar</button>
-                  </div>
-                </div>
-              ) : isQuizLoading ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                  {/* Golden pulsating wave spinner */}
-                  <div className="relative w-12 h-12">
-                    <div className="absolute inset-0 rounded-full border-2 border-[#F0C265] border-t-transparent animate-spin"></div>
-                    <div className="absolute inset-2 rounded-full border-2 border-[#F0C265]/30 border-b-transparent animate-spin animation-reverse"></div>
-                  </div>
-                  <span className="font-mono text-xs uppercase tracking-widest text-[#F0C265] font-black animate-pulse">
-                    Iniciando Chassi de Inscrição...
-                  </span>
-                </div>
-              ) : (
-                <>
-                  {/* STATUS PROGRESS BAR */}
-                  <div className="space-y-2 shrink-0">
-                    <div className="flex justify-between items-baseline">
-                      <span className="font-mono text-sm md:text-base text-[#F0C265] font-black uppercase tracking-widest">
-                        Passo {quizStep} de 5
-                      </span>
-                      <span className="font-mono text-sm md:text-base text-gray-400 font-bold">
-                        Progresso: {quizStep * 20}%
-                      </span>
-                    </div>
-                    <div className="w-full h-2 bg-black rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-[#FFF2D4] via-[#F0C265] to-[#B88A28] transition-all duration-300" style={{ width: `${quizStep * 20}%` }}></div>
-                    </div>
-                  </div>
-
-                  {/* STEP CONTENTS */}
-                  <form onSubmit={(e) => e.preventDefault()} className="grow flex flex-col justify-between gap-6">
-                    
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={quizStep}
-                        initial={{ x: slideDirection === 'next' ? 50 : -50, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: slideDirection === 'next' ? -50 : 50, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: 'easeInOut' }}
-                        className="space-y-6"
-                      >
-                        {quizStep === 1 && (
-                          <div className="space-y-4">
-                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Dados do Projeto</h3>
-                            <p className="text-sm text-gray-300">Insira as informações gerais da banda/artista.</p>
-                            <div className="space-y-4 pt-2">
-                              <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome da Banda / Dupla de Rap *</label>
-                                <input 
-                                  type="text" 
-                                  value={projectName} 
-                                  onChange={(e) => setProjectName(e.target.value)} 
-                                  placeholder="Ex: The Jackson Five" 
-                                  className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" 
-                                  required 
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Estilo / Gênero *</label>
-                                <input 
-                                  type="text" 
-                                  value={projectStyle} 
-                                  onChange={(e) => setProjectStyle(e.target.value)} 
-                                  placeholder="Ex: R&B" 
-                                  className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" 
-                                  required 
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {quizStep === 2 && (
-                          <div className="space-y-4">
-                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Biografia & Mídia</h3>
-                            <p className="text-sm text-gray-300">Estas informações serão avaliadas pelo corpo de jurados técnicos.</p>
-                            <div className="space-y-4 pt-2">
-                              <div className="space-y-1">
-                                <div className="flex justify-between items-baseline">
-                                  <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Biografia *</label>
-                                  
-                                  {/* Dynamic Profile Strength Meter (Item 2) */}
-                                  <span className="font-mono text-[9px] uppercase tracking-wider font-bold">
-                                    {projectBio.length <= 80 && <span className="text-red-500">Fraca 🔴 (Adicione mais detalhes)</span>}
-                                    {projectBio.length > 80 && projectBio.length <= 220 && <span className="text-yellow-500">Boa 🟡 (Fale de influências e objetivos)</span>}
-                                    {projectBio.length > 220 && <span className="text-emerald-500">Excelente! 🟢 (Lineup qualificado)</span>}
-                                  </span>
-                                </div>
-                                <textarea 
-                                  value={projectBio} 
-                                  onChange={(e) => setProjectBio(e.target.value.slice(0, 400))} 
-                                  rows={3} 
-                                  maxLength={400} 
-                                  className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] resize-none focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" 
-                                  required 
-                                />
-                                <span className="text-xs text-gray-500 font-mono block text-right mt-1 font-bold">{projectBio.length}/400 caracteres</span>
-                              </div>
-                              <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Foto Oficial *</label>
-                                
-                                {/* Dynamic real-time browser canvas compression image upload handler (Item 3) */}
-                                <div className="border border-dashed border-white/10 hover:border-[#E3B552] rounded-xl p-5 text-center cursor-pointer bg-black/40 relative">
-                                  <input type="file" onChange={handleImageCompression} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" required />
-                                  {projectPhotoName ? (
-                                    <span className="text-sm text-[#10B981] font-bold">✓ Foto Selecionada: {projectPhotoName}</span>
-                                  ) : (
-                                    <span className="text-sm text-gray-400">Arraste ou clique para carregar foto</span>
-                                  )}
-                                </div>
-                                <span className="text-[10px] text-gray-500 font-mono block mt-1">Formatos: JPEG, PNG, WEBP. Max: 5MB. Compressor client-side ativo (peso reduzido a &lt; 250KB).</span>
-                              </div>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                  <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Instagram (Opcional)</label>
-                                  <input 
-                                    type="text" 
-                                    value={projectInstagram} 
-                                    onChange={(e) => setProjectInstagram(e.target.value)} 
-                                    placeholder="Ex: @suabanda" 
-                                    className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-xs outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" 
-                                  />
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Link do Vídeo (Opcional)</label>
-                                  <input 
-                                    type="url" 
-                                    value={projectVideoLink} 
-                                    onChange={(e) => setProjectVideoLink(e.target.value)} 
-                                    placeholder="Ex: https://youtube.com/watch?v=..." 
-                                    className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-xs outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" 
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {quizStep === 3 && (
-                          <div className="space-y-4">
-                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Líder Responsável</h3>
-                            <p className="text-sm text-gray-300">Preencha as credenciais do integrante responsável legal da banda / dupla.</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                              <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome Completo *</label>
-                                <input type="text" value={respName} onChange={(e) => setRespName(e.target.value)} className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" required />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">CPF *</label>
-                                <input type="text" value={respCpf} onChange={(e) => setRespCpf(applyCpfMask(e.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" maxLength={14} required />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nascimento *</label>
-                                <input type="text" value={respBirth} onChange={(e) => setRespBirth(applyDateMask(e.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" maxLength={10} required />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">WhatsApp *</label>
-                                <input type="tel" value={respPhone} onChange={(e) => setRespPhone(applyPhoneMask(e.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors" maxLength={15} required />
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {quizStep === 4 && (
-                          <div className="space-y-4">
-                            <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                              <div>
-                                <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Lineup da Banda</h3>
-                                <p className="text-xs text-gray-300">Preencha o roster oficial de integrantes (Mínimo 2, Máximo 7).</p>
-                              </div>
-                              <button 
-                                type="button" 
-                                onClick={() => setIsAddingMemberInline(true)}
-                                className="flex items-center gap-1.5 font-mono text-xs font-bold text-black bg-[#F0C265] px-3.5 py-2.5 rounded-full hover:bg-[#FFF2D4] active:scale-95 transition-all outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B]"
-                              >
-                                <Plus className="w-4 h-4" /> Escalar Integrante
-                              </button>
-                            </div>
-
-                            {/* Interactive dynamic inline member insert form (Item 3) */}
-                            <AnimatePresence>
-                              {isAddingMemberInline && (
-                                <motion.div 
-                                  initial={{ height: 0, opacity: 0 }}
-                                  animate={{ height: 'auto', opacity: 1 }}
-                                  exit={{ height: 0, opacity: 0 }}
-                                  className="bg-black/50 p-4 border border-[#E3B552]/30 rounded-2xl space-y-4 overflow-hidden"
-                                >
-                                  <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                                    <span className="font-mono text-xs text-[#F0C265] font-bold uppercase tracking-wider">Novo Integrante Roster</span>
-                                    <button type="button" onClick={() => setIsAddingMemberInline(false)} className="text-gray-400 hover:text-white"><X className="w-4 h-4" /></button>
-                                  </div>
-                                  
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">Nome Completo</label>
-                                      <input type="text" value={newMemberName} onChange={(newE) => setNewMemberName(newE.target.value)} className="w-full bg-[#05070B] border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" />
-                                    </div>
-                                    <div className="space-y-1">
-                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">CPF</label>
-                                      <input type="text" value={newMemberCpf} onChange={(newE) => setNewMemberCpf(applyCpfMask(newE.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" maxLength={14} />
-                                    </div>
-                                    <div className="space-y-1 sm:col-span-2">
-                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">Nascimento (DD/MM/AAAA)</label>
-                                      <input type="text" value={newMemberBirth} onChange={(newE) => setNewMemberBirth(applyDateMask(newE.target.value))} className="w-full bg-[#05070B] border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552]" maxLength={10} />
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="flex justify-end gap-2.5 pt-2">
-                                    <button type="button" onClick={() => setIsAddingMemberInline(false)} className="font-mono text-xs font-bold text-gray-400 px-4 py-2 border border-white/10 rounded-full">Descartar</button>
-                                    <button type="button" onClick={saveMemberInline} className="font-mono text-xs font-bold text-black bg-[#10B981] px-4 py-2 rounded-full">Confirmar</button>
-                                  </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-
-                            <div className="space-y-3 overflow-y-auto max-h-[220px] pr-1">
-                              <div className="bg-[#05070B] p-4 flex justify-between items-center border border-white/5 rounded-2xl shadow">
-                                <div className="flex items-center gap-3">
-                                  <span className="w-8 h-8 rounded-full bg-[#F0C265]/10 text-[#F0C265] flex items-center justify-center font-mono text-xs font-bold border border-[#F0C265]/20">1</span>
-                                  <div>
-                                    <span className="text-xs sm:text-sm font-bold text-white block">{respName || 'Nome do Líder'}</span>
-                                    <span className="font-mono text-[10px] text-gray-400 uppercase block mt-0.5">Integrante 1 • Líder Responsável (CPF: {respCpf || '---'})</span>
-                                  </div>
-                                </div>
-                                <span className="font-mono text-[9px] text-[#F0C265] bg-[#F0C265]/10 px-2.5 py-1 rounded border border-[#F0C265]/20 uppercase font-bold tracking-wider">Fixo</span>
-                              </div>
-
-                              {membersList.map((m, index) => (
-                                <div key={index} className="bg-[#05070B] p-4 flex justify-between items-center border border-white/5 rounded-2xl shadow hover:border-white/10 transition-colors">
-                                  <div className="flex items-center gap-3">
-                                    <span className="w-8 h-8 rounded-full bg-[#E3B552]/10 text-[#F0C265] flex items-center justify-center font-mono text-xs font-bold border border-[#E3B552]/20">{index + 2}</span>
-                                    <div>
-                                      <span className="text-xs sm:text-sm font-bold text-white block">{m.name || `Integrante ${index + 2}`}</span>
-                                      <span className="font-mono text-[10px] text-gray-400 uppercase block mt-0.5">Integrante {index + 2} • CPF: {m.cpf || '---'} • Nascimento: {m.birth || '---'}</span>
-                                    </div>
-                                  </div>
-                                  <button type="button" onClick={() => removeQuizMember(index)} className="text-xs text-red-500 hover:text-red-400 font-bold uppercase font-mono tracking-wider flex items-center gap-1">
-                                    <Trash2 className="w-3.5 h-3.5" /> Remover
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {quizStep === 5 && (
-                          <div className="space-y-4">
-                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Revisar Matrícula</h3>
-                            <p className="text-sm text-gray-300">Confirme os dados consolidados do sinal.</p>
-                            
-                            <div className="bg-black/50 p-5 rounded-2xl border border-white/5 space-y-4 text-xs font-mono">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <span className="text-gray-400 block text-xs font-bold uppercase">PROJETO BANDA:</span>
-                                  <span className="font-bold text-white text-sm block mt-1">{projectName || '-'}</span>
-                                </div>
-                                <div>
-                                  <span className="text-gray-400 block text-xs font-bold uppercase">RESPONSÁVEL LÍDER:</span>
-                                  <span className="font-bold text-white text-sm block mt-1">{respName || '-'}</span>
-                                </div>
-                                <div>
-                                  <span className="text-gray-400 block text-xs font-bold uppercase">LOTE VIGENTE:</span>
-                                  <span className="font-bold text-[#F0C265] text-sm block mt-1 uppercase">{activeLoteName} (R$ {activePrice} / integrante)</span>
-                                </div>
-                                <div>
-                                  <span className="text-gray-400 block text-xs font-bold uppercase">INTEGRANTES CONECTADOS:</span>
-                                  <span className="font-bold text-white text-sm block mt-1">{selectedMembers}</span>
-                                </div>
-                              </div>
-
-                              <div className="border-t border-white/5 pt-4 flex flex-col sm:flex-row justify-between items-baseline gap-4">
-                                <div className="space-y-2">
-                                  <span className="font-mono text-sm text-[#F0C265] font-bold block">RETORNO GARANTIDO INCLUÍDO:</span>
-                                  <div className="space-y-1.5 text-[10px] md:text-xs text-gray-400 font-mono">
-                                    <div className="flex items-center gap-2">
-                                      <span>• Gravação e Transmissão de Live no Estúdio:</span>
-                                      <span className="line-through">R$ 1.500,00</span>
-                                      <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span>• Mixagem e Masterização Multicanal Profissional:</span>
-                                      <span className="line-through">R$ 600,00</span>
-                                      <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span>• Direção Artística e Sessão de Fotos:</span>
-                                      <span className="line-through">R$ 500,00</span>
-                                      <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span>• Assessoria de Imprensa e Kit de Divulgação:</span>
-                                      <span className="line-through">R$ 400,00</span>
-                                      <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="text-right shrink-0">
-                                  <span className="font-mono text-sm text-gray-300 block font-bold">TAXA TOTAL DO GRUPO:</span>
-                                  <span className="text-3xl font-display font-black text-[#F0C265] block mt-1">R$ {totalCost},00</span>
-                                  <span className="text-xs text-gray-300 font-mono block mt-1 uppercase">E mais {selectedMembers}kg de alimento</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="p-1">
-                              <label className="flex items-start gap-3 cursor-pointer">
-                                <input type="checkbox" checked={acceptRules} onChange={(e) => setAcceptRules(e.target.checked)} className="mt-1 w-4 h-4 text-[#F0C265] bg-black border-[#2E2820] rounded focus:ring-[#F0C265]" />
-                                <span className="text-xs text-gray-300 leading-relaxed font-normal">
-                                  Declaramos ler e anuir os termos de uso e política de privacidade, concordando com as etapas.
-                                </span>
-                              </label>
-                            </div>
-                          </div>
-                        )}
-                      </motion.div>
-                    </AnimatePresence>
-
-                    {/* CONTROLS */}
-                    <div className="border-t border-[#2C2C2C] pt-4 flex justify-between items-center gap-4 shrink-0">
-                      <div className="flex flex-col">
-                        <span className="text-xs text-[#B3B3B3] font-mono uppercase tracking-widest block font-bold">PASSO ATIVO</span>
-                        <span className="text-sm text-[#F0EAE0] font-bold font-mono">0{quizStep}/05</span>
-                      </div>
-
-                      <div className="flex gap-2.5">
-                        {/* Golden test demo filler button (no raw bypass) */}
-                        <button type="button" onClick={fillDemoData} className="font-mono text-xs font-bold text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/20 px-3.5 py-2 rounded-xl uppercase hover:bg-[#F0C265] hover:text-black transition-colors">Testar Demo</button>
-                        
-                        {quizStep > 1 && (
-                          <button type="button" onClick={handleQuizPrev} className="font-mono text-xs font-bold text-white border border-white/10 bg-white/5 px-5 py-2.5 rounded-xl uppercase">Voltar</button>
-                        )}
-                        {quizStep < 5 ? (
-                          <button type="button" onClick={handleQuizNext} className="btn-gold-shimmer px-7 py-2.5 rounded uppercase border-none text-black">Continuar</button>
-                        ) : (
-                          <button type="button" disabled={isSaving} onClick={handleLaunchCheckout} className="font-mono text-xs font-bold text-black bg-lime px-7 py-2.5 rounded-xl uppercase border-none">
-                            {isSaving ? "Gravando..." : "Gerar Pix"}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                  </form>
-                </>
-              )}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* CHECKOUT POPUP MODAL - MODIFIED FOR PORT WRAPPER SCROLL (Item 1 & 2) */}
-      <AnimatePresence>
-        {isCheckoutOpen && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start sm:items-center">
-            
-            <div className="absolute inset-0 cursor-pointer" onClick={() => setIsCheckoutOpen(false)}></div>
-
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-black/95 border-2 border-[#E3B552] max-w-sm w-full p-6 rounded-[32px] relative space-y-6 shadow-2xl z-10"
-            >
-              <button onClick={() => setIsCheckoutOpen(false)} className="absolute right-4 top-4 text-gray-400 hover:text-white font-mono text-xl">&times;</button>
-              
-              <div className="text-center space-y-2 pt-2">
-                <span className="font-mono text-sm text-lime font-bold bg-lime/10 border border-lime/20 px-3 py-1 rounded-full w-max mx-auto block uppercase">● Servidor Autenticado</span>
-                <h3 className="font-display font-bold text-xl text-white uppercase tracking-tight">PIX DE INSCRIÇÃO</h3>
-              </div>
-
-              <div className="bg-[#030407] p-4 rounded-xl flex flex-col items-center space-y-4 border border-white/5">
-                <div className="w-48 h-48 bg-white p-3 rounded-xl flex items-center justify-center relative shadow-lg">
-                  <div className="w-full h-full border border-black/10 flex flex-col justify-between p-2">
-                    <div className="flex justify-between">
-                      <div className="w-8 h-8 bg-black"></div>
-                      <div className="w-8 h-8 bg-black"></div>
-                    </div>
-                    <div className="text-center font-bold text-[8px] text-[#05070B] font-mono uppercase tracking-widest leading-none py-2">Canção Profana</div>
-                    <div className="flex justify-between">
-                      <div className="w-8 h-8 bg-black"></div>
-                      <div className="w-12 h-12 border border-black border-dashed flex items-center justify-center"><div className="w-6 h-6 bg-[#F0C265]"></div></div>
-                    </div>
-                  </div>
-                  {isCheckoutLoading && (
-                    <div className="absolute inset-0 bg-[#05070B]/95 flex flex-col items-center justify-center text-center p-3 rounded-xl">
-                      <span className="w-8 h-8 rounded-full border-2 border-[#F0C265] border-t-transparent animate-spin mb-3"></span>
-                      
-                      {/* Interactive real-time dynamic log loader labels (Item 4) */}
-                      <div className="space-y-1 mt-2 text-center relative z-20">
-                        <span className="font-mono text-xs text-[#F0C265] uppercase tracking-widest font-bold block animate-pulse">
-                          {pollingStep === 0 && "Aguardando sinal da rede..."}
-                          {pollingStep === 1 && "Consultando compensação..."}
-                          {pollingStep === 2 && "Identificando Pix bancário..."}
-                          {pollingStep >= 3 && "Confirmando sua vaga..."}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="text-center space-y-3 w-full">
-                  <div>
-                    <span className="font-mono text-[10px] text-gray-500 block uppercase font-bold">TOTAL CONVERSÃO:</span>
-                    <span className="text-2xl font-mono font-black text-lime block mt-0.5">R$ {totalCost},00</span>
-                  </div>
-
-                  {/* 10m countdown with yellow pulsating dot positioned dynamically below green total value */}
-                  <div className="flex items-center justify-center gap-2 font-mono text-[10px] text-[#FFF2D4] bg-[#8B1E1E]/20 border border-[#8B1E1E]/30 py-1.5 px-3 rounded-full w-max mx-auto shadow-inner">
-                    <span className="relative flex h-1.5 w-1.5 shrink-0">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F0C265] opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#F0C265]"></span>
-                    </span>
-                    <span>Vaga reservada por: {formatCheckoutTime(checkoutTimeLeft)}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <button onClick={copyPixCode} className="font-mono text-sm font-bold text-white bg-white/5 border border-[#2E2820] py-3 rounded-xl w-full hover:bg-white/10 transition-colors uppercase">Copiar Código Pix</button>
-                <button onClick={handleSimulateWebhook} className="font-mono text-sm font-bold text-black bg-lime py-3 rounded-xl w-full hover:bg-lime/90 transition-colors uppercase border-none shadow-lg shadow-lime/20">Confirmar Pagamento</button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* SUCCESS STATE - BACKSTAGE PASS / CONCERT TICKET (Item 6) WITH INSTAGRAM STORY SHARE OPTION (Item 5) */}
-      <AnimatePresence>
-        {isSuccessOpen && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start sm:items-center">
-            
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-black/95 border-2 border-[#F0C265] max-w-md w-full rounded-[32px] text-center overflow-hidden shadow-2xl relative my-8"
-            >
-              
-              {/* Luxury Ticket Background Graphics */}
-              <div className="absolute -right-32 -top-32 w-64 h-64 bg-[#F0C265]/5 rounded-full blur-3xl pointer-events-none"></div>
-              <div className="absolute -left-32 -bottom-32 w-64 h-64 bg-purple-600/5 rounded-full blur-3xl pointer-events-none"></div>
-
-              {/* Faux Torn Edge notches represent real tickets */}
-              <div className="absolute left-[-10px] top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#05070B] border-r border-[#F0C265]"></div>
-              <div className="absolute right-[-10px] top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#05070B] border-l border-[#F0C265]"></div>
-
-              {/* TICKET TOP PORTION */}
-              <div className="p-6 md:p-8 space-y-4">
-                <div className="w-12 h-12 rounded-full bg-lime/10 text-lime border-2 border-lime flex items-center justify-center mx-auto text-2xl shadow font-bold">✓</div>
-                
-                <div className="space-y-1">
-                  <span className="font-mono text-[9px] text-lime uppercase tracking-widest font-black bg-lime/10 px-2.5 py-0.5 rounded border border-lime/20">● Homologado no Sistema</span>
-                  <h4 className="font-mono text-[10px] text-[#F0C265] font-black uppercase tracking-widest block pt-2">CONCURSO CANÇÃO PROFANA</h4>
-                  <h3 className="font-display font-black text-2xl text-white uppercase tracking-tightest leading-tight">MATRÍCULA CONFIRMADA!</h3>
-                </div>
-
-                <p className="text-xs text-gray-400 leading-relaxed max-w-xs mx-auto">Sua inscrição foi confirmada e processada via webhook seguro. O passaporte oficial foi enviado ao e-mail.</p>
-              </div>
-
-              {/* DASHED SEPARATOR LINE */}
-              <div className="border-t-2 border-dashed border-[#F0C265]/30 relative"></div>
-
-              {/* TICKET BOTTOM PORTION */}
-              <div className="p-6 md:p-8 bg-black/40 space-y-6">
-                
-                <div className="grid grid-cols-2 gap-4 text-left border border-white/5 p-4 rounded-2xl bg-black/30 font-mono text-[11px]">
-                  <div>
-                    <span className="text-gray-500 uppercase block text-[9px]">CÓDIGO ID BANDA:</span>
-                    <span className="text-xs font-black text-white font-mono block mt-0.5">CP-2026-X7Y9</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500 uppercase block text-[9px]">ROSTER CONECTADO:</span>
-                    <span className="text-xs font-black text-bento-snow font-mono block mt-0.5">{selectedMembers} INTEGRANTES</span>
-                  </div>
-                  <div className="col-span-2 border-t border-white/5 pt-3">
-                    <span className="text-[#10B981] uppercase font-bold block text-[9px]">Condição Solidária Obrigatória:</span>
-                    <p className="text-xs text-gray-300 mt-1 leading-relaxed font-mono">Trazer {selectedMembers}kg de alimento não-perecível na entrada do estúdio.</p>
-                  </div>
-                </div>
-
-                {/* Realistic Barcode Design */}
-                <div className="space-y-1">
-                  <div className="h-9 bg-white/5 rounded px-4 flex items-center justify-between opacity-70 border border-white/5">
-                    <div className="w-1.5 h-full bg-white/80"></div>
-                    <div className="w-0.5 h-full bg-white/80"></div>
-                    <div className="w-1 h-full bg-white/80"></div>
-                    <div className="w-2 h-full bg-white/80"></div>
-                    <div className="w-0.5 h-full bg-white/80"></div>
-                    <div className="w-1.5 h-full bg-white/80"></div>
-                    <div className="w-0.5 h-full bg-white/80"></div>
-                    <div className="w-1 h-full bg-white/80"></div>
-                    <div className="w-2.5 h-full bg-white/80"></div>
-                    <div className="w-0.5 h-full bg-white/80"></div>
-                    <div className="w-1.5 h-full bg-white/80"></div>
-                  </div>
-                  <span className="font-mono text-[8px] text-gray-500 uppercase tracking-widest block">Pedra Profana Backstage Access</span>
-                </div>
-
-                {/* Viral Stage Pass share CTA buttons (Item 5) */}
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  <button 
-                    type="button" 
-                    onClick={handleViralShare}
-                    className="w-full sm:w-1/2 flex items-center justify-center gap-1.5 font-mono text-xs font-bold text-white bg-white/5 border border-white/10 px-4 py-3 rounded-full hover:bg-white/10 transition-colors uppercase"
-                  >
-                    <Copy className="w-3.5 h-3.5" /> Copiar Convocação
-                  </button>
-                  <Link 
-                    href="/minha-inscricao" 
-                    className="w-full sm:w-1/2 btn-gold-shimmer px-4 py-3 rounded-full text-xs uppercase tracking-widest font-black text-black text-center"
-                  >
-                    Ver minha inscrição
-                  </Link>
-                </div>
-              </div>
-
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* LAZY LOADED TERMS POPUP MODAL (Item 2) */}
-      <AnimatePresence>
-        {isTermsOpen && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start">
-            <div className="absolute inset-0 cursor-pointer" onClick={() => setIsTermsOpen(false)}></div>
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-black/95 border-2 border-[#E3B552] w-full max-w-2xl rounded-[32px] p-6 md:p-8 my-8 relative space-y-6 shadow-2xl flex flex-col justify-between z-10"
-            >
-              <button type="button" onClick={() => setIsTermsOpen(false)} className="absolute right-5 top-5 text-[#B3B3B3] hover:text-white font-mono text-2xl font-bold">&times;</button>
-              
-              <div className="border-b border-white/5 pb-4">
-                <h1 className="font-display font-black text-xl text-white uppercase tracking-tight">TERMOS DE USO DO PORTAL</h1>
-                <p className="text-[10px] text-[#F0C265] font-mono uppercase tracking-widest mt-1">CONCURSO MUSICAL CANÇÃO PROFANA — ESTÚDIO PEDRA PROFANA</p>
-              </div>
-
-              <div className="space-y-4 text-xs sm:text-sm text-gray-300 leading-relaxed text-left max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">
-                <p>Bem-vindo ao Portal de Inscrições do Concurso Musical Canção Profana, de propriedade e gerido pelo Estúdio Pedra Profana. Ao realizar a sua matrícula, você e os demais integrantes declaram aceitar e cumprir integralmente as condições descritas abaixo.</p>
-
-                <div className="space-y-1">
-                  <h2 className="font-display font-bold text-sm text-white">1. ELEGIBILIDADE E INSCRIÇÕES</h2>
-                  <p>1.1. O concurso é aberto exclusivamente a pf projetos musicais compostos por grupos contendo no mínimo 2 (dois) e no máximo 7 (sete) integrantes.</p>
-                  <p>1.2. É obrigatória a inclusão de pelo menos uma música original (autoral) escrita majoritariamente em língua portuguesa ou em formato instrumental no repertório do projeto.</p>
-                  <p>1.3. O repertório a ser apresentado no concurso é limitado ao máximo de 3 (três) músicas por banda.</p>
-                </div>
-
-                <div className="space-y-1">
-                  <h2 className="font-display font-bold text-sm text-white">2. TAXAS DE INSCRIÇÃO E LOTES</h2>
-                  <p>2.1. O valor das inscrições é calculado dinamicamente com base no lote vigente no exato momento da matrícula, multiplicado pelo número total de integrantes informados.</p>
-                  <p>2.2. O pagamento é realizado em cota única de forma digital via PIX. Uma vez processado o pagamento, o valor não será reembolsável, salvo por cancelamento formal do evento por parte do Estúdio Pedra Profana.</p>
-                </div>
-
-                <div className="space-y-1">
-                  <h2 className="font-display font-bold text-sm text-white">3. DIREITOS AUTORAIS E DISTRIBUIÇÃO</h2>
-                  <p>3.1. Ao se inscrever, a banda autoriza expressamente a captação de áudio, gravação de vídeo e transmissão ao vivo (streaming) de sua apresentação durante as etapas do concurso.</p>
-                  <p>3.2. Os direitos autorais morais sobre as composições permanecem com seus respectivos autores. O acordo e os percentuais de distribuição digital das gravações oficiais geradas no concurso serão decididos amigavelmente entre as partes ao encerramento das etapas.</p>
-                </div>
-
-                <div className="space-y-1">
-                  <h2 className="font-display font-bold text-sm text-white">4. INGRESSO SOLIDÁRIO</h2>
-                  <p>4.1. É condição obrigatória e regulamentar do concurso a entrega de 1kg (um quilo) de alimento não-perecível por integrante na entrada de cada etapa física (incluindo as sessões de gravação ao vivo).</p>
-                </div>
-
-                <div className="space-y-1">
-                  <h2 className="font-display font-bold text-sm text-white">5. PENALIDADES</h2>
-                  <p>5.1. Informações cadastrais falsas (como CPFs inativos ou idades incorretas), agressões físicas ou comportamentos antidesportivos no estúdio resultarão na desclassificação imediata do projeto, sem devolução das taxas pagas.</p>
-                </div>
-              </div>
-
-              <div className="border-t border-white/5 pt-4 flex justify-between items-center text-[10px] font-mono text-gray-500">
-                <span>Versão: 1.0 (2026)</span>
-                <button type="button" onClick={() => setIsTermsOpen(false)} className="text-[#F0C265] hover:underline uppercase font-bold">Fechar</button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* LAZY LOADED PRIVACY POPUP MODAL (Item 2) */}
-      <AnimatePresence>
-        {isPrivacyOpen && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start">
-            <div className="absolute inset-0 cursor-pointer" onClick={() => setIsPrivacyOpen(false)}></div>
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-black/95 border-2 border-[#E3B552] w-full max-w-2xl rounded-[32px] p-6 md:p-8 my-8 relative space-y-6 shadow-2xl flex flex-col justify-between z-10"
-            >
-              <button type="button" onClick={() => setIsPrivacyOpen(false)} className="absolute right-5 top-5 text-[#B3B3B3] hover:text-white font-mono text-2xl font-bold">&times;</button>
-              
-              <div className="border-b border-white/5 pb-4">
-                <h1 className="font-display font-black text-xl text-white uppercase tracking-tight">POLÍTICA DE PRIVACIDADE</h1>
-                <p className="text-[10px] text-[#F0C265] font-mono uppercase tracking-widest mt-1">TRATAMENTO DE DADOS PESSOAIS — ESTÚDIO PEDRA PROFANA</p>
-              </div>
-
-              <div className="space-y-4 text-xs sm:text-sm text-gray-300 leading-relaxed text-left max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">
-                <p>O Estúdio Pedra Profana tem o compromisso de proteger a privacidade e a segurança dos dados pessoais fornecidos pelas bandas e seus integrantes durante o processo de matrícula no Concurso Canção Profana. Esta política descreve como coletamos, usamos e protegemos seus dados em conformidade com a LGPD (Lei Geral de Proteção de Dados - Lei nº 13.709/18).</p>
-
-                <div className="space-y-1">
-                  <h2 className="font-display font-bold text-sm text-white">1. DADOS COLETADOS</h2>
-                  <p>1.1. Coletamos dados estritamente necessários para viabilizar as inscrições, organização das fases e faturamento:</p>
-                  <p>• **Dados do Projeto:** Nome da banda/projeto, biografia de divulgação, gênero musical e foto oficial.</p>
-                  <p>• **Dados Pessoais (Responsável e Integrantes):** Nome completo, Cadastro de Pessoa Física (CPF), Data de Nascimento e número de WhatsApp do responsável.</p>
-                </div>
-
-                <div className="space-y-1">
-                  <h2 className="font-display font-bold text-sm text-white">2. FINALIDADE DO TRATAMENTO</h2>
-                  <p>2.1. Os dados de CPF e Data de Nascimento são tratados unicamente para validar a autenticidade cadastral dos participantes perante as regras do edital.</p>
-                  <p>2.2. A biografia e a foto oficial serão exibidas de forma pública em canais de votação e divulgação do Pedra Profana.</p>
-                  <p>2.3. Os dados de contato (WhatsApp e e-mail) serão utilizados para alinhamento de agendas de gravação e comunicações urgentes do concurso.</p>
-                </div>
-
-                <div className="space-y-1">
-                  <h2 className="font-display font-bold text-sm text-white">3. COMPARTILHAMENTO DE DADOS</h2>
-                  <p>3.1. O Estúdio Pedra Profana **não vende, não aluga e não cede** os dados pessoais cadastrados para fins de publicidade de terceiros.</p>
-                  <p>3.2. Os dados de faturamento podem ser processados por gateways de pagamento (como Supabase, Asaas ou Mercado Pago) de forma criptografada para consolidação do Pix de inscrição.</p>
-                </div>
-
-                <div className="space-y-1">
-                  <h2 className="font-display font-bold text-sm text-white">4. SEGURANÇA E ARMAZENAMENTO</h2>
-                  <p>4.1. Todos os dados são armazenados de forma criptografada em servidores em nuvem seguros geridos pelo Supabase, equipados com firewalls de última geração e chaves de acesso restritas.</p>
-                  <p>4.2. Os dados serão mantidos em nosso sistema pelo prazo necessário para a conclusão do concurso, envio de materiais fonográficos e conciliações contábeis e fiscais obrigatórias.</p>
-                </div>
-              </div>
-
-              <div className="border-t border-white/5 pt-4 flex justify-between items-center text-[10px] font-mono text-gray-500">
-                <span>Versão: 1.0 (2026)</span>
-                <button type="button" onClick={() => setIsPrivacyOpen(false)} className="text-[#F0C265] hover:underline uppercase font-bold">Fechar</button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Legal popups (footer) — CSS-animated, zero JS cost when closed */}
+      <TermsModal open={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
+      <PrivacyModal open={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
 
     </div>
   );

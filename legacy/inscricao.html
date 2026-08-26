@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal do Candidato — Canção Profana</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Space Grotesk & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            vstBg: '#05070B',
+            vstPanel: '#0B0F19',
+            goldAccent: '#E3B552',
+            goldLight: '#FFF2D4',
+            goldMedium: '#F0C265',
+            goldDark: '#B88A28',
+            lime: '#10B981',
+            coral: '#FF4B2E',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    body {
+      background-color: #05070B;
+      color: #F0EAE0;
+      font-family: 'Inter', sans-serif;
+      background-image: radial-gradient(ellipse at top, rgba(227, 181, 82, 0.1) 0%, #05070B 80%);
+    }
+    
+    .glass-card-2 {
+      background: rgba(11, 15, 25, 0.65);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 
+        0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    }
+    
+    .vst-input-groove {
+      background-color: rgba(9, 6, 19, 0.6);
+      box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body class="min-h-screen py-16 px-6 flex items-center justify-center">
+
+  <div class="glass-card-2 max-w-2xl w-full p-6 md:p-8 rounded-[32px] relative space-y-8 shadow-2xl">
+    
+    <!-- HEADER BAR -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/5 pb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] flex items-center justify-center font-display font-black text-black text-xl border border-black shadow-md">
+          P
+        </div>
+        <div>
+          <span class="font-display font-black text-white text-md tracking-tight uppercase block leading-none">CANÇÃO PROFANA</span>
+          <span class="font-mono text-[9px] text-[#F0C265] tracking-widest block uppercase mt-1">PORTAL DO CANDIDATO</span>
+        </div>
+      </div>
+      
+      <a href="index.html" class="flex items-center gap-1 text-xs font-mono text-[#A89880] hover:text-white transition-colors">
+        ← Voltar ao Início
+      </a>
+    </div>
+
+    <!-- LIVE STATUS BAR -->
+    <div class="vst-input-groove p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div>
+        <span class="font-mono text-[9px] text-gray-400 block uppercase font-bold">STATUS DA MATRÍCULA:</span>
+        <div class="flex items-center gap-2 mt-1">
+          <svg class="w-5 h-5 text-[#10B981]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span class="text-[#10B981] font-display font-black text-md uppercase tracking-wider">Inscrição Ativa / Aprovada</span>
+        </div>
+      </div>
+      <span class="bg-black/50 border border-[#D4A843]/30 px-3.5 py-1.5 rounded-full font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-wider">
+        ● SYNC SUPABASE REALTIME
+      </span>
+    </div>
+
+    <!-- CANDIDATE INFO BODY -->
+    <div class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-white/5 pb-6">
+        <div class="space-y-1">
+          <span class="font-mono text-[8px] text-gray-400 uppercase font-bold block">PROJETO / DUPLA DE RAP:</span>
+          <span class="text-white font-bold text-md block">Os Profanos do Ritmo</span>
+        </div>
+        <div class="space-y-1">
+          <span class="font-mono text-[8px] text-gray-400 uppercase font-bold block">ESTILO MUSICAL:</span>
+          <span class="text-white font-bold text-md block">Rock Autoral</span>
+        </div>
+        <div class="col-span-1 md:col-span-2 space-y-1">
+          <span class="font-mono text-[8px] text-gray-400 uppercase font-bold block">BIOGRAFIA OFICIAL:</span>
+          <p class="text-xs text-[#A89880] leading-relaxed font-normal">Formada em 2025 nas garagens da serra, a banda une timbres clássicos de fuzz a letras densas e poéticas em português. Nosso objetivo é o palco principal do festival.</p>
+        </div>
+        <div class="space-y-1">
+          <span class="font-mono text-[8px] text-gray-400 uppercase font-bold block">INSTAGRAM:</span>
+          <span class="text-white font-bold text-xs block font-mono">@osprofanos</span>
+        </div>
+        <div class="space-y-1">
+          <span class="font-mono text-[8px] text-gray-400 uppercase font-bold block">LINK DE VÍDEO DA MÚSICA:</span>
+          <a href="#" class="text-[#F0C265] hover:underline text-xs block font-mono truncate">https://youtube.com/watch?v=demo-profana</a>
+        </div>
+      </div>
+
+      <!-- RESPONSIBLE DETAILS -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-white/5 pb-6">
+        <div class="space-y-1">
+          <span class="font-mono text-[8px] text-gray-400 uppercase font-bold block">LÍDER RESPONSÁVEL:</span>
+          <span class="text-white font-bold text-xs block">Emily Bryan</span>
+        </div>
+        <div class="space-y-1">
+          <span class="font-mono text-[8px] text-gray-400 uppercase font-bold block">WHATSAPP:</span>
+          <span class="text-white font-bold text-xs block font-mono">(21) 98765-4321</span>
+        </div>
+      </div>
+
+      <!-- ROSTER QUEUE -->
+      <div class="space-y-4">
+        <span class="font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-widest block">ROSTER DA BANDA (QUEUE DE INTEGRANTES)</span>
+        
+        <div class="space-y-3">
+          <div class="vst-input-groove p-3 flex justify-between items-center border border-white/5">
+            <div class="flex items-center gap-3">
+              <span class="w-6 h-6 rounded-full bg-[#E3B552]/10 text-[#F0C265] flex items-center justify-center font-mono text-[9px] font-bold border border-[#E3B552]/20">2</span>
+              <div>
+                <span class="text-xs font-bold text-white block">John Bryan</span>
+                <span class="font-mono text-[8px] text-gray-400 tracking-wider uppercase block mt-0.5">Integrante 2 • CPF: 123.456.789-10</span>
+              </div>
+            </div>
+            <span class="font-mono text-[8px] text-[#10B981] bg-[#10B981]/15 px-2.5 py-0.5 rounded border border-[#10B981]/25 uppercase font-bold tracking-wider">Apto</span>
+          </div>
+          <div class="vst-input-groove p-3 flex justify-between items-center border border-white/5">
+            <div class="flex items-center gap-3">
+              <span class="w-6 h-6 rounded-full bg-[#E3B552]/10 text-[#F0C265] flex items-center justify-center font-mono text-[9px] font-bold border border-[#E3B552]/20">3</span>
+              <div>
+                <span class="text-xs font-bold text-white block">Nate Bryan</span>
+                <span class="font-mono text-[8px] text-gray-400 tracking-wider uppercase block mt-0.5">Integrante 3 • CPF: 987.654.321-00</span>
+              </div>
+            </div>
+            <span class="font-mono text-[8px] text-[#10B981] bg-[#10B981]/15 px-2.5 py-0.5 rounded border border-[#10B981]/25 uppercase font-bold tracking-wider">Apto</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t border-white/5 pt-5 text-center">
+      <span class="font-mono text-[9px] text-gray-500 uppercase">QUALQUER INCONSISTÊNCIA CADASTRAL DEVE SER NOTIFICADA À DIREÇÃO DO Pedra Profana.</span>
+    </div>
+
+  </div>
+</body>
+</html>

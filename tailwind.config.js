@@ -47,8 +47,8 @@ module.exports = {
             '0 0 0 1px rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.08)',
         },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        display: ['Space Grotesk', 'sans-serif']
+        sans: ['var(--font-inter)', 'Inter', 'sans-serif'],
+        display: ['var(--font-space-grotesk)', 'Space Grotesk', 'sans-serif']
       }
     },
   },
