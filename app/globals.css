@@ -247,3 +247,31 @@
 .legal-pop {
   animation: legal-pop 0.22s ease-out both;
 }
+
+/* ---------- Touch-aware interaction feedback (replaces framer whileHover/whileTap) ---------- */
+.hover-scale { transition: transform 0.18s ease; will-change: transform; }
+@media (hover: hover) and (pointer: fine) {
+  .hover-scale:hover { transform: scale(1.05); }
+}
+.hover-scale:active { transform: scale(0.98); }
+
+.hover-lift { transition: transform 0.25s ease; will-change: transform; }
+@media (hover: hover) and (pointer: fine) {
+  .hover-lift:hover { transform: translateY(-6px) scale(1.01); }
+}
+
+/* ---------- Entrance animation (replaces framer initial/animate on load) ---------- */
+@keyframes fade-up-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up-800 { animation: fade-up-in 0.8s ease-out both; }
+
+/* Initial state for scroll-reveal items (GSAP animates to visible on viewport entry) */
+.reveal-hidden { opacity: 0; transform: translateY(30px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up-800 { animation: none; }
+  .reveal-hidden { opacity: 1; transform: none; }
+  .hover-scale, .hover-lift { transition: none; }
+}

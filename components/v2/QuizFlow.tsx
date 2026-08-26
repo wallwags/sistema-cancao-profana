@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import gsap from 'gsap';
 import { Trash2, Plus, X, Copy, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
@@ -76,6 +76,24 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
   const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next');
 
+  // GSAP render mirrors (logical state stays separate from animated visibility)
+  const [quizVisible, setQuizVisible] = useState(false);
+  const [checkoutVisible, setCheckoutVisible] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
+  const [memberFormRendered, setMemberFormRendered] = useState(false);
+
+  const quizCardRef = useRef<HTMLDivElement | null>(null);
+  const checkoutCardRef = useRef<HTMLDivElement | null>(null);
+  const successCardRef = useRef<HTMLDivElement | null>(null);
+  const stepRef = useRef<HTMLDivElement | null>(null);
+  const collapseRef = useRef<HTMLDivElement | null>(null);
+  const confirmRef = useRef<HTMLDivElement | null>(null);
+  const quizClosingRef = useRef(false);
+  const checkoutClosingRef = useRef(false);
+
+  // SSR-safe layout effect
+  const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
   // HARDENING: refs for save/webhook race protection (fix: stale createdProjectId closure)
   const saveIdRef = useRef<string | null>(null);
   const savePromiseRef = useRef<Promise<string> | null>(null);
@@ -86,6 +104,104 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   useEffect(() => {
     setSelectedMembers(1 + membersList.length);
   }, [membersList]);
+
+  // ---------- GSAP choreography ----------
+  // Open/close sync: logical isOpen -> visible mirror
+  useEffect(() => {
+    if (isOpen) {
+      quizClosingRef.current = false;
+      setQuizVisible(true);
+    }
+  }, [isOpen]);
+
+  // Quiz card entrance
+  useIsomorphicLayoutEffect(() => {
+    if (quizVisible && quizCardRef.current) {
+      gsap.fromTo(quizCardRef.current,
+        { scale: 0.95, y: 30, opacity: 0 },
+        { scale: 1, y: 0, opacity: 1, duration: 0.3, ease: 'power2.out', clearProps: 'transform' });
+    }
+  }, [quizVisible]);
+
+  // Step transition — enter-only (slide-in with direction), no exit choreography
+  useIsomorphicLayoutEffect(() => {
+    if (quizVisible && stepRef.current && !draftToRestore) {
+      gsap.fromTo(stepRef.current,
+        { x: slideDirection === 'next' ? 48 : -48, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.25, ease: 'power2.out', clearProps: 'transform,opacity' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quizStep, quizVisible]);
+
+  // Checkout card entrance
+  useIsomorphicLayoutEffect(() => {
+    if (checkoutVisible && checkoutCardRef.current) {
+      gsap.fromTo(checkoutCardRef.current,
+        { scale: 0.95, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.25, ease: 'power2.out', clearProps: 'transform' });
+    }
+  }, [checkoutVisible]);
+
+  // Success ticket entrance
+  useIsomorphicLayoutEffect(() => {
+    if (successVisible && successCardRef.current) {
+      gsap.fromTo(successCardRef.current,
+        { scale: 0.95, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.3, ease: 'power2.out', clearProps: 'transform' });
+    }
+  }, [successVisible]);
+
+  // Close quiz with exit animation, then unmount + notify parent
+  const requestCloseQuiz = () => {
+    if (quizClosingRef.current) return;
+    quizClosingRef.current = true;
+    if (quizCardRef.current && typeof window !== 'undefined') {
+      gsap.to(quizCardRef.current, {
+        scale: 0.95, y: 30, opacity: 0, duration: 0.22, ease: 'power2.in',
+        onComplete: () => {
+          quizClosingRef.current = false;
+          setQuizVisible(false);
+          onClose();
+        }
+      });
+    } else {
+      quizClosingRef.current = false;
+      setQuizVisible(false);
+      onClose();
+    }
+  };
+
+  // Member inline form — whole block (container + content) expands together
+  const openMemberForm = () => {
+    setMemberErrors({});
+    setIsAddingMemberInline(true);
+    setMemberFormRendered(true);
+  };
+
+  const closeMemberForm = () => {
+    setMemberErrors({});
+    if (collapseRef.current && typeof window !== 'undefined') {
+      gsap.to(collapseRef.current, {
+        height: 0, opacity: 0, duration: 0.25, ease: 'power2.in',
+        onComplete: () => {
+          setIsAddingMemberInline(false);
+          setMemberFormRendered(false);
+        }
+      });
+    } else {
+      setIsAddingMemberInline(false);
+      setMemberFormRendered(false);
+    }
+  };
+
+  // Member form entrance (height 0 -> auto, container and content as one block)
+  useIsomorphicLayoutEffect(() => {
+    if (memberFormRendered && collapseRef.current) {
+      gsap.fromTo(collapseRef.current,
+        { height: 0, opacity: 0 },
+        { height: 'auto', opacity: 1, duration: 0.3, ease: 'power2.out' });
+    }
+  }, [memberFormRendered]);
 
   // Offer draft recovery every time the quiz is opened (only if form is empty)
   useEffect(() => {
@@ -211,7 +327,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     setNewMemberCpf('');
     setNewMemberBirth('');
     setMemberErrors({});
-    setIsAddingMemberInline(false);
+    closeMemberForm();
     clearError('roster');
   };
 
@@ -442,6 +558,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     setShowManualConfirm(false);
     setPixCopied(false);
     setIsCheckoutOpen(true);
+    setCheckoutVisible(true);
     setIsCheckoutLoading(false);
 
     savePromiseRef.current = saveRegistrationToSupabase().then(id => {
@@ -459,11 +576,25 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   };
 
   const closeCheckout = () => {
-    setIsCheckoutOpen(false);
-    setConfirmClose(false);
-    setIsCheckoutLoading(false);
-    setPollingStep(0);
-    setShowManualConfirm(false);
+    if (checkoutClosingRef.current) return;
+    checkoutClosingRef.current = true;
+    const finish = () => {
+      checkoutClosingRef.current = false;
+      setIsCheckoutOpen(false);
+      setCheckoutVisible(false);
+      setConfirmClose(false);
+      setIsCheckoutLoading(false);
+      setPollingStep(0);
+      setShowManualConfirm(false);
+    };
+    if (checkoutCardRef.current && typeof window !== 'undefined') {
+      gsap.to(checkoutCardRef.current, {
+        scale: 0.95, opacity: 0, duration: 0.2, ease: 'power2.in',
+        onComplete: finish
+      });
+    } else {
+      finish();
+    }
   };
 
   // Checkout 10-minute price-guarantee timer (graceful expiry, no data loss)
@@ -558,6 +689,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       setTimeout(() => {
         closeCheckout();
         setIsSuccessOpen(true);
+        setSuccessVisible(true);
       }, 1200);
     } catch (err) {
       console.error(err);
@@ -633,7 +765,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       setNewMemberName("John Bryan");
       setNewMemberCpf("123.456.789-09");
       setNewMemberBirth("24/05/2000");
-      setIsAddingMemberInline(true);
+      openMemberForm();
     } else if (quizStep === 5) {
       setAcceptRules(true);
       clearError('acceptRules');
@@ -649,20 +781,16 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   return (
     <>
       {/* QUIZ INTERACTIVE POPUP MODAL — external page scroll, no internal modal scroll */}
-      <AnimatePresence>
-        {isOpen && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start sm:items-center">
+      {quizVisible && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start sm:items-center">
 
-            <div className="absolute inset-0 cursor-pointer" onClick={onClose}></div>
+          <div className="absolute inset-0 cursor-pointer" onClick={requestCloseQuiz}></div>
 
-            <motion.div
-              initial={{ scale: 0.95, y: 30, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 30, opacity: 0 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="bg-black/95 border-2 border-[#E3B552] w-full max-w-xl rounded-[32px] p-6 md:p-8 my-8 relative space-y-6 shadow-[0_10px_50px_rgba(0,0,0,0.8)] flex flex-col justify-between z-10"
-            >
-              <button type="button" onClick={onClose} className="absolute right-5 top-5 text-[#B3B3B3] hover:text-white font-mono text-2xl font-bold">&times;</button>
+          <div
+            ref={quizCardRef}
+            className="bg-black/95 border-2 border-[#E3B552] w-full max-w-xl rounded-[32px] p-6 md:p-8 my-8 relative space-y-6 shadow-[0_10px_50px_rgba(0,0,0,0.8)] flex flex-col justify-between z-10"
+          >
+            <button type="button" onClick={requestCloseQuiz} className="absolute right-5 top-5 text-[#B3B3B3] hover:text-white font-mono text-2xl font-bold">&times;</button>
 
               {/* DRAFT RECOVERY */}
               {draftToRestore ? (
@@ -699,15 +827,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   {/* STEP CONTENTS */}
                   <form onSubmit={(e) => e.preventDefault()} className="grow flex flex-col justify-between gap-6">
 
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={quizStep}
-                        initial={{ x: slideDirection === 'next' ? 50 : -50, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: slideDirection === 'next' ? -50 : 50, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: 'easeInOut' }}
-                        className="space-y-6"
-                      >
+                    <div ref={stepRef} className="space-y-6">
                         {quizStep === 1 && (
                           <div className="space-y-4">
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Dados do Projeto</h3>
@@ -854,25 +974,20 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                               </div>
                               <button
                                 type="button"
-                                onClick={() => setIsAddingMemberInline(true)}
+                                onClick={openMemberForm}
                                 className="flex items-center gap-1.5 font-mono text-xs font-bold text-black bg-[#F0C265] px-3.5 py-2.5 rounded-full hover:bg-[#FFF2D4] active:scale-95 transition-all outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B]"
                               >
                                 <Plus className="w-4 h-4" /> Escalar Integrante
                               </button>
                             </div>
 
-                            {/* Interactive dynamic inline member insert form */}
-                            <AnimatePresence>
-                              {isAddingMemberInline && (
-                                <motion.div
-                                  initial={{ height: 0, opacity: 0 }}
-                                  animate={{ height: 'auto', opacity: 1 }}
-                                  exit={{ height: 0, opacity: 0 }}
-                                  className="bg-black/50 p-4 border border-[#E3B552]/30 rounded-2xl space-y-4 overflow-hidden"
-                                >
+                            {/* Interactive dynamic inline member insert form — whole block expands together (GSAP height auto) */}
+                            {memberFormRendered && (
+                              <div ref={collapseRef} className="overflow-hidden">
+                                <div className="bg-black/50 p-4 border border-[#E3B552]/30 rounded-2xl space-y-4">
                                   <div className="flex justify-between items-center border-b border-white/5 pb-2">
                                     <span className="font-mono text-xs text-[#F0C265] font-bold uppercase tracking-wider">Novo Integrante Roster</span>
-                                    <button type="button" onClick={() => { setIsAddingMemberInline(false); setMemberErrors({}); }} className="text-gray-400 hover:text-white"><X className="w-4 h-4" /></button>
+                                    <button type="button" onClick={closeMemberForm} className="text-gray-400 hover:text-white"><X className="w-4 h-4" /></button>
                                   </div>
 
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -894,12 +1009,12 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                   </div>
 
                                   <div className="flex justify-end gap-2.5 pt-2">
-                                    <button type="button" onClick={() => { setIsAddingMemberInline(false); setMemberErrors({}); }} className="font-mono text-xs font-bold text-gray-400 px-4 py-2 border border-white/10 rounded-full">Descartar</button>
+                                    <button type="button" onClick={closeMemberForm} className="font-mono text-xs font-bold text-gray-400 px-4 py-2 border border-white/10 rounded-full">Descartar</button>
                                     <button type="button" onClick={saveMemberInline} className="font-mono text-xs font-bold text-black bg-[#10B981] px-4 py-2 rounded-full">Confirmar</button>
                                   </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
+                                </div>
+                              </div>
+                            )}
 
                             <div className="space-y-3 overflow-y-auto max-h-[220px] pr-1">
                               <div className="bg-[#05070B] p-4 flex justify-between items-center border border-white/5 rounded-2xl shadow">
@@ -1002,8 +1117,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                             </div>
                           </div>
                         )}
-                      </motion.div>
-                    </AnimatePresence>
+                    </div>
 
                     {/* CONTROLS */}
                     <div className="border-t border-[#2C2C2C] pt-4 flex justify-between items-center gap-4 shrink-0">
@@ -1032,22 +1146,18 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   </form>
                 </>
               )}
-            </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
 
       {/* CHECKOUT POPUP MODAL — external page scroll */}
-      <AnimatePresence>
-        {isCheckoutOpen && (
+      {checkoutVisible && (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start sm:items-center">
 
             <div className="absolute inset-0 cursor-pointer" onClick={requestCloseCheckout}></div>
 
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+            <div
+              ref={checkoutCardRef}
               className="bg-black/95 border-2 border-[#E3B552] max-w-sm w-full p-6 rounded-[32px] relative space-y-6 shadow-2xl z-10"
             >
               <button onClick={requestCloseCheckout} className="absolute right-4 top-4 text-gray-400 hover:text-white font-mono text-xl">&times;</button>
@@ -1086,7 +1196,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   <div>
                     <span className="font-mono text-[10px] text-gray-500 block uppercase font-bold">TOTAL CONVERSÃO:</span>
                     <span className="text-2xl font-mono font-black text-lime block mt-0.5">R$ {totalCost},00</span>
-                  </div>
+  </div>
 
                   {/* Live polling status line (feedback while QR is on screen) */}
                   {!checkoutExpired && !isCheckoutLoading && (
@@ -1138,40 +1248,29 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
               )}
 
               {/* In-modal close confirmation (no data loss, no native confirm) */}
-              <AnimatePresence>
-                {confirmClose && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-black/90 rounded-[32px] z-20 flex flex-col items-center justify-center text-center p-8 space-y-5"
-                  >
-                    <span className="text-3xl">🎵</span>
-                    <div className="space-y-2">
-                      <h4 className="font-display font-black text-lg text-white uppercase tracking-tight">Fechar o checkout?</h4>
-                      <p className="text-xs text-gray-300 leading-relaxed max-w-[240px]">Seus dados ficam salvos no rascunho e você pode retomar a inscrição a qualquer momento.</p>
-                    </div>
-                    <div className="flex flex-col gap-3 w-full max-w-[240px] pt-1">
-                      <button onClick={() => setConfirmClose(false)} className="btn-gold-shimmer px-4 py-3 rounded-full text-xs uppercase tracking-widest font-black text-black">Continuar pagando</button>
-                      <button onClick={closeCheckout} className="font-mono text-xs font-bold text-gray-400 border border-white/10 py-2.5 rounded-full hover:bg-white/5 transition-colors uppercase">Fechar por agora</button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
+              {confirmClose && (
+                <div ref={confirmRef} className="legal-pop absolute inset-0 bg-black/90 rounded-[32px] z-20 flex flex-col items-center justify-center text-center p-8 space-y-5">
+                  <span className="text-3xl">🎵</span>
+                  <div className="space-y-2">
+                    <h4 className="font-display font-black text-lg text-white uppercase tracking-tight">Fechar o checkout?</h4>
+                    <p className="text-xs text-gray-300 leading-relaxed max-w-[240px]">Seus dados ficam salvos no rascunho e você pode retomar a inscrição a qualquer momento.</p>
+                  </div>
+                  <div className="flex flex-col gap-3 w-full max-w-[240px] pt-1">
+                    <button onClick={() => setConfirmClose(false)} className="btn-gold-shimmer px-4 py-3 rounded-full text-xs uppercase tracking-widest font-black text-black">Continuar pagando</button>
+                    <button onClick={closeCheckout} className="font-mono text-xs font-bold text-gray-400 border border-white/10 py-2.5 rounded-full hover:bg-white/5 transition-colors uppercase">Fechar por agora</button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
-      </AnimatePresence>
 
       {/* SUCCESS STATE — BACKSTAGE PASS / CONCERT TICKET */}
-      <AnimatePresence>
-        {isSuccessOpen && (
+      {successVisible && (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start sm:items-center">
 
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+            <div
+              ref={successCardRef}
               className="bg-black/95 border-2 border-[#F0C265] max-w-md w-full rounded-[32px] text-center overflow-hidden shadow-2xl relative my-8"
             >
 
@@ -1258,10 +1357,9 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                 </div>
               </div>
 
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
 
       {/* Legal popups (shared, CSS-animated, zero JS cost when closed) */}
       <TermsModal open={isTermsOpen} onClose={() => setIsTermsOpen(false)} />

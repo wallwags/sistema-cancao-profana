@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useRef } from 'react';
+import gsap from 'gsap';
 import { Music, Video, Camera, Globe } from 'lucide-react';
 
 interface FeatureCardProps {
@@ -11,27 +11,10 @@ interface FeatureCardProps {
   description: string;
 }
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.15
-    }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 100 } }
-};
-
 function FeatureCard({ badge, icon, title, description }: FeatureCardProps) {
   return (
-    <motion.div
-      variants={itemVariants}
-      whileHover={{ y: -6, scale: 1.01 }}
-      className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 hover:border-[#E3B552]/30 rounded-2xl p-5 sm:p-6 relative space-y-4 flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_15px_30px_rgba(0,0,0,0.4)] transition-colors h-full group"
+    <div
+      className="reveal-hidden reveal-item hover-lift bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 hover:border-[#E3B552]/30 rounded-2xl p-5 sm:p-6 relative space-y-4 flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_15px_30px_rgba(0,0,0,0.4)] h-full group"
     >
       {/* Floating Estimated Value Badge in Top Right */}
       <div className="absolute top-4 right-4 bg-black/50 px-2.5 py-1 rounded border border-[#E3B552]/30 font-mono text-xs text-[#F0C265] font-bold">
@@ -43,7 +26,7 @@ function FeatureCard({ badge, icon, title, description }: FeatureCardProps) {
         <div className="w-12 h-12 rounded-xl bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] flex items-center justify-center text-black shadow-[0_0_15px_rgba(240,194,101,0.2)]">
           {icon}
         </div>
-        
+
         <div className="border-t border-[#2E2820] pt-4 space-y-2">
           <h4 className="font-display font-black text-md text-white uppercase tracking-tight">
             {title}
@@ -53,11 +36,44 @@ function FeatureCard({ badge, icon, title, description }: FeatureCardProps) {
           </p>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
 export default function FeatureGrid() {
+  const gridRef = useRef<HTMLDivElement | null>(null);
+
+  // Scroll reveal — GSAP stagger when the grid enters the viewport (once), same
+  // choreography as before (opacity 0→1, y 30→0, 0.15s stagger, soft ease).
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+
+    const items = el.querySelectorAll('.reveal-item');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (reduceMotion) {
+      gsap.set(items, { opacity: 1, y: 0 });
+      return;
+    }
+
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        gsap.to(items, {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          stagger: 0.15,
+          ease: 'power2.out'
+        });
+        io.disconnect();
+      }
+    }, { rootMargin: '0px 0px -100px 0px', threshold: 0 });
+
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   const cards = [
     {
       badge: '~~R$ 12K~~',
@@ -86,13 +102,7 @@ export default function FeatureGrid() {
   ];
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: '-100px' }}
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-    >
+    <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {cards.map((card, i) => (
         <FeatureCard
           key={i}
@@ -102,6 +112,6 @@ export default function FeatureGrid() {
           description={card.description}
         />
       ))}
-    </motion.div>
+    </div>
   );
 }
