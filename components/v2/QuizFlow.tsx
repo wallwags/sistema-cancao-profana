@@ -446,6 +446,24 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   // ---------- Database save (network/adblock resilient with local fallback) ----------
   const saveRegistrationToSupabase = async (): Promise<string> => {
     try {
+      // Upload da foto comprimida (se existir no navegador) para o Storage
+      let photoUrl: string | null = null;
+      const dataUrl = typeof window !== 'undefined' ? localStorage.getItem('temp_compressed_photo') : null;
+      if (dataUrl && dataUrl.startsWith('data:image')) {
+        try {
+          const blobResult = await fetch(dataUrl);
+          const blob = await blobResult.blob();
+          const baseName = (projectPhotoName || 'foto').split('.')[0].replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 30) || 'foto';
+          const path = `${Date.now()}-${baseName}.jpg`;
+          const { error: upErr } = await supabase.storage
+            .from('project-photos')
+            .upload(path, blob, { contentType: 'image/jpeg', cacheControl: '3600' });
+          if (!upErr) {
+            const { data: pub } = supabase.storage.from('project-photos').getPublicUrl(path);
+            photoUrl = pub?.publicUrl || null;
+          }
+        } catch { /* segue com fallback de nome de arquivo */ }
+      }
       // Probe whether the members table supports the email column (self-healing)
       let supportsEmail = true;
       try {
@@ -470,7 +488,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
           name: projectName,
           style: projectStyle,
           bio: projectBio,
-          photo_url: projectPhotoName || 'default_photo.png',
+          photo_url: photoUrl || projectPhotoName || 'default_photo.png',
           instagram: projectInstagram || null,
           video_link: projectVideoLink || null,
           status: 'pending'

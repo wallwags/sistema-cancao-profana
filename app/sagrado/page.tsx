@@ -188,6 +188,7 @@ export default function SagradoPage() {
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [jurySearch, setJurySearch] = useState('');
+  const [photoView, setPhotoView] = useState<string | null>(null);
 
   // account
   const [newName, setNewName] = useState('');
@@ -417,9 +418,13 @@ export default function SagradoPage() {
   });
 
   // ---------- conteúdo ----------
-  const saveSetting = (key: string, label: string, kind: 'datetime' | 'text' = 'datetime') => guarded(`set-${key}`, async () => {
+  const saveSetting = (key: string, label: string, kind: 'datetime' | 'text' | 'number' = 'datetime') => guarded(`set-${key}`, async () => {
     const v = settingDrafts[key] ?? '';
     if (kind === 'text' && v.trim() && !/^https?:\/\//i.test(v.trim())) return 'Informe um link começando com http(s)://';
+    if (kind === 'number') {
+      const n = Number(v);
+      if (!v || isNaN(n) || n <= 0) return 'Informe um valor numérico válido.';
+    }
     const value = kind === 'datetime' ? (fromInputValue(v) ?? '') : v.trim();
     const { error } = await supabase.rpc('staff_save_setting', { p_key: key, p_value: value });
     if (error) return 'Erro ao salvar: ' + error.message;
@@ -565,6 +570,16 @@ export default function SagradoPage() {
     await loadStaff();
     setInvite({ email: '', name: '', password: '', role: 'jurado' });
     setMsg('invite', 'ok', 'Acesso criado. Envie o e-mail e a senha inicial à pessoa — ela deve trocar a senha em Minha conta.');
+    return 'ok';
+  });
+
+  const disableStaff = (s: StaffRow) => guarded(`disable-${s.id}`, async () => {
+    if (!isDev) return 'Operação não permitida.';
+    const { data: res, error } = await supabase.rpc('disable_staff_member', { p_id: s.id });
+    if (error) return 'Erro: ' + error.message;
+    if (res !== 'ok') return String(res);
+    await loadStaff();
+    setMsg(`disable-${s.id}`, 'ok', 'Acesso desativado. O painel desta pessoa fica inacessível imediatamente.');
     return 'ok';
   });
 
@@ -779,12 +794,15 @@ export default function SagradoPage() {
                   { key: 'countdown_target', label: 'Fim do lote vigente (contagem regressiva)', kind: 'datetime' as const, current: fmtDate(settings['countdown_target']) },
                   { key: 'live_launch', label: 'Lançamento oficial da live', kind: 'datetime' as const, current: fmtDate(settings['live_launch']) },
                   { key: 'live_url', label: 'Link da transmissão ao vivo (YouTube)', kind: 'text' as const, current: settings['live_url'] || 'não definido' },
+                  { key: 'dia0_price', label: 'Preço do Dia 0 — Live (R$)', kind: 'number' as const, current: settings['dia0_price'] || '25' },
                 ].map(s => (
                   <div key={s.key} className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
                     <Field label={`${s.label} — atual: ${s.current}`}>
                       {s.kind === 'datetime'
                         ? <input type="datetime-local" className={inputCls} value={settingDrafts[s.key] ?? ''} onChange={(e) => setSettingDrafts(p => ({ ...p, [s.key]: e.target.value }))} />
-                        : <input type="url" placeholder="https://youtube.com/live/..." className={inputCls} value={settingDrafts[s.key] ?? ''} onChange={(e) => setSettingDrafts(p => ({ ...p, [s.key]: e.target.value }))} />}
+                        : s.kind === 'number'
+                          ? <input type="number" min={1} step="0.01" className={inputCls} value={settingDrafts[s.key] ?? ''} onChange={(e) => setSettingDrafts(p => ({ ...p, [s.key]: e.target.value }))} />
+                          : <input type="url" placeholder="https://youtube.com/live/..." className={inputCls} value={settingDrafts[s.key] ?? ''} onChange={(e) => setSettingDrafts(p => ({ ...p, [s.key]: e.target.value }))} />}
                     </Field>
                     <button type="button" onClick={() => saveSetting(s.key, s.label, s.kind)} disabled={busy === `set-${s.key}`} className={btnGold}>
                       {busy === `set-${s.key}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Salvar'}
@@ -880,7 +898,16 @@ export default function SagradoPage() {
                         </div>
                         <div className="space-y-1 md:col-span-2">
                           <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">FOTO DE DIVULGAÇÃO ENVIADA:</span>
-                          <span className="text-xs font-mono text-gray-300 block">{proj.photo_url ? `✓ ${proj.photo_url}` : '—'}</span>
+                          {proj.photo_url && String(proj.photo_url).startsWith('http') ? (
+                            <img
+                              src={String(proj.photo_url)}
+                              alt={`Foto de divulgação de ${p.name}`}
+                              className="w-full max-w-[220px] h-32 object-cover rounded-xl border border-white/10 cursor-zoom-in hover:border-[#E3B552]/50 transition-colors"
+                              onClick={() => setPhotoView(String(proj.photo_url))}
+                            />
+                          ) : (
+                            <span className="text-xs font-mono text-gray-300 block">{proj.photo_url ? `✓ ${proj.photo_url} (arquivo local — enviado antes do armazenamento em nuvem)` : '—'}</span>
+                          )}
                         </div>
                       </div>
 
@@ -1140,8 +1167,9 @@ export default function SagradoPage() {
                       ))}
                     </div>
 
-                    <div className="flex justify-end items-center gap-3">
+                    <div className="flex justify-end items-center gap-3 flex-wrap">
                       {notice[k] && <Notice kind={notice[k].kind}>{notice[k].msg}</Notice>}
+                      {!self && <DisableStaffButton onDisable={() => disableStaff(cur)} busy={busy === `disable-${cur.id}`} />}
                       <button type="button" onClick={() => saveStaff(cur)} disabled={busy === k || self} className={btnGold}>
                         {busy === k ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : self ? 'Edite em Minha conta' : 'Salvar membro'}
                       </button>
@@ -1172,6 +1200,7 @@ export default function SagradoPage() {
 
               <div className="bg-black/40 border border-dashed border-[#E3B552]/30 rounded-xl p-4 space-y-3">
                 <span className="font-mono text-[9px] text-[#F0C265] uppercase tracking-widest font-bold flex items-center gap-1.5"><UserPlus className="w-3.5 h-3.5" /> Criar novo acesso</span>
+                <p className="text-[10px] text-gray-500 font-mono">Se o e-mail pertencer a um acesso desativado, ele será reativado no nível escolhido (a senha continua a anterior).</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <Field label="E-mail"><input className={inputCls} value={invite.email} onChange={(e) => setInvite(p => ({ ...p, email: e.target.value }))} placeholder="pessoa@pedraprofana.com" /></Field>
                   <Field label="Nome de exibição"><input className={inputCls} value={invite.name} onChange={(e) => setInvite(p => ({ ...p, name: e.target.value }))} placeholder="Como aparece no painel" /></Field>
@@ -1265,7 +1294,41 @@ export default function SagradoPage() {
           </div>
         </div>
       )}
+
+      {/* VISUALIZADOR DE FOTO EM TELA CHEIA */}
+      {photoView && (
+        <div className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-6" onClick={() => setPhotoView(null)}>
+          <img
+            src={photoView}
+            alt="Foto de divulgação ampliada"
+            className="legal-pop max-h-[80vh] max-w-full rounded-2xl border-2 border-[#F0C265]/40 shadow-2xl"
+          />
+          <button type="button" className="mt-5 font-mono text-[10px] text-gray-400 hover:text-white uppercase tracking-widest border border-white/10 px-4 py-2 rounded-full">
+            Fechar
+          </button>
+        </div>
+      )}
     </div>
+  );
+}
+
+function DisableStaffButton({ onDisable, busy }: { onDisable: () => void; busy: boolean }) {
+  const [armed, setArmed] = useState(false);
+  if (!armed) {
+    return (
+      <button type="button" onClick={() => setArmed(true)} disabled={busy} className="font-mono text-[10px] font-bold text-red-400/80 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 px-4 py-2.5 rounded-xl uppercase tracking-wider transition-colors">
+        Desativar acesso
+      </button>
+    );
+  }
+  return (
+    <span className="flex items-center gap-2">
+      <span className="font-mono text-[9px] text-gray-400 uppercase">Confirmar?</span>
+      <button type="button" onClick={() => { setArmed(false); onDisable(); }} disabled={busy} className="bg-red-600 text-white font-mono text-[9px] font-bold px-3 py-2.5 rounded-xl uppercase disabled:opacity-50">
+        {busy ? '...' : 'Desativar'}
+      </button>
+      <button type="button" onClick={() => setArmed(false)} className="p-2 text-gray-400 hover:text-white"><X className="w-3.5 h-3.5" /></button>
+    </span>
   );
 }
 

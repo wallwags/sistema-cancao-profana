@@ -59,6 +59,7 @@ export default function Page() {
   const [countdownTarget, setCountdownTarget] = useState<string | null>(null);
   const [liveLaunch, setLiveLaunch] = useState<string | null>(null);
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
+  const [dia0Price, setDia0Price] = useState<number>(25);
 
   // Quiz modal: mounted on demand, kept mounted afterwards so state/draft persists
   const [isQuizOpen, setIsQuizOpen] = useState(false);
@@ -98,6 +99,8 @@ export default function Page() {
           if (map.countdown_target) setCountdownTarget(map.countdown_target);
           if (map.live_launch) setLiveLaunch(map.live_launch);
           if (map.live_url) setLiveUrl(map.live_url);
+          const dp = Number(map.dia0_price);
+          if (!isNaN(dp) && dp > 0) setDia0Price(dp);
         }
 
         if (faqRes.data && faqRes.data.length > 0) {
@@ -490,10 +493,10 @@ export default function Page() {
 
           <div data-reveal-group className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
-              { key: 'dia0', title: 'Dia 0 (Live)', status: lotesConfig.live.status === 'ao_vivo' ? 'ativo' : lotesConfig.live.status === 'encerrada' ? 'encerrado' : 'em_breve', desc: 'Apenas durante a transmissão ao vivo.', valor: 25 },
-              { key: 'lote1', title: 'Lote 1', status: lotesConfig.lote1.status, desc: 'Primeiras inscrições. Menor preço histórico.', valor: 35, vagas: lotesConfig.lote1.vagasRestantes },
-              { key: 'lote2', title: 'Lote 2', status: lotesConfig.lote2.status, desc: 'Disponível na fase intermediária.', valor: 40, vagas: lotesConfig.lote2.vagasRestantes },
-              { key: 'lote3', title: 'Lote 3', status: lotesConfig.lote3.status, desc: 'Reta final de inscrições regulamentares.', valor: 45, vagas: lotesConfig.lote3.vagasRestantes }
+              { key: 'dia0', title: 'Dia 0 (Live)', status: lotesConfig.live.status === 'ao_vivo' ? 'ativo' : lotesConfig.live.status === 'encerrada' ? 'encerrado' : 'em_breve', desc: 'Apenas durante a transmissão ao vivo.', valor: dia0Price },
+              { key: 'lote1', title: 'Lote 1', status: lotesConfig.lote1.status, desc: 'Primeiras inscrições. Menor preço histórico.', valor: lotesConfig.lote1.valor, vagas: lotesConfig.lote1.vagasRestantes },
+              { key: 'lote2', title: 'Lote 2', status: lotesConfig.lote2.status, desc: 'Disponível na fase intermediária.', valor: lotesConfig.lote2.valor, vagas: lotesConfig.lote2.vagasRestantes },
+              { key: 'lote3', title: 'Lote 3', status: lotesConfig.lote3.status, desc: 'Reta final de inscrições regulamentares.', valor: lotesConfig.lote3.valor, vagas: lotesConfig.lote3.vagasRestantes }
             ].map((l, i) => {
               const isActive = l.status === 'ativo';
               const isClosed = l.status === 'encerrado';
@@ -596,7 +599,12 @@ export default function Page() {
           </div>
 
           <div data-reveal-group className="space-y-4 max-w-4xl mx-auto">
-            {faqList.map((f, i) => (
+            {faqList.map((f, i) => {
+              const prazoAnswer = countdownTarget
+                ? `As inscrições do lote vigente terminam em ${formatLaunch(countdownTarget)}. Depois disso, o lote seguinte abre automaticamente, conforme o cronograma de lotes exibido na seção de investimento.`
+                : f.a;
+              const answer = f.q.toLowerCase().includes('prazo final') ? prazoAnswer : f.a;
+              return (
               <div
                 key={i}
                 className="reveal-hidden bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-xl p-5 sm:p-6 cursor-pointer hover:border-[#E3B552]/40 transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B]"
@@ -613,12 +621,13 @@ export default function Page() {
                 <div className={`faq-collapse ${activeFaq === i ? 'faq-open' : ''}`}>
                   <div>
                     <p className="text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3 font-normal font-[Inter]">
-                      {f.a}
+                      {answer}
                     </p>
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
