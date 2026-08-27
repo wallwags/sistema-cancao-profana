@@ -5,15 +5,40 @@ import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import {
   Shield, LayoutDashboard, Tags, FileText, ClipboardList, Users, UserCog,
-  LogOut, Check, X, Plus, ArrowUp, ArrowDown, Trash2, KeyRound, Loader2
+  LogOut, Check, X, Plus, ArrowUp, ArrowDown, Trash2, KeyRound, Loader2, Star, Eye
 } from 'lucide-react';
 
 interface StaffRow {
   id: string;
   email: string;
   display_name: string;
-  role: 'dev' | 'admin';
+  role: 'dev' | 'admin' | 'jurado';
   permissions: { manage_lotes?: boolean; manage_content?: boolean; manage_subscriptions?: boolean };
+}
+
+interface MemberFull {
+  name: string;
+  cpf: string;
+  birth_date: string;
+  phone: string | null;
+  email?: string | null;
+  is_responsible: boolean;
+}
+
+interface ScoreView {
+  juror: string;
+  presentation: number;
+  composition: number;
+  aesthetics: number;
+  notes: string;
+  updated_at: string;
+}
+
+interface JuryDraft {
+  presentation: number;
+  composition: number;
+  aesthetics: number;
+  notes: string;
 }
 
 interface BatchRow {
@@ -39,6 +64,10 @@ interface ProjectRow {
   id: string;
   name: string;
   style: string;
+  bio?: string | null;
+  instagram?: string | null;
+  video_link?: string | null;
+  photo_url?: string | null;
   status: string;
   created_at: string;
   members?: { count: number }[];
@@ -60,6 +89,15 @@ const PERM_KEYS = [
   { key: 'manage_content', label: 'Gerenciar conteúdo do site' },
   { key: 'manage_subscriptions', label: 'Gerenciar inscrições e pagamentos' },
 ] as const;
+
+const PROJECT_STATUS: Record<string, { label: string; cls: string }> = {
+  pending: { label: 'pendente', cls: 'bg-amber-500/15 text-amber-500 border-amber-500/30' },
+  paid: { label: 'paga', cls: 'bg-[#10B981]/15 text-[#10B981] border-[#10B981]/30' },
+  failed: { label: 'negada', cls: 'bg-red-500/15 text-red-400 border-red-500/30' },
+  blocked: { label: 'bloqueada', cls: 'bg-red-900/30 text-red-300 border-red-800/40' },
+  suspended: { label: 'suspensa', cls: 'bg-orange-500/15 text-orange-400 border-orange-500/30' },
+  refunded: { label: 'reembolsada', cls: 'bg-white/5 text-gray-400 border-white/10' },
+};
 
 function parseDbDate(v?: string | null): Date | null {
   if (!v) return null;
@@ -131,11 +169,17 @@ export default function SagradoPage() {
   // data
   const [batches, setBatches] = useState<BatchRow[]>([]);
   const [batchDrafts, setBatchDrafts] = useState<Record<string, BatchDraft>>({});
+  const [liveStatus, setLiveStatus] = useState<string>('em_breve');
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [settingDrafts, setSettingDrafts] = useState<Record<string, string>>({});
   const [faqs, setFaqs] = useState<FaqRow[]>([]);
   const [newFaq, setNewFaq] = useState({ question: '', answer: '' });
   const [projects, setProjects] = useState<ProjectRow[]>([]);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<{ proj: Record<string, unknown> | null; members: MemberFull[]; sub: Record<string, unknown> | null; scores: ScoreView[] } | null>(null);
+  const [ownScores, setOwnScores] = useState<Record<string, JuryDraft>>({});
+  const [juryDraft, setJuryDraft] = useState<Record<string, JuryDraft>>({});
+  const [openJury, setOpenJury] = useState<string | null>(null);
 
   // account
   const [newName, setNewName] = useState('');
@@ -151,10 +195,27 @@ export default function SagradoPage() {
   };
 
   const isDev = me?.role === 'dev';
+  const isJudge = !!me && (isDev || me.role === 'jurado');
   const perms = me?.permissions || {};
   const canLotes = isDev || !!perms.manage_lotes;
   const canContent = isDev || !!perms.manage_content;
   const canSubs = isDev || !!perms.manage_subscriptions;
+
+  const loadLive = useCallback(async () => {
+    const { data } = await supabase.from('live_broadcast').select('status').eq('id', 1).maybeSingle();
+    if (data?.status) setLiveStatus(data.status);
+  }, []);
+
+  const loadOwnScores = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase.from('jury_scores').select('*').eq('staff_id', user.id);
+    const map: Record<string, JuryDraft> = {};
+    (data || []).forEach((s: { project_id: string; presentation: number; composition: number; aesthetics: number; notes: string }) => {
+      map[s.project_id] = { presentation: s.presentation, composition: s.composition, aesthetics: s.aesthetics, notes: s.notes };
+    });
+    setOwnScores(map);
+  }, []);
 
   const loadStaff = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -193,7 +254,7 @@ export default function SagradoPage() {
   const loadProjects = useCallback(async () => {
     const { data } = await supabase
       .from('projects')
-      .select('id, name, style, status, created_at, members(count), subscriptions(status, amount_paid, batches(name))')
+      .select('id, name, style, bio, instagram, video_link, photo_url, status, created_at, members(count), subscriptions(status, amount_paid, batches(name))')
       .order('created_at', { ascending: false })
       .limit(100);
     if (data) setProjects(data as unknown as ProjectRow[]);
@@ -203,7 +264,7 @@ export default function SagradoPage() {
     (async () => {
       const ok = await loadStaff();
       if (ok) {
-        await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects()]);
+        await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores()]);
       }
       setBooting(false);
     })();
@@ -211,14 +272,16 @@ export default function SagradoPage() {
       if (evt === 'SIGNED_OUT') { setAuthed(false); setMe(null); setStaffList([]); }
     });
     return () => sub.subscription.unsubscribe();
-  }, [loadStaff, loadBatches, loadSettings, loadFaqs, loadProjects]);
+  }, [loadStaff, loadBatches, loadSettings, loadFaqs, loadProjects, loadLive, loadOwnScores]);
 
   useEffect(() => {
     if (!authed) return;
-    const available = ['visao'];
+    const available: string[] = [];
+    if (me?.role !== 'jurado') available.push('visao');
     if (canLotes) available.push('lotes');
     if (canContent) available.push('conteudo');
     if (canSubs) available.push('inscritos');
+    if (isJudge) available.push('avaliacao');
     if (isDev) available.push('equipe');
     available.push('conta');
     setTab(t => (available.includes(t) ? t : available[0]));
@@ -242,7 +305,7 @@ export default function SagradoPage() {
       setLoggingIn(false);
       return;
     }
-    await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects()]);
+    await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores()]);
     setLoggingIn(false);
     setPassword('');
   };
@@ -382,6 +445,67 @@ export default function SagradoPage() {
     return 'ok';
   });
 
+  const setProjectState = (p: ProjectRow, status: string, msg: string) => guarded(`st-${p.id}`, async () => {
+    const { data, error } = await supabase.from('projects').update({ status }).eq('id', p.id).select();
+    if (error) return 'Erro: ' + error.message;
+    if (!data || data.length === 0) return 'Operação não permitida.';
+    await loadProjects();
+    if (detailId === p.id) await openDetail(p.id);
+    setMsg(`st-${p.id}`, 'ok', msg);
+    return 'ok';
+  });
+
+  const openDetail = async (id: string) => {
+    setDetailId(id);
+    setDetail(null);
+    const [projRes, membersRes, subRes, scoresRes] = await Promise.all([
+      supabase.from('projects').select('*').eq('id', id).single(),
+      supabase.from('members').select('*').eq('project_id', id).order('is_responsible', { ascending: false }),
+      supabase.from('subscriptions').select('*, batches(name)').eq('project_id', id).maybeSingle(),
+      (isDev || canSubs)
+        ? supabase.rpc('get_project_scores', { pid: id })
+        : Promise.resolve({ data: [] } as { data: ScoreView[] | null })
+    ]);
+    setDetail({
+      proj: (projRes.data || null) as Record<string, unknown> | null,
+      members: (membersRes.data || []) as unknown as MemberFull[],
+      sub: (subRes.data || null) as Record<string, unknown> | null,
+      scores: (scoresRes.data || []) as ScoreView[]
+    });
+  };
+
+  // ---------- avaliação ----------
+  const draftScore = (pid: string): JuryDraft =>
+    juryDraft[pid] ?? ownScores[pid] ?? { presentation: 0, composition: 0, aesthetics: 0, notes: '' };
+
+  const setScoreDraft = (pid: string, patch: Partial<JuryDraft>) =>
+    setJuryDraft(p => ({ ...p, [pid]: { ...draftScore(pid), ...patch } }));
+
+  const saveScore = (pid: string) => guarded(`score-${pid}`, async () => {
+    if (!me) return 'Sessão expirada.';
+    const d = draftScore(pid);
+    const clamp = (n: number) => Math.max(0, Math.min(10, Math.round(Number(n) || 0)));
+    const { error } = await supabase
+      .from('jury_scores')
+      .upsert(
+        { project_id: pid, staff_id: me.id, presentation: clamp(d.presentation), composition: clamp(d.composition), aesthetics: clamp(d.aesthetics), notes: d.notes },
+        { onConflict: 'project_id,staff_id' }
+      );
+    if (error) return 'Erro ao salvar nota: ' + error.message;
+    await loadOwnScores();
+    setMsg(`score-${pid}`, 'ok', 'Nota registrada.');
+    return 'ok';
+  });
+
+  // ---------- live ----------
+  const setLivePhase = (phase: 'ao_vivo' | 'encerrada' | 'em_breve') => guarded('live-phase', async () => {
+    const { error } = await supabase.rpc('set_live_phase', { phase });
+    if (error) return 'Não foi possível: ' + error.message;
+    await Promise.all([loadLive(), loadBatches()]);
+    setMsg('live-phase', 'ok', phase === 'ao_vivo' ? 'Live no ar. Lotes ativos foram pausados automaticamente.' : 'Fase da live atualizada.');
+    return 'ok';
+  });
+
   // ---------- equipe ----------
   const saveStaff = (s: StaffRow) => guarded(`staff-${s.id}`, async () => {
     const { data, error } = await supabase
@@ -472,10 +596,11 @@ export default function SagradoPage() {
           {/* tabs */}
           <div className="flex gap-1.5 overflow-x-auto py-4 scrollbar-thin">
             {[
-              { id: 'visao', label: 'Visão geral', icon: LayoutDashboard, show: true },
-              { id: 'lotes', label: 'Lotes', icon: Tags, show: canLotes },
+              { id: 'visao', label: 'Visão geral', icon: LayoutDashboard, show: !!me && me.role !== 'jurado' },
+              { id: 'lotes', label: 'Lotes & Live', icon: Tags, show: canLotes },
               { id: 'conteudo', label: 'Conteúdo do site', icon: FileText, show: canContent },
               { id: 'inscritos', label: 'Inscrições', icon: ClipboardList, show: canSubs },
+              { id: 'avaliacao', label: 'Avaliação', icon: Star, show: isJudge },
               { id: 'equipe', label: 'Equipe', icon: Users, show: isDev },
               { id: 'conta', label: 'Minha conta', icon: UserCog, show: true },
             ].filter(t => t.show).map(t => (
@@ -522,7 +647,33 @@ export default function SagradoPage() {
           {/* LOTES */}
           {tab === 'lotes' && (
             <div className="space-y-5 fade-up-800">
-              <Notice kind="info">Ativar um lote ajusta os demais automaticamente (anteriores ficam encerrados, seguintes em breve) e sincroniza a data exibida no site.</Notice>
+              <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 border-[#E3B552]/40 rounded-2xl p-5 space-y-4">
+                <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="font-display font-bold text-white uppercase">🔴 Live — Dia 0</h3>
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded font-mono uppercase border ${
+                      liveStatus === 'ao_vivo' ? 'bg-red-500/15 text-red-400 border-red-500/30 animate-pulse'
+                      : liveStatus === 'encerrada' ? 'bg-[#121215] text-gray-500 border-white/5'
+                      : 'bg-[#121215] text-gray-400 border-white/5'}`}>
+                      {liveStatus}
+                    </span>
+                  </div>
+                  <span className="font-mono text-[9px] text-gray-400 uppercase">Lançamento: {fmtDate(settings.live_launch)}</span>
+                </div>
+                <p className="text-xs text-gray-300 leading-relaxed">
+                  Colocar a live no ar pausa automaticamente qualquer lote ativo (o Dia 0 passa a valer). Ativar um lote depois encerra a transmissão.
+                </p>
+                <div className="flex flex-wrap gap-2.5">
+                  <button type="button" onClick={() => setLivePhase('ao_vivo')} disabled={busy === 'live-phase' || liveStatus === 'ao_vivo'} className={btnGold}>
+                    {busy === 'live-phase' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Ativar ao vivo'}
+                  </button>
+                  <button type="button" onClick={() => setLivePhase('encerrada')} disabled={busy === 'live-phase' || liveStatus === 'encerrada'} className={btnGhost}>Encerrar transmissão</button>
+                  <button type="button" onClick={() => setLivePhase('em_breve')} disabled={busy === 'live-phase' || liveStatus === 'em_breve'} className={btnGhost}>Voltar para em breve</button>
+                </div>
+                {notice['live-phase'] && <Notice kind={notice['live-phase'].kind}>{notice['live-phase'].msg}</Notice>}
+              </div>
+
+              <Notice kind="info">Ativar um lote ajusta os demais automaticamente (anteriores ficam encerrados, seguintes em breve), encerra a live se estiver no ar e sincroniza a data exibida no site.</Notice>
               {batches.map(b => {
                 const d = draftFor(b);
                 const k = `batch-${b.id}`;
@@ -637,41 +788,211 @@ export default function SagradoPage() {
           {/* INSCRIÇÕES */}
           {tab === 'inscritos' && (
             <div className="space-y-4 fade-up-800">
-              {notice['faq-list'] && <Notice kind={notice['faq-list'].kind}>{notice['faq-list'].msg}</Notice>}
-              <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
-                <h3 className="font-display font-bold text-white uppercase border-b border-white/5 pb-3">Inscrições recentes ({projects.length})</h3>
-                {projects.length === 0 && <p className="text-xs text-gray-400 font-mono">Nenhuma inscrição ainda.</p>}
-                <div className="space-y-3">
-                  {projects.map(p => {
-                    const sub = p.subscriptions?.[0];
-                    const count = p.members?.[0]?.count ?? 0;
-                    return (
-                      <div key={p.id} className="bg-black/40 border border-white/5 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <div className="space-y-0.5 min-w-0">
-                          <span className="text-sm font-bold text-white block truncate">{p.name}</span>
-                          <span className="font-mono text-[10px] text-gray-400 uppercase block">
-                            {p.style || '—'} • {count} integrante{count === 1 ? '' : 's'} • {fmtDate(p.created_at)} {sub?.batches?.name ? `• ${sub.batches.name}` : ''} {sub?.amount_paid ? `• R$ ${sub.amount_paid},00` : ''}
-                          </span>
+              {detailId ? (() => {
+                const p = projects.find(x => x.id === detailId);
+                if (!p) return <Notice kind="err">Inscrição não encontrada.</Notice>;
+                const st = PROJECT_STATUS[p.status] || { label: p.status, cls: 'bg-white/5 text-gray-400 border-white/10' };
+                const sub = detail?.sub as { amount_paid?: number; status?: string; batches?: { name: string }; charge_id?: string; paid_at?: string | null } | null | undefined;
+                const proj = (detail?.proj || {}) as Record<string, string | null>;
+                return (
+                  <div className="space-y-4">
+                    <button type="button" onClick={() => { setDetailId(null); setDetail(null); }} className={btnGhost}>← Voltar para a lista</button>
+
+                    <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-5">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/5 pb-4">
+                        <div>
+                          <h3 className="font-display font-black text-xl text-white uppercase leading-tight">{p.name}</h3>
+                          <span className="font-mono text-[10px] text-gray-400 uppercase block mt-1">{p.style || '—'} • cadastrada em {fmtDate(p.created_at)}</span>
                         </div>
-                        <div className="flex items-center gap-2.5 shrink-0">
-                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded font-mono uppercase border ${
-                            p.status === 'paid' ? 'bg-[#10B981]/15 text-[#10B981] border-[#10B981]/30'
-                            : p.status === 'failed' ? 'bg-red-500/15 text-red-400 border-red-500/30'
-                            : 'bg-amber-500/15 text-amber-500 border-amber-500/30'}`}>
-                            {p.status === 'paid' ? 'paga' : p.status === 'failed' ? 'negada' : 'pendente'}
-                          </span>
-                          {p.status === 'pending' && (
-                            <button type="button" onClick={() => confirmPayment(p)} disabled={busy === `pay-${p.id}`} className="bg-[#10B981] text-black font-mono text-[9px] font-bold px-3 py-1.5 rounded uppercase disabled:opacity-50">
-                              {busy === `pay-${p.id}` ? '...' : 'Confirmar pagamento'}
-                            </button>
-                          )}
-                          {notice[`pay-${p.id}`] && <span className="hidden">{notice[`pay-${p.id}`].msg}</span>}
+                        <span className={`text-[9px] font-bold px-2.5 py-1 rounded font-mono uppercase border shrink-0 ${st.cls}`}>{st.label}</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="md:col-span-2 space-y-1">
+                          <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">BIOGRAFIA OFICIAL:</span>
+                          <p className="text-xs text-gray-200 leading-relaxed">{proj.bio || '—'}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">INSTAGRAM:</span>
+                          {proj.instagram
+                            ? <a href={`https://instagram.com/${String(proj.instagram).replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[#F0C265] font-bold text-xs font-mono hover:underline break-all">{String(proj.instagram)}</a>
+                            : <span className="text-xs text-gray-500 font-mono">—</span>}
+                        </div>
+                        <div className="space-y-1">
+                          <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">LINK DA MÚSICA / VÍDEO:</span>
+                          {proj.video_link
+                            ? <a href={String(proj.video_link)} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline text-xs font-mono break-all">{String(proj.video_link)}</a>
+                            : <span className="text-xs text-gray-500 font-mono">—</span>}
+                        </div>
+                        <div className="space-y-1 md:col-span-2">
+                          <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">FOTO DE DIVULGAÇÃO ENVIADA:</span>
+                          <span className="text-xs font-mono text-gray-300 block">{proj.photo_url ? `✓ ${proj.photo_url}` : '—'}</span>
                         </div>
                       </div>
-                    );
-                  })}
+
+                      <div className="space-y-3">
+                        <span className="font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-widest block">Integrantes ({detail?.members.length ?? 0})</span>
+                        <div className="space-y-2">
+                          {(detail?.members || []).map((m, i) => (
+                            <div key={i} className={`p-3 rounded-xl border ${m.is_responsible ? 'border-[#F0C265]/20 bg-[#F0C265]/5' : 'border-white/5 bg-black/30'}`}>
+                              <div className="flex justify-between items-center gap-2">
+                                <span className="text-xs font-bold text-white">{m.name} {m.is_responsible && <span className="font-mono text-[8px] text-[#F0C265] uppercase">(líder responsável)</span>}</span>
+                                <span className="font-mono text-[9px] text-gray-500">#{i + 1}</span>
+                              </div>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 font-mono text-[10px] text-gray-300">
+                                <span>CPF: {m.cpf || '—'}</span>
+                                <span>Nasc.: {m.birth_date || '—'}</span>
+                                <span>WhatsApp: {m.phone || '—'}</span>
+                                <span>E-mail: {(m as any).email || '—'}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 bg-black/40 border border-white/5 rounded-xl p-4">
+                        <span className="font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-widest block">Recibo da cobrança</span>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-[10px] text-gray-300">
+                          <span>Valor: <strong className="text-[#10B981]">{sub?.amount_paid != null ? `R$ ${sub.amount_paid},00` : '—'}</strong></span>
+                          <span>Lote: {sub?.batches?.name || '—'}</span>
+                          <span>Cobrança: {sub?.status || '—'}</span>
+                          <span>ID: {sub?.charge_id ? String(sub.charge_id).slice(0, 18) : '—'}</span>
+                          <span className="md:col-span-2">Pago em: {fmtDate(sub?.paid_at ?? null)}</span>
+                        </div>
+                      </div>
+
+                      {(detail?.scores?.length ?? 0) > 0 && (
+                        <div className="space-y-2 bg-black/40 border border-white/5 rounded-xl p-4">
+                          <span className="font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-widest block">Notas do júri</span>
+                          {detail!.scores.map((sc, i) => (
+                            <div key={i} className="flex flex-wrap justify-between gap-2 font-mono text-[10px] text-gray-300 border-b border-white/5 pb-1.5 last:border-none">
+                              <span className="text-white font-bold">{sc.juror}</span>
+                              <span>Apres. {sc.presentation} • Compos. {sc.composition} • Estét. {sc.aesthetics} • Média <strong className="text-[#F0C265]">{((sc.presentation + sc.composition + sc.aesthetics) / 3).toFixed(1)}</strong></span>
+                              {sc.notes && <span className="w-full text-gray-500">“{sc.notes}”</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {canSubs && (
+                        <div className="border-t border-white/5 pt-4 space-y-2">
+                          <span className="font-mono text-[9px] text-gray-400 uppercase tracking-widest block font-bold">Ações sobre esta inscrição</span>
+                          <div className="flex flex-wrap gap-2.5">
+                            {(p.status === 'pending' || p.status === 'failed') && (
+                              <button type="button" onClick={() => confirmPayment(p)} disabled={busy === `pay-${p.id}`} className="bg-[#10B981] text-black font-mono text-[9px] font-bold px-3 py-2 rounded uppercase disabled:opacity-50">
+                                {busy === `pay-${p.id}` ? '...' : 'Confirmar pagamento'}
+                              </button>
+                            )}
+                            {p.status === 'paid' && (
+                              <button type="button" onClick={() => setProjectState(p, 'suspended', 'Inscrição suspensa.')} disabled={busy === `st-${p.id}`} className="bg-orange-500 text-black font-mono text-[9px] font-bold px-3 py-2 rounded uppercase disabled:opacity-50">Suspender</button>
+                            )}
+                            {p.status !== 'blocked' && (
+                              <button type="button" onClick={() => setProjectState(p, 'blocked', 'Inscrição bloqueada.')} disabled={busy === `st-${p.id}`} className="bg-red-600 text-white font-mono text-[9px] font-bold px-3 py-2 rounded uppercase disabled:opacity-50">Bloquear</button>
+                            )}
+                            {p.status === 'paid' && (
+                              <button type="button" onClick={() => setProjectState(p, 'refunded', 'Inscrição marcada como reembolsada.')} disabled={busy === `st-${p.id}`} className="bg-white/10 text-gray-300 font-mono text-[9px] font-bold px-3 py-2 rounded uppercase border border-white/10 disabled:opacity-50">Marcar reembolsada</button>
+                            )}
+                            {(p.status === 'suspended' || p.status === 'blocked' || p.status === 'refunded') && (
+                              <button type="button" onClick={() => setProjectState(p, 'paid', 'Inscrição reativada como paga.')} disabled={busy === `st-${p.id}`} className="bg-[#10B981] text-black font-mono text-[9px] font-bold px-3 py-2 rounded uppercase disabled:opacity-50">Reativar (paga)</button>
+                            )}
+                          </div>
+                          {notice[`st-${p.id}`] && <Notice kind={notice[`st-${p.id}`].kind}>{notice[`st-${p.id}`].msg}</Notice>}
+                          <p className="text-[10px] text-gray-500 font-mono leading-relaxed">Estas ações alteram apenas o estado da inscrição — os dados cadastrados pela banda permanecem intactos para análise da gerência.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })() : (
+                <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
+                  <h3 className="font-display font-bold text-white uppercase border-b border-white/5 pb-3">Inscrições ({projects.length})</h3>
+                  {projects.length === 0 && <p className="text-xs text-gray-400 font-mono">Nenhuma inscrição ainda.</p>}
+                  <div className="space-y-3">
+                    {projects.map(p => {
+                      const sub = p.subscriptions?.[0];
+                      const count = p.members?.[0]?.count ?? 0;
+                      const st = PROJECT_STATUS[p.status] || { label: p.status, cls: 'bg-white/5 text-gray-400 border-white/10' };
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => openDetail(p.id)}
+                          className="w-full text-left bg-black/40 border border-white/5 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:border-[#E3B552]/30 transition-colors"
+                        >
+                          <div className="space-y-0.5 min-w-0">
+                            <span className="text-sm font-bold text-white block truncate">{p.name}</span>
+                            <span className="font-mono text-[10px] text-gray-400 uppercase block">
+                              {p.style || '—'} • {count} integrante{count === 1 ? '' : 's'} • {fmtDate(p.created_at)} {sub?.batches?.name ? `• ${sub.batches.name}` : ''} {sub?.amount_paid ? `• R$ ${sub.amount_paid},00` : ''}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2.5 shrink-0">
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded font-mono uppercase border ${st.cls}`}>{st.label}</span>
+                            <span className="flex items-center gap-1 font-mono text-[9px] font-bold text-[#F0C265] uppercase"><Eye className="w-3 h-3" /> Ficha</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                {notice['inscritos'] && <Notice kind={notice['inscritos'].kind}>{notice['inscritos'].msg}</Notice>}
+              )}
+            </div>
+          )}
+
+          {/* AVALIAÇÃO */}
+          {tab === 'avaliacao' && isJudge && (
+            <div className="space-y-4 fade-up-800">
+              <Notice kind="info">Abra uma banda para ver a ficha artística e registrar as notas (0 a 10). Sua nota pode ser ajustada a qualquer momento.</Notice>
+              {projects.length === 0 && (
+                <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-5">
+                  <p className="text-xs text-gray-400 font-mono">Nenhuma banda cadastrada ainda.</p>
+                </div>
+              )}
+              <div className="space-y-3">
+                {projects.map(p => {
+                  const d = draftScore(p.id);
+                  const avg = (Math.round((((Number(d.presentation) || 0) + (Number(d.composition) || 0) + (Number(d.aesthetics) || 0)) / 3) * 10) / 10).toFixed(1);
+                  return (
+                    <div key={p.id} className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
+                      <button type="button" onClick={() => setOpenJury(o => (o === p.id ? null : p.id))} className="w-full flex justify-between items-center gap-3 text-left">
+                        <div>
+                          <span className="text-sm font-bold text-white block">{p.name}</span>
+                          <span className="font-mono text-[10px] text-gray-400 uppercase block">{p.style || '—'} • {p.members?.[0]?.count ?? 0} integrante{(p.members?.[0]?.count ?? 0) === 1 ? '' : 's'}</span>
+                        </div>
+                        <span className="font-mono text-lg text-[#F0C265] font-black shrink-0">{avg}</span>
+                      </button>
+
+                      {openJury === p.id && (
+                        <div className="space-y-4 border-t border-white/5 pt-4">
+                          <div className="space-y-2">
+                            <span className="font-mono text-[9px] text-gray-400 uppercase tracking-widest block font-bold">Ficha artística</span>
+                            <p className="text-xs text-gray-200 leading-relaxed">{p.bio || 'Sem biografia cadastrada.'}</p>
+                            <div className="flex flex-wrap gap-3 font-mono text-[10px]">
+                              {p.instagram && <a href={`https://instagram.com/${String(p.instagram).replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[#F0C265] hover:underline">{String(p.instagram)}</a>}
+                              {p.video_link && <a href={String(p.video_link)} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all">ouvir/ver música ↗</a>}
+                              <span className="text-gray-500">foto: {p.photo_url ? 'enviada ✓' : '—'}</span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-3">
+                            <Field label="Apresentação"><input type="number" min={0} max={10} className={inputCls} value={d.presentation} onChange={(e) => setScoreDraft(p.id, { presentation: e.target.value === '' ? 0 : Number(e.target.value) })} /></Field>
+                            <Field label="Composição"><input type="number" min={0} max={10} className={inputCls} value={d.composition} onChange={(e) => setScoreDraft(p.id, { composition: e.target.value === '' ? 0 : Number(e.target.value) })} /></Field>
+                            <Field label="Estética"><input type="number" min={0} max={10} className={inputCls} value={d.aesthetics} onChange={(e) => setScoreDraft(p.id, { aesthetics: e.target.value === '' ? 0 : Number(e.target.value) })} /></Field>
+                          </div>
+                          <Field label="Observações (opcional)">
+                            <textarea className={`${inputCls} resize-none`} rows={2} value={d.notes} onChange={(e) => setScoreDraft(p.id, { notes: e.target.value })} placeholder="Anotações da avaliação ao vivo" />
+                          </Field>
+
+                          <div className="flex justify-end items-center gap-3">
+                            {notice[`score-${p.id}`] && <Notice kind={notice[`score-${p.id}`].kind}>{notice[`score-${p.id}`].msg}</Notice>}
+                            <button type="button" onClick={() => saveScore(p.id)} disabled={busy === `score-${p.id}`} className={btnGold}>
+                              {busy === `score-${p.id}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Registrar nota'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -692,7 +1013,7 @@ export default function SagradoPage() {
                         <h3 className="font-display font-bold text-white">{cur.display_name || cur.email}</h3>
                         <span className="font-mono text-[9px] text-gray-500 block">{cur.email}{self ? ' • você' : ''}</span>
                       </div>
-                      <span className={`font-mono text-[9px] font-bold px-2.5 py-1 rounded-full uppercase border ${cur.role === 'dev' ? 'text-[#F0C265] border-[#F0C265]/40 bg-[#F0C265]/10' : 'text-gray-400 border-white/10 bg-white/5'}`}>
+                      <span className={`font-mono text-[9px] font-bold px-2.5 py-1 rounded-full uppercase border ${cur.role === 'dev' ? 'text-[#F0C265] border-[#F0C265]/40 bg-[#F0C265]/10' : cur.role === 'jurado' ? 'text-blue-300 border-blue-400/30 bg-blue-400/10' : 'text-gray-400 border-white/10 bg-white/5'}`}>
                         {cur.role}
                       </span>
                     </div>
@@ -702,14 +1023,15 @@ export default function SagradoPage() {
                         <input className={inputCls} value={cur.display_name} disabled={self} onChange={(e) => upd({ display_name: e.target.value })} />
                       </Field>
                       <Field label="Nível de acesso">
-                        <select className={inputCls} value={cur.role} disabled={self} onChange={(e) => upd({ role: e.target.value as 'dev' | 'admin' })}>
+                        <select className={inputCls} value={cur.role} disabled={self} onChange={(e) => upd({ role: e.target.value as StaffRow['role'] })}>
                           <option value="admin">admin</option>
+                          <option value="jurado">jurado</option>
                           <option value="dev">dev</option>
                         </select>
                       </Field>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className={`space-y-2 ${cur.role === 'admin' ? '' : 'hidden'}`}>
                       <span className="font-mono text-[9px] text-gray-400 uppercase tracking-widest block font-bold">Funções liberadas no painel</span>
                       {PERM_KEYS.map(pk => (
                         <label key={pk.key} className="flex items-center gap-3 cursor-pointer">

@@ -6,7 +6,8 @@ import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
 import { 
   Shield, Music, Users, Calendar, CheckCircle, Clock, 
-  AlertTriangle, ArrowLeft, Search, Phone, User, Hash 
+  AlertTriangle, ArrowLeft, Search, Phone, User, Hash,
+  XCircle, PauseCircle, RotateCcw
 } from 'lucide-react';
 
 interface Member {
@@ -26,7 +27,7 @@ interface RegistrationData {
   photo_url: string | null;
   instagram: string | null;
   video_link: string | null;
-  status: 'pending' | 'paid' | 'failed';
+  status: 'pending' | 'paid' | 'failed' | 'blocked' | 'suspended' | 'refunded';
   members: Member[];
   amount_paid?: number;
   batch_name?: string;
@@ -379,6 +380,24 @@ export default function MinhaInscricaoPage() {
                 <>
                   <AlertTriangle className="w-5 h-5 text-red-500" />
                   <span className="text-red-500 font-display font-black text-md uppercase tracking-wider">Inscrição Negada / Rejeitada</span>
+                </>
+              )}
+              {data.status === 'blocked' && (
+                <>
+                  <XCircle className="w-5 h-5 text-red-500" />
+                  <span className="text-red-500 font-display font-black text-md uppercase tracking-wider">Inscrição Bloqueada</span>
+                </>
+              )}
+              {data.status === 'suspended' && (
+                <>
+                  <PauseCircle className="w-5 h-5 text-orange-400" />
+                  <span className="text-orange-400 font-display font-black text-md uppercase tracking-wider">Inscrição Suspensa</span>
+                </>
+              )}
+              {data.status === 'refunded' && (
+                <>
+                  <RotateCcw className="w-5 h-5 text-gray-400" />
+                  <span className="text-gray-400 font-display font-black text-md uppercase tracking-wider">Inscrição Reembolsada</span>
                 </>
               )}
             </div>

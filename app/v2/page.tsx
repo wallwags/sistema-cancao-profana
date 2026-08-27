@@ -484,7 +484,7 @@ export default function Page() {
 
           <div data-reveal-group className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
-              { key: 'dia0', title: 'Dia 0 (Live)', status: 'encerrado', desc: 'Apenas durante a transmissão ao vivo.', valor: 25 },
+              { key: 'dia0', title: 'Dia 0 (Live)', status: lotesConfig.live.status === 'ao_vivo' ? 'ativo' : lotesConfig.live.status === 'encerrada' ? 'encerrado' : 'em_breve', desc: 'Apenas durante a transmissão ao vivo.', valor: 25 },
               { key: 'lote1', title: 'Lote 1', status: lotesConfig.lote1.status, desc: 'Primeiras inscrições. Menor preço histórico.', valor: 35, vagas: lotesConfig.lote1.vagasRestantes },
               { key: 'lote2', title: 'Lote 2', status: lotesConfig.lote2.status, desc: 'Disponível na fase intermediária.', valor: 40, vagas: lotesConfig.lote2.vagasRestantes },
               { key: 'lote3', title: 'Lote 3', status: lotesConfig.lote3.status, desc: 'Reta final de inscrições regulamentares.', valor: 45, vagas: lotesConfig.lote3.vagasRestantes }
