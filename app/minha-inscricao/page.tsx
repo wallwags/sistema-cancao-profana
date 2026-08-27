@@ -68,32 +68,20 @@ export default function MinhaInscricaoPage() {
         }
       }
 
-      // 1. Fetch project details
-      const { data: project, error: pError } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const savedCpf = localStorage.getItem('current_cpf_v2');
+      if (!savedCpf) {
+        throw new Error("Sessão expirada. Busque novamente pelo CPF do responsável.");
+      }
 
-      if (pError || !project) {
+      const { data: reg, error: rpcError } = await supabase
+        .rpc('get_registration', { p_id: id, p_cpf: savedCpf });
+
+      if (rpcError || !reg || !reg.project) {
         throw new Error("Não encontramos nenhum projeto com este identificador.");
       }
 
-      // 2. Fetch project members
-      const { data: members, error: mError } = await supabase
-        .from('members')
-        .select('*')
-        .eq('project_id', id)
-        .order('is_responsible', { ascending: false });
-
-      // 3. Fetch project subscriptions
-      const { data: subscription } = await supabase
-        .from('subscriptions')
-        .select('*, batches(name)')
-        .eq('project_id', id)
-        .single();
-
-      const typedMembers: Member[] = (members || []).map(m => ({
+      const project = reg.project;
+      const typedMembers: Member[] = (reg.members || []).map((m: any) => ({
         name: m.name,
         cpf: m.cpf,
         birth_date: m.birth_date,
@@ -101,6 +89,8 @@ export default function MinhaInscricaoPage() {
         email: m.email ?? null,
         is_responsible: m.is_responsible
       }));
+
+      const sub = (reg.subscriptions || [])[0] || null;
 
       setData({
         id: project.id,
@@ -110,10 +100,10 @@ export default function MinhaInscricaoPage() {
         photo_url: project.photo_url,
         instagram: project.instagram || null,
         video_link: project.video_link || null,
-        status: project.status, // 'pending' | 'paid' | 'failed'
+        status: project.status,
         members: typedMembers,
-        amount_paid: subscription ? Number(subscription.amount_paid) : undefined,
-        batch_name: subscription && (subscription as any).batches ? (subscription as any).batches.name : undefined
+        amount_paid: sub ? Number(sub.amount_paid) : undefined,
+        batch_name: sub?.batch_name || undefined
       });
 
       setProjectId(id);
@@ -134,12 +124,14 @@ export default function MinhaInscricaoPage() {
     }
   };
 
-  // Check for saved project ID on mount
+  // Check for saved project keys on mount
   useEffect(() => {
     const savedId = localStorage.getItem('current_project_id');
-    if (savedId) {
+    const savedCpf = localStorage.getItem('current_cpf_v2');
+    if (savedId && savedCpf) {
       loadProject(savedId);
     } else {
+      if (savedId) localStorage.removeItem('current_project_id');
       setLoading(false);
     }
   }, []);
@@ -175,31 +167,28 @@ export default function MinhaInscricaoPage() {
 
       if (localFoundId) {
         localStorage.setItem('current_project_id', localFoundId);
+        localStorage.setItem('current_cpf_v2', searchCpf);
         await loadProject(localFoundId);
         setSearching(false);
         return;
       }
 
-      // 1. Scan online Supabase database if no offline match
-      const { data: member, error: mError } = await supabase
-        .from('members')
-        .select('project_id')
-        .eq('cpf', searchCpf)
-        .eq('is_responsible', true)
-        .limit(1)
-        .maybeSingle();
+      // 1. Scan online database if no offline match (secure lookup by CPF)
+      const { data: foundId, error: rpcError } = await supabase
+        .rpc('find_registration_by_cpf', { p_cpf: searchCpf });
 
-      if (mError) {
+      if (rpcError) {
         throw new Error("Ocorreu um erro ao consultar o banco de dados.");
       }
 
-      if (!member) {
+      if (!foundId) {
         throw new Error("Nenhuma inscrição encontrada com este CPF de responsável líder.");
       }
 
-      // If found, load the full project
-      localStorage.setItem('current_project_id', member.project_id);
-      await loadProject(member.project_id);
+      // If found, store the lookup keys and load the full project
+      localStorage.setItem('current_project_id', foundId);
+      localStorage.setItem('current_cpf_v2', searchCpf);
+      await loadProject(foundId);
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || "Nenhuma inscrição encontrada.");

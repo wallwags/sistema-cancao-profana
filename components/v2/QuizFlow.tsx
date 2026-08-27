@@ -661,26 +661,6 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
           parsed.status = 'paid';
           localStorage.setItem('fallback_project_' + id, JSON.stringify(parsed));
         }
-      } else {
-        // 1. Update project status to 'paid'
-        await supabase.from('projects').update({ status: 'paid' }).eq('id', id);
-        // 2. Update subscription status to 'paid' and set paid_at
-        await supabase
-          .from('subscriptions')
-          .update({ status: 'paid', paid_at: new Date().toISOString() })
-          .eq('project_id', id);
-        // 3. Decrement active batch seats
-        const { data: activeBatch } = await supabase
-          .from('batches')
-          .select('*')
-          .eq('status', 'ativo')
-          .single();
-        if (activeBatch) {
-          await supabase
-            .from('batches')
-            .update({ vagas_restantes: Math.max(0, activeBatch.vagas_restantes - 1) })
-            .eq('id', activeBatch.id);
-        }
       }
 
       setTicketCode(deriveTicketCode(id));
@@ -745,7 +725,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   // ---------- Demo filler (production-safe: fills valid data, validations stay on) ----------
   const fillDemoData = () => {
     if (quizStep === 1) {
-      setProjectName("Os Profanos do Ritmo");
+      setProjectName("[DEMO] Os Profanos do Ritmo");
       setProjectStyle("Rock Autoral");
       clearError('projectName'); clearError('projectStyle');
     } else if (quizStep === 2) {
@@ -1292,7 +1272,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   <h3 className="font-display font-black text-2xl text-white uppercase tracking-tightest leading-tight">MATRÍCULA CONFIRMADA!</h3>
                 </div>
 
-                <p className="text-xs text-gray-400 leading-relaxed max-w-xs mx-auto">Inscrição confirmada e processada com segurança. Guarde este passe oficial e acompanhe o status no portal do candidato.</p>
+                <p className="text-xs text-gray-400 leading-relaxed max-w-xs mx-auto">Inscrição registrada com sucesso! Após a confirmação do Pix pela equipe do estúdio, sua matrícula fica ativa no portal do candidato.</p>
               </div>
 
               {/* DASHED SEPARATOR LINE */}

@@ -176,7 +176,7 @@ export default function SagradoPage() {
   const [newFaq, setNewFaq] = useState({ question: '', answer: '' });
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [detailId, setDetailId] = useState<string | null>(null);
-  const [detail, setDetail] = useState<{ proj: Record<string, unknown> | null; members: MemberFull[]; sub: Record<string, unknown> | null; scores: ScoreView[] } | null>(null);
+  const [detail, setDetail] = useState<{ proj: Record<string, unknown> | null; members: MemberFull[]; sub: Record<string, unknown> | null; subsTotal: number; scores: ScoreView[] } | null>(null);
   const [ownScores, setOwnScores] = useState<Record<string, JuryDraft>>({});
   const [juryDraft, setJuryDraft] = useState<Record<string, JuryDraft>>({});
   const [openJury, setOpenJury] = useState<string | null>(null);
@@ -276,6 +276,14 @@ export default function SagradoPage() {
 
   useEffect(() => {
     if (!authed) return;
+    const recheck = () => { loadStaff(); };
+    const iv = setInterval(recheck, 60000);
+    window.addEventListener('focus', recheck);
+    return () => { clearInterval(iv); window.removeEventListener('focus', recheck); };
+  }, [authed, loadStaff]);
+
+  useEffect(() => {
+    if (!authed) return;
     const available: string[] = [];
     if (me?.role !== 'jurado') available.push('visao');
     if (canLotes) available.push('lotes');
@@ -286,7 +294,7 @@ export default function SagradoPage() {
     available.push('conta');
     setTab(t => (available.includes(t) ? t : available[0]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authed]);
+  }, [authed, me?.role, canLotes, canContent, canSubs, isJudge]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -372,11 +380,11 @@ export default function SagradoPage() {
   });
 
   // ---------- conteúdo ----------
-  const saveSetting = (key: string, label: string) => guarded(`set-${key}`, async () => {
-    const v = settingDrafts[key];
-    const iso = fromInputValue(v);
-    if (v && !iso) return 'Data inválida.';
-    const { error } = await supabase.from('site_settings').upsert({ key, value: iso ?? '' }, { onConflict: 'key' });
+  const saveSetting = (key: string, label: string, kind: 'datetime' | 'text' = 'datetime') => guarded(`set-${key}`, async () => {
+    const v = settingDrafts[key] ?? '';
+    if (kind === 'text' && v.trim() && !/^https?:\/\//i.test(v.trim())) return 'Informe um link começando com http(s)://';
+    const value = kind === 'datetime' ? (fromInputValue(v) ?? '') : v.trim();
+    const { error } = await supabase.from('site_settings').upsert({ key, value }, { onConflict: 'key' });
     if (error) return 'Erro ao salvar: ' + error.message;
     await loadSettings();
     setMsg(`set-${key}`, 'ok', `${label} atualizado no site.`);
@@ -437,9 +445,9 @@ export default function SagradoPage() {
       .eq('project_id', p.id);
     if (e2) return 'Erro na cobrança: ' + e2.message;
     const { data: activeBatch } = await supabase.from('batches').select('*').eq('status', 'ativo').single();
-    if (activeBatch) {
-      await supabase.from('batches').update({ vagas_restantes: Math.max(0, activeBatch.vagas_restantes - 1) }).eq('id', activeBatch.id);
-    }
+    if (!activeBatch) return 'Nenhum lote está ativo no momento. Ative um lote antes de confirmar pagamentos.';
+    if (activeBatch.vagas_restantes <= 0) return 'O lote vigente está sem vagas restantes. Ajuste as vagas na aba Lotes antes de confirmar.';
+    await supabase.from('batches').update({ vagas_restantes: activeBatch.vagas_restantes - 1 }).eq('id', activeBatch.id);
     await Promise.all([loadProjects(), loadBatches()]);
     setMsg(`pay-${p.id}`, 'ok', 'Pagamento confirmado. Status já visível no portal do candidato.');
     return 'ok';
@@ -458,19 +466,14 @@ export default function SagradoPage() {
   const openDetail = async (id: string) => {
     setDetailId(id);
     setDetail(null);
-    const [projRes, membersRes, subRes, scoresRes] = await Promise.all([
-      supabase.from('projects').select('*').eq('id', id).single(),
-      supabase.from('members').select('*').eq('project_id', id).order('is_responsible', { ascending: false }),
-      supabase.from('subscriptions').select('*, batches(name)').eq('project_id', id).maybeSingle(),
-      (isDev || canSubs)
-        ? supabase.rpc('get_project_scores', { pid: id })
-        : Promise.resolve({ data: [] } as { data: ScoreView[] | null })
-    ]);
+    const { data: prof, error } = await supabase.rpc('get_project_profile', { p_id: id });
+    if (error || !prof) { setDetail({ proj: null, members: [], sub: null, subsTotal: 0, scores: [] }); return; }
     setDetail({
-      proj: (projRes.data || null) as Record<string, unknown> | null,
-      members: (membersRes.data || []) as unknown as MemberFull[],
-      sub: (subRes.data || null) as Record<string, unknown> | null,
-      scores: (scoresRes.data || []) as ScoreView[]
+      proj: (prof.project || null) as Record<string, unknown> | null,
+      members: (prof.members || []) as unknown as MemberFull[],
+      sub: (prof.subscription || null) as Record<string, unknown> | null,
+      subsTotal: prof.subscriptions_total ?? 0,
+      scores: (prof.scores || []) as ScoreView[]
     });
   };
 
@@ -725,14 +728,17 @@ export default function SagradoPage() {
               <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
                 <h3 className="font-display font-bold text-white uppercase border-b border-white/5 pb-3">Datas do site</h3>
                 {[
-                  { key: 'countdown_target', label: 'Fim do lote vigente (contagem regressiva)' },
-                  { key: 'live_launch', label: 'Lançamento oficial da live' },
+                  { key: 'countdown_target', label: 'Fim do lote vigente (contagem regressiva)', kind: 'datetime' as const, current: fmtDate(settings['countdown_target']) },
+                  { key: 'live_launch', label: 'Lançamento oficial da live', kind: 'datetime' as const, current: fmtDate(settings['live_launch']) },
+                  { key: 'live_url', label: 'Link da transmissão ao vivo (YouTube)', kind: 'text' as const, current: settings['live_url'] || 'não definido' },
                 ].map(s => (
                   <div key={s.key} className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
-                    <Field label={`${s.label} — atual: ${fmtDate(settings[s.key])}`}>
-                      <input type="datetime-local" className={inputCls} value={settingDrafts[s.key] ?? ''} onChange={(e) => setSettingDrafts(p => ({ ...p, [s.key]: e.target.value }))} />
+                    <Field label={`${s.label} — atual: ${s.current}`}>
+                      {s.kind === 'datetime'
+                        ? <input type="datetime-local" className={inputCls} value={settingDrafts[s.key] ?? ''} onChange={(e) => setSettingDrafts(p => ({ ...p, [s.key]: e.target.value }))} />
+                        : <input type="url" placeholder="https://youtube.com/live/..." className={inputCls} value={settingDrafts[s.key] ?? ''} onChange={(e) => setSettingDrafts(p => ({ ...p, [s.key]: e.target.value }))} />}
                     </Field>
-                    <button type="button" onClick={() => saveSetting(s.key, s.label)} disabled={busy === `set-${s.key}`} className={btnGold}>
+                    <button type="button" onClick={() => saveSetting(s.key, s.label, s.kind)} disabled={busy === `set-${s.key}`} className={btnGold}>
                       {busy === `set-${s.key}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Salvar'}
                     </button>
                     <div className="md:col-span-2">{notice[`set-${s.key}`] && <Notice kind={notice[`set-${s.key}`].kind}>{notice[`set-${s.key}`].msg}</Notice>}</div>
@@ -792,7 +798,7 @@ export default function SagradoPage() {
                 const p = projects.find(x => x.id === detailId);
                 if (!p) return <Notice kind="err">Inscrição não encontrada.</Notice>;
                 const st = PROJECT_STATUS[p.status] || { label: p.status, cls: 'bg-white/5 text-gray-400 border-white/10' };
-                const sub = detail?.sub as { amount_paid?: number; status?: string; batches?: { name: string }; charge_id?: string; paid_at?: string | null } | null | undefined;
+                const sub = detail?.sub as { amount_paid?: number; status?: string; batch_name?: string; charge_id?: string; paid_at?: string | null } | null | undefined;
                 const proj = (detail?.proj || {}) as Record<string, string | null>;
                 return (
                   <div className="space-y-4">
@@ -851,10 +857,10 @@ export default function SagradoPage() {
                       </div>
 
                       <div className="space-y-2 bg-black/40 border border-white/5 rounded-xl p-4">
-                        <span className="font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-widest block">Recibo da cobrança</span>
+                        <span className="font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-widest block">Recibo da cobrança{detail && detail.subsTotal > 1 ? ` (mais recente de ${detail.subsTotal})` : ''}</span>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-[10px] text-gray-300">
                           <span>Valor: <strong className="text-[#10B981]">{sub?.amount_paid != null ? `R$ ${sub.amount_paid},00` : '—'}</strong></span>
-                          <span>Lote: {sub?.batches?.name || '—'}</span>
+                          <span>Lote: {sub?.batch_name || '—'}</span>
                           <span>Cobrança: {sub?.status || '—'}</span>
                           <span>ID: {sub?.charge_id ? String(sub.charge_id).slice(0, 18) : '—'}</span>
                           <span className="md:col-span-2">Pago em: {fmtDate(sub?.paid_at ?? null)}</span>

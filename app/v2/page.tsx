@@ -58,6 +58,7 @@ export default function Page() {
   ]);
   const [countdownTarget, setCountdownTarget] = useState<string | null>(null);
   const [liveLaunch, setLiveLaunch] = useState<string | null>(null);
+  const [liveUrl, setLiveUrl] = useState<string | null>(null);
 
   // Quiz modal: mounted on demand, kept mounted afterwards so state/draft persists
   const [isQuizOpen, setIsQuizOpen] = useState(false);
@@ -96,6 +97,7 @@ export default function Page() {
           });
           if (map.countdown_target) setCountdownTarget(map.countdown_target);
           if (map.live_launch) setLiveLaunch(map.live_launch);
+          if (map.live_url) setLiveUrl(map.live_url);
         }
 
         if (faqRes.data && faqRes.data.length > 0) {
@@ -206,6 +208,7 @@ export default function Page() {
   };
 
   const handleOpenQuiz = () => {
+    if (lotesConfig.live.status === 'ao_vivo') return;
     setQuizMounted(true);
     setIsQuizOpen(true);
   };
@@ -264,9 +267,10 @@ export default function Page() {
                 type="button"
                 onClick={handleOpenQuiz}
                 onMouseEnter={preloadQuiz}
-                className="btn-gold-shimmer px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black shadow-[0_0_30px_rgba(227,181,82,0.35)] w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all"
+                disabled={lotesConfig.live.status === 'ao_vivo'}
+                className="btn-gold-shimmer px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black shadow-[0_0_30px_rgba(227,181,82,0.35)] w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                INSCREVER-SE
+                {lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas — Live no ar' : 'INSCREVER-SE'}
               </button>
               <a
                 href="#premios"
@@ -459,7 +463,9 @@ export default function Page() {
             {lotesConfig.live.status === 'ao_vivo' && (
               <div className="py-4 px-6 rounded-2xl border-2 border-red-500 bg-red-950/20 text-red-500 flex flex-col sm:flex-row justify-between items-center gap-4 animate-pulse">
                 <span className="font-mono text-sm md:text-base font-black tracking-widest uppercase">🔴 TRANSMISSÃO AO VIVO AGORA</span>
-                <button className="bg-red-600 hover:bg-red-500 text-white font-mono text-sm font-bold uppercase px-5 py-2 rounded-xl border border-black shadow">ASSISTIR LIVE</button>
+                {liveUrl
+                  ? <a href={liveUrl} target="_blank" rel="noopener noreferrer" className="bg-red-600 hover:bg-red-500 text-white font-mono text-sm font-bold uppercase px-5 py-2 rounded-xl border border-black shadow">ASSISTIR LIVE</a>
+                  : <span className="bg-red-600/40 text-white/70 font-mono text-sm font-bold uppercase px-5 py-2 rounded-xl border border-black/40">ASSISTIR LIVE</span>}
               </div>
             )}
             {lotesConfig.live.status === 'em_breve' && (
@@ -570,9 +576,10 @@ export default function Page() {
             <button
               onClick={handleOpenQuiz}
               onMouseEnter={preloadQuiz}
-              className="btn-gold-shimmer px-10 py-4 rounded-2xl text-md shadow-[0_0_30px_rgba(240,194,101,0.3)]"
+              disabled={lotesConfig.live.status === 'ao_vivo'}
+              className="btn-gold-shimmer px-10 py-4 rounded-2xl text-md shadow-[0_0_30px_rgba(240,194,101,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Garantir Inscrição Lote 1
+              {lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas — Live no ar' : 'Garantir Inscrição Lote 1'}
             </button>
           </div>
         </section>
