@@ -2,43 +2,53 @@
 
 import React, { useState, useEffect } from 'react';
 
-export default function CountdownBar() {
+interface CountdownBarProps {
+  targetDate?: string | null;
+}
+
+function computeLeft(targetMs: number) {
+  const difference = targetMs - Date.now();
+  if (difference <= 0) return { days: '00', hours: '00', minutes: '00', seconds: '00', over: true };
+  const d = Math.floor(difference / (1000 * 60 * 60 * 24));
+  const h = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const m = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+  const s = Math.floor((difference % (1000 * 60)) / 1000);
+  return {
+    days: d < 10 ? `0${d}` : d.toString(),
+    hours: h < 10 ? `0${h}` : h.toString(),
+    minutes: m < 10 ? `0${m}` : m.toString(),
+    seconds: s < 10 ? `0${s}` : s.toString(),
+    over: false
+  };
+}
+
+export default function CountdownBar({ targetDate }: CountdownBarProps) {
   const [timeLeft, setTimeLeft] = useState({
-    days: '31',
-    hours: '12',
-    minutes: '45',
-    seconds: '00'
+    days: '—',
+    hours: '--',
+    minutes: '--',
+    seconds: '--'
   });
 
   useEffect(() => {
-    // Set target date for Lote 1 close: September 14, 2026 at 23:59:00
-    const targetDate = new Date("2026-09-14T23:59:00").getTime();
+    const parsed = targetDate ? new Date(String(targetDate).replace(' ', 'T')).getTime() : NaN;
+    const fallback = new Date('2026-09-14T23:59:00-03:00').getTime();
+    const target = !isNaN(parsed) ? parsed : fallback;
+
+    const tick = () => {
+      const left = computeLeft(target);
+      setTimeLeft({ days: left.days, hours: left.hours, minutes: left.minutes, seconds: left.seconds });
+      return left.over;
+    };
+
+    if (tick()) return;
 
     const timer = setInterval(() => {
-      const now = new Date().getTime();
-      const difference = targetDate - now;
-
-      if (difference <= 0) {
-        clearInterval(timer);
-        setTimeLeft({ days: '00', hours: '00', minutes: '00', seconds: '00' });
-        return;
-      }
-
-      const d = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const h = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const m = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-      const s = Math.floor((difference % (1000 * 60)) / 1000);
-
-      setTimeLeft({
-        days: d < 10 ? `0${d}` : d.toString(),
-        hours: h < 10 ? `0${h}` : h.toString(),
-        minutes: m < 10 ? `0${m}` : m.toString(),
-        seconds: s < 10 ? `0${s}` : s.toString()
-      });
+      if (tick()) clearInterval(timer);
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [targetDate]);
 
   return (
     <div className="w-full bg-[#8B1E1E] py-2 px-4 flex justify-center items-center gap-2 sm:gap-3 select-none text-center relative z-50 text-xs sm:text-sm border-b border-white/5 shadow-md">
