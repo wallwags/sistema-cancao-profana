@@ -909,6 +909,30 @@ export default function SagradoPage() {
                         <span className={`text-[11px] font-bold px-2.5 py-1 rounded font-mono uppercase border shrink-0 ${st.cls}`}>{st.label}</span>
                       </div>
 
+                      {canSubs && (
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold">Etapa atual do concurso:</span>
+                          <select
+                            className="bg-[#05070B] border border-white/10 rounded-lg px-2.5 py-1.5 text-white text-xs outline-none focus:border-[#E3B552] font-mono"
+                            value={String((detail?.proj as Record<string, unknown> | null)?.stage ?? 1)}
+                            disabled={busy === 'stage'}
+                            onChange={async (e) => {
+                              const nv = Number(e.target.value);
+                              setBusy('stage');
+                              const { error } = await supabase.rpc('set_project_stage', { p_id: p.id, p_stage: nv });
+                              setBusy(null);
+                              if (!error) { await loadProjects(); await openDetail(p.id); }
+                              else setMsg('stage', 'err', 'Erro ao definir etapa: ' + error.message);
+                            }}
+                          >
+                            <option value="1">Etapa 1 — Ao Vivo</option>
+                            <option value="2">Etapa 2 — Podcast</option>
+                            <option value="3">Etapa 3 — Grande Final</option>
+                          </select>
+                          {notice['stage'] && <Notice kind={notice['stage'].kind}>{notice['stage'].msg}</Notice>}
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="md:col-span-2 space-y-1">
                           <span className="font-mono text-xs text-gray-400 uppercase font-bold block">BIOGRAFIA OFICIAL:</span>

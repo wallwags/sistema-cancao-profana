@@ -513,69 +513,41 @@ export default function Page() {
             )}
           </div>
 
-          {/* BLOCO DE DECISAO - DIA 0 (LIVE): destaque dinamico */}
+          {/* DIA 0 — faixa discreta de decisao */}
           {lotesConfig.live.status !== 'encerrada' && (
-            <div data-reveal className={`reveal-hidden relative rounded-3xl p-6 md:p-7 space-y-4 overflow-hidden transition-all duration-500 ${
+            <div data-reveal className={`reveal-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 rounded-2xl px-5 py-4 border transition-all duration-500 ${
               lotesConfig.live.status === 'ao_vivo'
-                ? 'border-2 border-[#F0C265] bg-gradient-to-br from-[#8B1E1E]/30 via-[#0B0F19]/90 to-[#8B1E1E]/20 shadow-[0_0_45px_rgba(240,194,101,0.35)]'
-                : 'border border-[#F0C265]/30 bg-gradient-to-r from-[#8B1E1E]/15 via-[#0B0F19]/80 to-[#8B1E1E]/15 shadow-lg'
+                ? 'border-[#F0C265]/60 bg-[#0B0F19]/90 shadow-[0_0_25px_rgba(240,194,101,0.2)]'
+                : 'border-white/10 bg-[#0B0F19]/60'
             }`}>
-              <div className="absolute -right-24 -top-24 w-56 h-56 bg-[#F0C265]/10 rounded-full blur-3xl pointer-events-none"></div>
-
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <span className={`font-mono text-[11px] uppercase tracking-widest px-3 py-1 rounded-full border font-black ${
-                    lotesConfig.live.status === 'ao_vivo'
-                      ? 'bg-red-600 text-white border-black animate-pulse'
-                      : 'bg-[#F0C265]/15 text-[#F0C265] border-[#F0C265]/30'
-                  }`}>
-                    {lotesConfig.live.status === 'ao_vivo' ? '🔴 AO VIVO AGORA' : '🔴 EVENTO AO VIVO — DIA 0'}
-                  </span>
-                  <span className="font-mono text-xs text-gray-300 uppercase tracking-widest">
-                    {formatLaunch(liveLaunch)}
-                  </span>
-                </div>
-                <span className="font-display font-black text-2xl md:text-3xl text-[#F0C265]">
-                  R$ {dia0Price},00
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className={`font-mono text-[11px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${
+                  lotesConfig.live.status === 'ao_vivo'
+                    ? 'bg-red-600 text-white border-black animate-pulse'
+                    : 'bg-[#F0C265]/10 text-[#F0C265] border-[#F0C265]/30'
+                }`}>
+                  {lotesConfig.live.status === 'ao_vivo' ? '🔴 AO VIVO' : '🔴 DIA 0'}
                 </span>
+                <span className="font-mono text-xs text-gray-300">{formatLaunch(liveLaunch)}</span>
+                <span className="font-display font-black text-lg text-[#F0C265]">R$ {dia0Price},00</span>
+                <span className="font-mono text-[11px] text-gray-400 uppercase tracking-wider">Inscrição apenas durante a transmissão</span>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="flex items-start gap-2">
-                  <span className="text-[#F0C265] mt-0.5">•</span>
-                  <p className="text-sm text-gray-200 leading-snug"><strong className="text-white">Menor preço do concurso</strong> — exclusivo para quem se inscreve durante a transmissão.</p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-[#F0C265] mt-0.5">•</span>
-                  <p className="text-sm text-gray-200 leading-snug"><strong className="text-white">Experiência completa ao vivo</strong> — assista às performances e inscreva sua banda no calor do momento.</p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-[#F0C265] mt-0.5">•</span>
-                  <p className="text-sm text-gray-200 leading-snug"><strong className="text-white">Apoio direto</strong> — sua taxa vira estrutura de som, imagem e gravação das lives.</p>
-                </div>
-              </div>
-
-              {lotesConfig.live.status === 'ao_vivo' ? (
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              {lotesConfig.live.status === 'ao_vivo' && (
+                <div className="flex gap-2.5">
                   {liveUrl && (
-                    <a href={liveUrl} target="_blank" rel="noopener noreferrer" className="bg-red-600 hover:bg-red-500 text-white font-mono text-sm font-bold uppercase tracking-widest px-6 py-3 rounded-xl border border-black shadow-lg text-center transition-colors">
-                      Assistir e inscrever agora
+                    <a href={liveUrl} target="_blank" rel="noopener noreferrer" className="bg-red-600 hover:bg-red-500 text-white font-mono text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-xl border border-black transition-colors">
+                      Assistir
                     </a>
                   )}
                   <button
                     type="button"
                     onClick={handleOpenQuiz}
                     onMouseEnter={preloadQuiz}
-                    className="btn-gold-shimmer px-6 py-3 rounded-xl text-sm uppercase tracking-widest font-black"
+                    className="btn-gold-shimmer px-4 py-2 rounded-xl text-xs uppercase tracking-widest font-black"
                   >
-                    Abrir inscrição Dia 0
+                    Inscrever no Dia 0
                   </button>
-                  <span className="text-xs text-gray-400 font-mono sm:ml-auto">Vagas do Dia 0 limitadas à duração da transmissão.</span>
                 </div>
-              ) : (
-                <p className="text-sm text-gray-300 leading-relaxed">
-                  <strong className="text-[#F0C265]">Você decide:</strong> garantir sua vaga agora pelo <strong className="text-white">Lote 1 (R$ {lotesConfig.lote1.valor},00)</strong> com vaga confirmada na hora, ou aguardar o <strong className="text-white">Dia 0 ao vivo (R$ {dia0Price},00)</strong> e inscrever por menos durante a transmissão — sujeito à disponibilidade do momento.
-                </p>
               )}
             </div>
           )}
@@ -598,7 +570,9 @@ export default function Page() {
                       ? 'border-[#10B981] scale-[1.02] shadow-[0_0_20px_rgba(16,185,129,0.15)] bg-[#0B0F19]/90'
                       : (l.key === 'dia0' && lotesConfig.live.status === 'encerrada')
                         ? 'border-white/5 opacity-30 bg-[#0B0F19]/20'
-                        : 'border-white/5 opacity-50 bg-[#0B0F19]/30'
+                        : l.key === 'dia0'
+                          ? 'border-[#F0C265]/50 bg-[#0B0F19]/85'
+                          : 'border-white/5 opacity-50 bg-[#0B0F19]/30'
                   }`}
                 >
                   <div className="space-y-4">
@@ -615,7 +589,11 @@ export default function Page() {
                         </span>
                       )}
                       {isComing && (
-                        <span className="bg-[#121215] text-gray-500 text-[10px] font-bold px-2.5 py-1 rounded font-mono border border-white/5">
+                        <span className={`text-[10px] font-black px-2.5 py-1 rounded font-mono uppercase tracking-wider ${
+                          l.key === 'dia0'
+                            ? 'bg-[#F0C265] text-black border border-black animate-pulse'
+                            : 'bg-[#121215] text-gray-500 border border-white/5'
+                        }`}>
                           EM BREVE
                         </span>
                       )}
@@ -633,6 +611,10 @@ export default function Page() {
                         <div className="flex items-center gap-1.5 text-xs text-[#F0C265]">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#F0C265] shrink-0"></span>
                           <span>Preço exclusivo de lançamento;</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-[#F0C265]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#F0C265] shrink-0"></span>
+                          <span>Vagas limitadas à transmissão;</span>
                         </div>
                       </div>
                     ) : (
