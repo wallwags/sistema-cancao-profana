@@ -513,6 +513,73 @@ export default function Page() {
             )}
           </div>
 
+          {/* BLOCO DE DECISAO - DIA 0 (LIVE): destaque dinamico */}
+          {lotesConfig.live.status !== 'encerrada' && (
+            <div data-reveal className={`reveal-hidden relative rounded-3xl p-6 md:p-7 space-y-4 overflow-hidden transition-all duration-500 ${
+              lotesConfig.live.status === 'ao_vivo'
+                ? 'border-2 border-[#F0C265] bg-gradient-to-br from-[#8B1E1E]/30 via-[#0B0F19]/90 to-[#8B1E1E]/20 shadow-[0_0_45px_rgba(240,194,101,0.35)]'
+                : 'border border-[#F0C265]/30 bg-gradient-to-r from-[#8B1E1E]/15 via-[#0B0F19]/80 to-[#8B1E1E]/15 shadow-lg'
+            }`}>
+              <div className="absolute -right-24 -top-24 w-56 h-56 bg-[#F0C265]/10 rounded-full blur-3xl pointer-events-none"></div>
+
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className={`font-mono text-[11px] uppercase tracking-widest px-3 py-1 rounded-full border font-black ${
+                    lotesConfig.live.status === 'ao_vivo'
+                      ? 'bg-red-600 text-white border-black animate-pulse'
+                      : 'bg-[#F0C265]/15 text-[#F0C265] border-[#F0C265]/30'
+                  }`}>
+                    {lotesConfig.live.status === 'ao_vivo' ? '🔴 AO VIVO AGORA' : '🔴 EVENTO AO VIVO — DIA 0'}
+                  </span>
+                  <span className="font-mono text-xs text-gray-300 uppercase tracking-widest">
+                    {formatLaunch(liveLaunch)}
+                  </span>
+                </div>
+                <span className="font-display font-black text-2xl md:text-3xl text-[#F0C265]">
+                  R$ {dia0Price},00
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="flex items-start gap-2">
+                  <span className="text-[#F0C265] mt-0.5">•</span>
+                  <p className="text-sm text-gray-200 leading-snug"><strong className="text-white">Menor preço do concurso</strong> — exclusivo para quem se inscreve durante a transmissão.</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-[#F0C265] mt-0.5">•</span>
+                  <p className="text-sm text-gray-200 leading-snug"><strong className="text-white">Experiência completa ao vivo</strong> — assista às performances e inscreva sua banda no calor do momento.</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-[#F0C265] mt-0.5">•</span>
+                  <p className="text-sm text-gray-200 leading-snug"><strong className="text-white">Apoio direto</strong> — sua taxa vira estrutura de som, imagem e gravação das lives.</p>
+                </div>
+              </div>
+
+              {lotesConfig.live.status === 'ao_vivo' ? (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  {liveUrl && (
+                    <a href={liveUrl} target="_blank" rel="noopener noreferrer" className="bg-red-600 hover:bg-red-500 text-white font-mono text-sm font-bold uppercase tracking-widest px-6 py-3 rounded-xl border border-black shadow-lg text-center transition-colors">
+                      Assistir e inscrever agora
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleOpenQuiz}
+                    onMouseEnter={preloadQuiz}
+                    className="btn-gold-shimmer px-6 py-3 rounded-xl text-sm uppercase tracking-widest font-black"
+                  >
+                    Abrir inscrição Dia 0
+                  </button>
+                  <span className="text-xs text-gray-400 font-mono sm:ml-auto">Vagas do Dia 0 limitadas à duração da transmissão.</span>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-300 leading-relaxed">
+                  <strong className="text-[#F0C265]">Você decide:</strong> garantir sua vaga agora pelo <strong className="text-white">Lote 1 (R$ {lotesConfig.lote1.valor},00)</strong> com vaga confirmada na hora, ou aguardar o <strong className="text-white">Dia 0 ao vivo (R$ {dia0Price},00)</strong> e inscrever por menos durante a transmissão — sujeito à disponibilidade do momento.
+                </p>
+              )}
+            </div>
+          )}
+
           <div data-reveal-group className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
               { key: 'dia0', title: 'Dia 0 (Live)', status: lotesConfig.live.status === 'ao_vivo' ? 'ativo' : lotesConfig.live.status === 'encerrada' ? 'encerrado' : 'em_breve', desc: 'Apenas durante a transmissão ao vivo.', valor: dia0Price },
@@ -529,7 +596,9 @@ export default function Page() {
                   className={`reveal-hidden bg-[#0B0F19]/60 backdrop-blur-xl border-2 rounded-[24px] p-5 flex flex-col justify-between shadow transition-all duration-300 ${
                     isActive
                       ? 'border-[#10B981] scale-[1.02] shadow-[0_0_20px_rgba(16,185,129,0.15)] bg-[#0B0F19]/90'
-                      : 'border-white/5 opacity-50 bg-[#0B0F19]/30'
+                      : (l.key === 'dia0' && lotesConfig.live.status === 'encerrada')
+                        ? 'border-white/5 opacity-30 bg-[#0B0F19]/20'
+                        : 'border-white/5 opacity-50 bg-[#0B0F19]/30'
                   }`}
                 >
                   <div className="space-y-4">

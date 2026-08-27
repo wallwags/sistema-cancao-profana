@@ -11,6 +11,7 @@ import {
 interface StaffRow {
   id: string;
   email: string;
+  username?: string;
   display_name: string;
   role: 'dev' | 'admin' | 'jurado';
   permissions: { manage_lotes?: boolean; manage_content?: boolean; manage_subscriptions?: boolean; view_sensitive_data?: boolean; manage_team?: boolean; view_audit?: boolean };
@@ -183,13 +184,14 @@ export default function SagradoPage() {
   const [ownScores, setOwnScores] = useState<Record<string, JuryDraft>>({});
   const [juryDraft, setJuryDraft] = useState<Record<string, JuryDraft>>({});
   const [openJury, setOpenJury] = useState<string | null>(null);
-  const [invite, setInvite] = useState({ email: '', name: '', password: '', role: 'jurado' as 'jurado' | 'admin' });
+  const [invite, setInvite] = useState({ username: '', name: '', password: '', role: 'jurado' as 'jurado' | 'admin' });
   const [audit, setAudit] = useState<Array<Record<string, unknown>>>([]);
   const [searchQ, setSearchQ] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [loteFilter, setLoteFilter] = useState('');
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  const [paidCount, setPaidCount] = useState(0);
   const [jurySearch, setJurySearch] = useState('');
   const [photoView, setPhotoView] = useState<string | null>(null);
 
@@ -304,6 +306,11 @@ export default function SagradoPage() {
       .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
     if (data) setProjects(data as unknown as ProjectRow[]);
     setTotalCount(count ?? 0);
+    const { count: paidTotal } = await supabase
+      .from('projects')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'paid');
+    setPaidCount(paidTotal ?? 0);
   }, [searchQ, statusFilter, loteFilter, page, me?.role]);
 
   const loadAudit = useCallback(async () => {
@@ -364,7 +371,7 @@ export default function SagradoPage() {
     e.preventDefault();
     setLoginError('');
     setLoggingIn(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    const { error } = await supabase.auth.signInWithPassword({ email: `${email.trim().toLowerCase()}@painel.local`, password });
     if (error) {
       setLoginError('Credenciais inválidas.');
       setLoggingIn(false);
@@ -563,8 +570,8 @@ export default function SagradoPage() {
   // ---------- equipe ----------
   const friendlyStaffError = (m: string): string => {
     if (m.includes('SENHA_CURTA')) return 'A senha inicial precisa ter no mínimo 8 caracteres.';
-    if (m.includes('EMAIL_INVALIDO')) return 'E-mail inválido.';
-    if (m.includes('EMAIL_EM_USO')) return 'Já existe um acesso com este e-mail.';
+    if (m.includes('USUARIO_INVALIDO')) return 'Use de 3 a 20 caracteres: letras minúsculas, números, ponto ou underline.';
+    if (m.includes('USUARIO_EM_USO')) return 'Este nome de usuário já está em uso.';
     if (m.includes('NIVEL_INVALIDO')) return 'Nível de acesso inválido.';
     if (m.includes('SEM_PERMISSAO')) return 'Operação não permitida.';
     return 'Erro: ' + m;
@@ -582,13 +589,13 @@ export default function SagradoPage() {
 
   const createMember = () => guarded('invite', async () => {
     const args: Record<string, unknown> = {
-      p_email: invite.email.trim(), p_name: invite.name.trim(), p_password: invite.password
+      p_username: invite.username.trim().toLowerCase(), p_name: invite.name.trim(), p_password: invite.password
     };
     if (isDev) args.p_role = invite.role;
     const { error } = await supabase.rpc('create_staff_member', args);
     if (error) return friendlyStaffError(error.message);
     await loadStaff();
-    setInvite({ email: '', name: '', password: '', role: 'jurado' });
+    setInvite({ username: '', name: '', password: '', role: 'jurado' });
     setMsg('invite', 'ok', 'Acesso criado. Envie o e-mail e a senha inicial à pessoa — ela deve trocar a senha em Minha conta.');
     return 'ok';
   });
@@ -645,8 +652,8 @@ export default function SagradoPage() {
               <p className="text-xs text-gray-400">Acesso exclusivo da equipe do estúdio.</p>
             </div>
             <form onSubmit={handleLogin} className="space-y-4 text-left">
-              <Field label="E-mail">
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@pedraprofana.com" className={inputCls} required autoComplete="username" />
+              <Field label="Usuário">
+                <input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu.usuario" className={inputCls} required autoComplete="username" spellCheck={false} />
               </Field>
               <Field label="Senha">
                 <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••••" className={inputCls} required autoComplete="current-password" />
@@ -667,7 +674,7 @@ export default function SagradoPage() {
               <div className="w-10 h-10 rounded bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] flex items-center justify-center font-display font-black text-black text-xl border border-black shadow-md">P</div>
               <div>
                 <span className="font-display font-black text-white text-md tracking-tight uppercase block leading-none">CENTRAL PEDRA PROFANA</span>
-                <span className="font-mono text-[11px] text-[#F0C265] tracking-widest block uppercase mt-1">{me?.display_name || me?.email}</span>
+                <span className="font-mono text-[11px] text-[#F0C265] tracking-widest block uppercase mt-1">{me?.display_name || me?.username}</span>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -710,8 +717,8 @@ export default function SagradoPage() {
                 {[
                   { label: 'Lote vigente', value: (batches.find(b => b.status === 'ativo')?.name || '—'), accent: 'text-[#10B981]' },
                   { label: 'Vagas restantes', value: String(batches.find(b => b.status === 'ativo')?.vagas_restantes ?? '—'), accent: 'text-white' },
-                  { label: 'Inscrições', value: String(projects.length), accent: 'text-[#F0C265]' },
-                  { label: 'Pagas', value: String(projects.filter(p => p.status === 'paid').length), accent: 'text-[#10B981]' },
+                  { label: 'Inscrições', value: String(totalCount), accent: 'text-[#F0C265]' },
+                  { label: 'Pagas', value: String(paidCount), accent: 'text-[#10B981]' },
                 ].map(s => (
                   <div key={s.label} className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-1.5">
                     <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest block">{s.label}</span>
@@ -1156,7 +1163,7 @@ export default function SagradoPage() {
                     <div className="flex justify-between items-center border-b border-white/5 pb-3">
                       <div>
                         <h3 className="font-display font-bold text-white">{cur.display_name || cur.email}</h3>
-                        <span className="font-mono text-[11px] text-gray-500 block">{cur.email}{self ? ' • você' : ''}</span>
+                        <span className="font-mono text-[11px] text-gray-500 block">@{cur.username}{self ? ' • você' : ''}</span>
                       </div>
                       <span className={`font-mono text-[11px] font-bold px-2.5 py-1 rounded-full uppercase border ${cur.role === 'dev' ? 'text-[#F0C265] border-[#F0C265]/40 bg-[#F0C265]/10' : cur.role === 'jurado' ? 'text-blue-300 border-blue-400/30 bg-blue-400/10' : 'text-gray-400 border-white/10 bg-white/5'}`}>
                         {cur.role}
@@ -1209,8 +1216,8 @@ export default function SagradoPage() {
                 return (
                   <div key={s.id} className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
                     <div className="border-b border-white/5 pb-3">
-                      <h3 className="font-display font-bold text-white">{s.display_name || s.email}</h3>
-                      <span className="font-mono text-[11px] text-gray-500 block">{s.email}</span>
+                      <h3 className="font-display font-bold text-white">{s.display_name || s.username}</h3>
+                      <span className="font-mono text-[11px] text-gray-500 block">@{s.username}</span>
                     </div>
                     <Field label="Nome de exibição">
                       <input className={inputCls} value={s.display_name} onChange={(e) => upd({ display_name: e.target.value })} />
@@ -1229,7 +1236,7 @@ export default function SagradoPage() {
                 <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-bold flex items-center gap-1.5"><UserPlus className="w-3.5 h-3.5" /> Criar novo acesso</span>
                 <p className="text-xs text-gray-500 font-mono">Se o e-mail pertencer a um acesso desativado, ele será reativado no nível escolhido (a senha continua a anterior).</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <Field label="E-mail"><input className={inputCls} value={invite.email} onChange={(e) => setInvite(p => ({ ...p, email: e.target.value }))} placeholder="pessoa@pedraprofana.com" /></Field>
+                  <Field label="Nome de usuário"><input className={inputCls} value={invite.username} onChange={(e) => setInvite(p => ({ ...p, username: e.target.value }))} placeholder="ex: carlos.jurado" spellCheck={false} /></Field>
                   <Field label="Nome de exibição"><input className={inputCls} value={invite.name} onChange={(e) => setInvite(p => ({ ...p, name: e.target.value }))} placeholder="Como aparece no painel" /></Field>
                   <Field label="Senha inicial (mín. 8)"><input type="password" className={inputCls} value={invite.password} onChange={(e) => setInvite(p => ({ ...p, password: e.target.value }))} /></Field>
                   {isDev && (

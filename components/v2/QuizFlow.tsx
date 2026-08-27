@@ -549,6 +549,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       // Clean draft upon successful generation
       localStorage.removeItem('quiz_draft_v2');
 
+      localStorage.removeItem('temp_compressed_photo');
       localStorage.setItem('current_project_id', project.id);
       return project.id;
     } catch (err: any) {
@@ -578,6 +579,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         localStorage.setItem('fallback_project_' + mockId, JSON.stringify(localBackup));
         localStorage.setItem('current_project_id', mockId);
         localStorage.removeItem('quiz_draft_v2');
+        localStorage.removeItem('temp_compressed_photo');
       } catch { /* storage unavailable */ }
       return mockId;
     }
