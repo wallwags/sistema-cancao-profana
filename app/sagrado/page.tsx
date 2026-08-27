@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import {
   Shield, LayoutDashboard, Tags, FileText, ClipboardList, Users, UserCog,
-  LogOut, Check, X, Plus, ArrowUp, ArrowDown, Trash2, KeyRound, Loader2, Star, Eye
+  LogOut, Check, X, Plus, ArrowUp, ArrowDown, Trash2, KeyRound, Loader2, Star, Eye, History, UserPlus
 } from 'lucide-react';
 
 interface StaffRow {
@@ -180,6 +180,14 @@ export default function SagradoPage() {
   const [ownScores, setOwnScores] = useState<Record<string, JuryDraft>>({});
   const [juryDraft, setJuryDraft] = useState<Record<string, JuryDraft>>({});
   const [openJury, setOpenJury] = useState<string | null>(null);
+  const [invite, setInvite] = useState({ email: '', name: '', password: '', role: 'jurado' as 'jurado' | 'admin' });
+  const [audit, setAudit] = useState<Array<Record<string, unknown>>>([]);
+  const [searchQ, setSearchQ] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [loteFilter, setLoteFilter] = useState('');
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [jurySearch, setJurySearch] = useState('');
 
   // account
   const [newName, setNewName] = useState('');
@@ -195,6 +203,7 @@ export default function SagradoPage() {
   };
 
   const isDev = me?.role === 'dev';
+  const isAdminRole = me?.role === 'admin';
   const isJudge = !!me && (isDev || me.role === 'jurado');
   const perms = me?.permissions || {};
   const canLotes = isDev || !!perms.manage_lotes;
@@ -220,13 +229,23 @@ export default function SagradoPage() {
   const loadStaff = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setAuthed(false); setMe(null); return false; }
-    const { data, error } = await supabase.from('staff_users').select('*');
-    if (error || !data || data.length === 0) { setAuthed(false); setMe(null); return false; }
-    const self = data.find((r: StaffRow) => r.id === user.id) || null;
-    if (!self) { setAuthed(false); setMe(null); return false; }
+    const { data: meData, error: meErr } = await supabase.rpc('get_my_staff');
+    const self = (meData || null) as unknown as StaffRow | null;
+    if (meErr || !self || !self.id) { setAuthed(false); setMe(null); return false; }
     setMe(self);
     setNewName(self.display_name || '');
-    setStaffList(data as StaffRow[]);
+    if (self.role === 'dev') {
+      const { data: list } = await supabase.rpc('list_staff_for_dev');
+      setStaffList((list || []) as unknown as StaffRow[]);
+    } else if (self.role === 'admin') {
+      const { data: list } = await supabase.rpc('list_team_for_admin');
+      const rows = ((list || []) as Array<Record<string, string>>).map(r => ({
+        id: r.id, email: r.email, display_name: r.display_name, role: 'jurado' as const, permissions: {}
+      }));
+      setStaffList(rows as StaffRow[]);
+    } else {
+      setStaffList([]);
+    }
     setAuthed(true);
     return true;
   }, []);
@@ -251,13 +270,25 @@ export default function SagradoPage() {
     if (data) setFaqs(data as FaqRow[]);
   }, []);
 
+  const PAGE_SIZE = 25;
+
   const loadProjects = useCallback(async () => {
-    const { data } = await supabase
+    let query = supabase
       .from('projects')
-      .select('id, name, style, bio, instagram, video_link, photo_url, status, created_at, members(count), subscriptions(status, amount_paid, batches(name))')
+      .select('id, name, style, bio, instagram, video_link, photo_url, status, created_at, members(count), subscriptions(status, amount_paid, batches(name))', { count: 'exact' });
+    if (searchQ.trim()) query = query.ilike('name', `%${searchQ.trim()}%`);
+    if (statusFilter) query = query.eq('status', statusFilter);
+    if (loteFilter) query = query.eq('subscriptions.batch_id', loteFilter);
+    const { data, count } = await query
       .order('created_at', { ascending: false })
-      .limit(100);
+      .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
     if (data) setProjects(data as unknown as ProjectRow[]);
+    setTotalCount(count ?? 0);
+  }, [searchQ, statusFilter, loteFilter, page]);
+
+  const loadAudit = useCallback(async () => {
+    const { data } = await supabase.rpc('list_audit', { p_limit: 150 });
+    setAudit((data || []) as Array<Record<string, unknown>>);
   }, []);
 
   useEffect(() => {
@@ -273,6 +304,18 @@ export default function SagradoPage() {
     });
     return () => sub.subscription.unsubscribe();
   }, [loadStaff, loadBatches, loadSettings, loadFaqs, loadProjects, loadLive, loadOwnScores]);
+
+  useEffect(() => {
+    if (!authed || !canSubs) return;
+    const t = setTimeout(() => { loadProjects(); }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed, searchQ, statusFilter, loteFilter, page]);
+
+  useEffect(() => {
+    if (authed && tab === 'auditoria') loadAudit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed, tab]);
 
   useEffect(() => {
     if (!authed) return;
@@ -351,20 +394,14 @@ export default function SagradoPage() {
     const vRest = parseInt(String(d.vagasRest), 10);
     if (isNaN(vTotal) || vTotal < 0 || isNaN(vRest) || vRest < 0 || vRest > vTotal) return 'Vagas inválidas (restantes ≤ total).';
 
-    const { data, error } = await supabase
-      .from('batches')
-      .update({
-        name: d.name.trim(),
-        price_per_member: price,
-        vagas_total: vTotal,
-        vagas_restantes: vRest,
-        starts_at: fromInputValue(d.starts),
-        ends_at: fromInputValue(d.ends),
-      })
-      .eq('id', b.id)
-      .select();
+    const { data: res, error } = await supabase
+      .rpc('staff_save_batch', {
+        p_id: b.id, p_name: d.name.trim(), p_price: price,
+        p_vagas_total: vTotal, p_vagas_restantes: vRest,
+        p_starts_at: fromInputValue(d.starts), p_ends_at: fromInputValue(d.ends)
+      });
     if (error) return 'Erro ao salvar: ' + error.message;
-    if (!data || data.length === 0) return 'Sem permissão para salvar.';
+    if (res !== 'ok') return String(res);
     setBatchDrafts(p => { const c = { ...p }; delete c[b.id]; return c; });
     await loadBatches();
     setMsg(`batch-${b.id}`, 'ok', 'Lote salvo e publicado no site.');
@@ -384,7 +421,7 @@ export default function SagradoPage() {
     const v = settingDrafts[key] ?? '';
     if (kind === 'text' && v.trim() && !/^https?:\/\//i.test(v.trim())) return 'Informe um link começando com http(s)://';
     const value = kind === 'datetime' ? (fromInputValue(v) ?? '') : v.trim();
-    const { error } = await supabase.from('site_settings').upsert({ key, value }, { onConflict: 'key' });
+    const { error } = await supabase.rpc('staff_save_setting', { p_key: key, p_value: value });
     if (error) return 'Erro ao salvar: ' + error.message;
     await loadSettings();
     setMsg(`set-${key}`, 'ok', `${label} atualizado no site.`);
@@ -393,19 +430,16 @@ export default function SagradoPage() {
 
   const saveFaq = (item: FaqRow) => guarded(`faq-${item.id}`, async () => {
     if (!item.question.trim() || !item.answer.trim()) return 'Pergunta e resposta são obrigatórias.';
-    const { data, error } = await supabase
-      .from('faq_items')
-      .update({ question: item.question, answer: item.answer, active: item.active, sort_order: item.sort_order })
-      .eq('id', item.id)
-      .select();
+    const { data: res, error } = await supabase
+      .rpc('staff_faq_upsert', { p_id: item.id, p_question: item.question, p_answer: item.answer, p_sort_order: item.sort_order, p_active: item.active });
     if (error) return 'Erro ao salvar: ' + error.message;
-    if (!data || data.length === 0) return 'Sem permissão para salvar.';
+    if (!res) return 'Sem permissão para salvar.';
     setMsg(`faq-${item.id}`, 'ok', 'Pergunta atualizada no site.');
     return 'ok';
   });
 
   const deleteFaq = (item: FaqRow) => guarded(`faq-del-${item.id}`, async () => {
-    const { error } = await supabase.from('faq_items').delete().eq('id', item.id);
+    const { error } = await supabase.rpc('staff_faq_delete', { p_id: item.id });
     if (error) return 'Erro ao remover.';
     await loadFaqs();
     setMsg('faq-list', 'ok', 'Pergunta removida do site.');
@@ -415,8 +449,8 @@ export default function SagradoPage() {
   const addFaq = () => guarded('faq-add', async () => {
     if (!newFaq.question.trim() || !newFaq.answer.trim()) return 'Preencha pergunta e resposta.';
     const maxOrder = faqs.reduce((m, f) => Math.max(m, f.sort_order), -1);
-    const { error } = await supabase.from('faq_items').insert({
-      question: newFaq.question.trim(), answer: newFaq.answer.trim(), sort_order: maxOrder + 1, active: true
+    const { error } = await supabase.rpc('staff_faq_upsert', {
+      p_id: null, p_question: newFaq.question.trim(), p_answer: newFaq.answer.trim(), p_sort_order: maxOrder + 1, p_active: true
     });
     if (error) return 'Erro ao criar: ' + error.message;
     setNewFaq({ question: '', answer: '' });
@@ -429,34 +463,26 @@ export default function SagradoPage() {
     const other = faqs[idx + dir];
     if (!other) return 'ok';
     const cur = faqs[idx];
-    await supabase.from('faq_items').update({ sort_order: other.sort_order }).eq('id', cur.id);
-    await supabase.from('faq_items').update({ sort_order: cur.sort_order }).eq('id', other.id);
+    await supabase.rpc('staff_faq_upsert', { p_id: cur.id, p_question: cur.question, p_answer: cur.answer, p_sort_order: other.sort_order, p_active: cur.active });
+    await supabase.rpc('staff_faq_upsert', { p_id: other.id, p_question: other.question, p_answer: other.answer, p_sort_order: cur.sort_order, p_active: other.active });
     await loadFaqs();
     return 'ok';
   });
 
   // ---------- inscrições ----------
   const confirmPayment = (p: ProjectRow) => guarded(`pay-${p.id}`, async () => {
-    const { error: e1 } = await supabase.from('projects').update({ status: 'paid' }).eq('id', p.id);
-    if (e1) return 'Erro ao confirmar: ' + e1.message;
-    const { error: e2 } = await supabase
-      .from('subscriptions')
-      .update({ status: 'paid', paid_at: new Date().toISOString() })
-      .eq('project_id', p.id);
-    if (e2) return 'Erro na cobrança: ' + e2.message;
-    const { data: activeBatch } = await supabase.from('batches').select('*').eq('status', 'ativo').single();
-    if (!activeBatch) return 'Nenhum lote está ativo no momento. Ative um lote antes de confirmar pagamentos.';
-    if (activeBatch.vagas_restantes <= 0) return 'O lote vigente está sem vagas restantes. Ajuste as vagas na aba Lotes antes de confirmar.';
-    await supabase.from('batches').update({ vagas_restantes: activeBatch.vagas_restantes - 1 }).eq('id', activeBatch.id);
+    const { data: res, error } = await supabase.rpc('staff_confirm_payment', { p_id: p.id });
+    if (error) return 'Erro ao confirmar: ' + error.message;
+    if (res !== 'ok') return String(res);
     await Promise.all([loadProjects(), loadBatches()]);
     setMsg(`pay-${p.id}`, 'ok', 'Pagamento confirmado. Status já visível no portal do candidato.');
     return 'ok';
   });
 
   const setProjectState = (p: ProjectRow, status: string, msg: string) => guarded(`st-${p.id}`, async () => {
-    const { data, error } = await supabase.from('projects').update({ status }).eq('id', p.id).select();
+    const { data: res, error } = await supabase.rpc('staff_set_project_state', { p_id: p.id, p_status: status });
     if (error) return 'Erro: ' + error.message;
-    if (!data || data.length === 0) return 'Operação não permitida.';
+    if (res !== 'ok') return String(res);
     await loadProjects();
     if (detailId === p.id) await openDetail(p.id);
     setMsg(`st-${p.id}`, 'ok', msg);
@@ -510,18 +536,39 @@ export default function SagradoPage() {
   });
 
   // ---------- equipe ----------
+  const friendlyStaffError = (m: string): string => {
+    if (m.includes('SENHA_CURTA')) return 'A senha inicial precisa ter no mínimo 8 caracteres.';
+    if (m.includes('EMAIL_INVALIDO')) return 'E-mail inválido.';
+    if (m.includes('EMAIL_EM_USO')) return 'Já existe um acesso com este e-mail.';
+    if (m.includes('NIVEL_INVALIDO')) return 'Nível de acesso inválido.';
+    if (m.includes('SEM_PERMISSAO')) return 'Operação não permitida.';
+    return 'Erro: ' + m;
+  };
+
   const saveStaff = (s: StaffRow) => guarded(`staff-${s.id}`, async () => {
-    const { data, error } = await supabase
-      .from('staff_users')
-      .update({ display_name: s.display_name?.trim() || '', role: s.role, permissions: s.permissions })
-      .eq('id', s.id)
-      .select();
-    if (error) return 'Erro ao salvar: ' + error.message;
-    if (!data || data.length === 0) return 'Operação não permitida.';
+    const args: Record<string, unknown> = { p_id: s.id, p_display_name: s.display_name?.trim() || '' };
+    if (isDev) { args.p_role = s.role; args.p_permissions = s.permissions; }
+    const { error } = await supabase.rpc('update_staff_member', args);
+    if (error) return friendlyStaffError(error.message);
     await loadStaff();
     setMsg(`staff-${s.id}`, 'ok', 'Membro atualizado. O painel dele já reflete as mudanças no próximo acesso.');
     return 'ok';
   });
+
+  const createMember = () => guarded('invite', async () => {
+    const args: Record<string, unknown> = {
+      p_email: invite.email.trim(), p_name: invite.name.trim(), p_password: invite.password
+    };
+    if (isDev) args.p_role = invite.role;
+    const { error } = await supabase.rpc('create_staff_member', args);
+    if (error) return friendlyStaffError(error.message);
+    await loadStaff();
+    setInvite({ email: '', name: '', password: '', role: 'jurado' });
+    setMsg('invite', 'ok', 'Acesso criado. Envie o e-mail e a senha inicial à pessoa — ela deve trocar a senha em Minha conta.');
+    return 'ok';
+  });
+
+  const openAuditTab = () => { loadAudit(); };
 
   // ---------- conta ----------
   const saveOwnName = () => guarded('acc-name', async () => {
@@ -604,7 +651,8 @@ export default function SagradoPage() {
               { id: 'conteudo', label: 'Conteúdo do site', icon: FileText, show: canContent },
               { id: 'inscritos', label: 'Inscrições', icon: ClipboardList, show: canSubs },
               { id: 'avaliacao', label: 'Avaliação', icon: Star, show: isJudge },
-              { id: 'equipe', label: 'Equipe', icon: Users, show: isDev },
+              { id: 'equipe', label: 'Equipe', icon: Users, show: isDev || isAdminRole },
+              { id: 'auditoria', label: 'Auditoria', icon: History, show: isDev || isAdminRole },
               { id: 'conta', label: 'Minha conta', icon: UserCog, show: true },
             ].filter(t => t.show).map(t => (
               <button
@@ -911,8 +959,32 @@ export default function SagradoPage() {
                 );
               })() : (
                 <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
-                  <h3 className="font-display font-bold text-white uppercase border-b border-white/5 pb-3">Inscrições ({projects.length})</h3>
-                  {projects.length === 0 && <p className="text-xs text-gray-400 font-mono">Nenhuma inscrição ainda.</p>}
+                  <h3 className="font-display font-bold text-white uppercase border-b border-white/5 pb-3">Inscrições ({totalCount})</h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_150px_150px] gap-3">
+                    <input className={inputCls} placeholder="Buscar por nome da banda..." value={searchQ} onChange={(e) => { setSearchQ(e.target.value); setPage(0); }} />
+                    <select className={inputCls} value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}>
+                      <option value="">Todos os estados</option>
+                      <option value="pending">Pendentes</option>
+                      <option value="paid">Pagas</option>
+                      <option value="suspended">Suspensas</option>
+                      <option value="blocked">Bloqueadas</option>
+                      <option value="refunded">Reembolsadas</option>
+                      <option value="failed">Negadas</option>
+                    </select>
+                    <select className={inputCls} value={loteFilter} onChange={(e) => { setLoteFilter(e.target.value); setPage(0); }}>
+                      <option value="">Todos os lotes</option>
+                      {batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
+                  </div>
+
+                  {(searchQ || statusFilter || loteFilter) && (
+                    <button type="button" onClick={() => { setSearchQ(''); setStatusFilter(''); setLoteFilter(''); setPage(0); }} className="font-mono text-[9px] text-[#F0C265] hover:underline uppercase font-bold">
+                      Limpar filtros
+                    </button>
+                  )}
+
+                  {projects.length === 0 && <p className="text-xs text-gray-400 font-mono">Nenhuma inscrição encontrada.</p>}
                   <div className="space-y-3">
                     {projects.map(p => {
                       const sub = p.subscriptions?.[0];
@@ -939,22 +1011,35 @@ export default function SagradoPage() {
                       );
                     })}
                   </div>
+
+                  {totalCount > PAGE_SIZE && (
+                    <div className="flex justify-between items-center border-t border-white/5 pt-4">
+                      <button type="button" disabled={page === 0 || busy !== null} onClick={() => setPage(p => Math.max(0, p - 1))} className={btnGhost}>← Anterior</button>
+                      <span className="font-mono text-[10px] text-gray-400 uppercase">Página {page + 1} de {Math.ceil(totalCount / PAGE_SIZE)}</span>
+                      <button type="button" disabled={(page + 1) * PAGE_SIZE >= totalCount || busy !== null} onClick={() => setPage(p => p + 1)} className={btnGhost}>Próxima →</button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
 
           {/* AVALIAÇÃO */}
-          {tab === 'avaliacao' && isJudge && (
+          {tab === 'avaliacao' && isJudge && (() => {
+            const paidProjects = projects.filter(p => p.status === 'paid');
+            const q = jurySearch.trim().toLowerCase();
+            const juryList = q ? paidProjects.filter(p => p.name.toLowerCase().includes(q)) : paidProjects;
+            return (
             <div className="space-y-4 fade-up-800">
-              <Notice kind="info">Abra uma banda para ver a ficha artística e registrar as notas (0 a 10). Sua nota pode ser ajustada a qualquer momento.</Notice>
-              {projects.length === 0 && (
+              <Notice kind="info">Somente inscrições com pagamento confirmado entram na avaliação. Abra uma banda para ver a ficha artística e registrar as notas (0 a 10) — sua nota pode ser ajustada a qualquer momento.</Notice>
+              <input className={inputCls + ' max-w-md'} placeholder="Buscar banda paga..." value={jurySearch} onChange={(e) => setJurySearch(e.target.value)} />
+              {juryList.length === 0 && (
                 <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-5">
-                  <p className="text-xs text-gray-400 font-mono">Nenhuma banda cadastrada ainda.</p>
+                  <p className="text-xs text-gray-400 font-mono">{paidProjects.length === 0 ? 'Nenhuma banda paga disponível para avaliação no momento.' : 'Nenhuma banda encontrada para esta busca.'}</p>
                 </div>
               )}
               <div className="space-y-3">
-                {projects.map(p => {
+                {juryList.map(p => {
                   const d = draftScore(p.id);
                   const avg = (Math.round((((Number(d.presentation) || 0) + (Number(d.composition) || 0) + (Number(d.aesthetics) || 0)) / 3) * 10) / 10).toFixed(1);
                   return (
@@ -1001,13 +1086,15 @@ export default function SagradoPage() {
                 })}
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* EQUIPE */}
-          {tab === 'equipe' && isDev && (
+          {tab === 'equipe' && (isDev || isAdminRole) && (
             <div className="space-y-4 fade-up-800">
-              <Notice kind="info">Funções salvas aqui passam a valer imediatamente no painel de cada membro. A senha de cada membro é alterada por ele mesmo em &quot;Minha conta&quot;.</Notice>
-              {staffList.map(s => {
+              <Notice kind="info">Crie acessos da equipe e ajuste os nomes de exibição. A senha inicial é definida aqui — a pessoa deve trocá-la em Minha conta após o primeiro acesso.</Notice>
+
+              {isDev ? staffList.map(s => {
                 const self = s.id === me?.id;
                 const k = `staff-${s.id}`;
                 const cur = staffList.find(x => x.id === s.id) || s;
@@ -1061,7 +1148,81 @@ export default function SagradoPage() {
                     </div>
                   </div>
                 );
+              }) : staffList.filter(x => x.id !== me?.id).map(s => {
+                const k = `staff-${s.id}`;
+                const upd = (patch: Partial<StaffRow>) => setStaffList(list => list.map(x => x.id === s.id ? { ...x, ...patch } : x));
+                return (
+                  <div key={s.id} className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
+                    <div className="border-b border-white/5 pb-3">
+                      <h3 className="font-display font-bold text-white">{s.display_name || s.email}</h3>
+                      <span className="font-mono text-[9px] text-gray-500 block">{s.email}</span>
+                    </div>
+                    <Field label="Nome de exibição">
+                      <input className={inputCls} value={s.display_name} onChange={(e) => upd({ display_name: e.target.value })} />
+                    </Field>
+                    <div className="flex justify-end items-center gap-3">
+                      {notice[k] && <Notice kind={notice[k].kind}>{notice[k].msg}</Notice>}
+                      <button type="button" onClick={() => saveStaff(s)} disabled={busy === k} className={btnGold}>
+                        {busy === k ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Salvar'}
+                      </button>
+                    </div>
+                  </div>
+                );
               })}
+
+              <div className="bg-black/40 border border-dashed border-[#E3B552]/30 rounded-xl p-4 space-y-3">
+                <span className="font-mono text-[9px] text-[#F0C265] uppercase tracking-widest font-bold flex items-center gap-1.5"><UserPlus className="w-3.5 h-3.5" /> Criar novo acesso</span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <Field label="E-mail"><input className={inputCls} value={invite.email} onChange={(e) => setInvite(p => ({ ...p, email: e.target.value }))} placeholder="pessoa@pedraprofana.com" /></Field>
+                  <Field label="Nome de exibição"><input className={inputCls} value={invite.name} onChange={(e) => setInvite(p => ({ ...p, name: e.target.value }))} placeholder="Como aparece no painel" /></Field>
+                  <Field label="Senha inicial (mín. 8)"><input type="password" className={inputCls} value={invite.password} onChange={(e) => setInvite(p => ({ ...p, password: e.target.value }))} /></Field>
+                  {isDev && (
+                    <Field label="Nível de acesso">
+                      <select className={inputCls} value={invite.role} onChange={(e) => setInvite(p => ({ ...p, role: e.target.value as 'jurado' | 'admin' }))}>
+                        <option value="jurado">jurado</option>
+                        <option value="admin">admin</option>
+                      </select>
+                    </Field>
+                  )}
+                </div>
+                <div className="flex justify-end items-center gap-3">
+                  {notice['invite'] && <Notice kind={notice['invite'].kind}>{notice['invite'].msg}</Notice>}
+                  <button type="button" onClick={createMember} disabled={busy === 'invite'} className={btnGold}>
+                    {busy === 'invite' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Criar acesso'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* AUDITORIA */}
+          {tab === 'auditoria' && (isDev || isAdminRole) && (
+            <div className="space-y-4 fade-up-800">
+              <div className="flex justify-between items-center">
+                <span className="font-mono text-[10px] text-gray-400 uppercase tracking-widest">Histórico das ações internas ({audit.length})</span>
+                <button type="button" onClick={openAuditTab} className={btnGhost}>Atualizar</button>
+              </div>
+              {audit.length === 0 && (
+                <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-5">
+                  <p className="text-xs text-gray-400 font-mono">Nenhuma ação registrada ainda.</p>
+                </div>
+              )}
+              <div className="space-y-2">
+                {audit.map(a => {
+                  const d = (a.details && typeof a.details === 'object') ? a.details as Record<string, unknown> : {};
+                  const detailText = Object.keys(d).length ? Object.entries(d).map(([kk, vv]) => `${kk}: ${String(vv)}`).join(' · ') : '';
+                  return (
+                    <div key={String(a.id)} className="bg-black/40 border border-white/5 rounded-xl p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                      <div className="min-w-0">
+                        <span className="text-xs text-white font-bold block">{String(a.actor_name || '—')} <span className="text-gray-400 font-normal">{String(a.action)}</span></span>
+                        <span className="font-mono text-[10px] text-[#F0C265] block truncate">{String(a.target || '')}</span>
+                        {detailText && <span className="font-mono text-[9px] text-gray-500 block">{detailText}</span>}
+                      </div>
+                      <span className="font-mono text-[9px] text-gray-500 shrink-0">{fmtDate(String(a.created_at))}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 

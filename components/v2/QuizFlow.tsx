@@ -4,6 +4,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { Trash2, Plus, X, Copy, Share2 } from 'lucide-react';
 import Link from 'next/link';
+import Script from 'next/script';
 import { supabase } from '../../lib/supabase';
 import {
   applyCpfMask, applyDateMask, applyPhoneMask,
@@ -90,6 +91,23 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const confirmRef = useRef<HTMLDivElement | null>(null);
   const quizClosingRef = useRef(false);
   const checkoutClosingRef = useRef(false);
+  const quizOpenedAt = useRef<number>(0);
+  const tsRenderedRef = useRef(false);
+  const [honey, setHoney] = useState('');
+  const [tsToken, setTsToken] = useState('');
+
+  const tryRenderTurnstile = () => {
+    if (tsRenderedRef.current) return;
+    const el = document.getElementById('cf-ts');
+    const w = window as unknown as { turnstile?: { render: (el: HTMLElement | string, opts: Record<string, unknown>) => void } };
+    if (el && w.turnstile) {
+      w.turnstile.render(el, {
+        sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA',
+        callback: (token: string) => setTsToken(token)
+      });
+      tsRenderedRef.current = true;
+    }
+  };
 
   // SSR-safe layout effect
   const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -111,6 +129,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     if (isOpen) {
       quizClosingRef.current = false;
       setQuizVisible(true);
+      quizOpenedAt.current = Date.now();
     }
   }, [isOpen]);
 
@@ -150,6 +169,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         { scale: 1, opacity: 1, duration: 0.3, ease: 'power2.out', clearProps: 'transform' });
     }
   }, [successVisible]);
+
+  useEffect(() => {
+    if (quizVisible && quizStep === 5) tryRenderTurnstile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quizVisible, quizStep]);
 
   // Close quiz with exit animation, then unmount + notify parent
   const requestCloseQuiz = () => {
@@ -544,6 +568,17 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   // ---------- Checkout flow ----------
   const handleLaunchCheckout = () => {
     const errs = validateStep(5);
+    if (honey.trim()) {
+      setErrors({ acceptRules: 'Não foi possível validar o envio. Recarregue a página e tente novamente.' });
+      return;
+    }
+    if (quizOpenedAt.current && Date.now() - quizOpenedAt.current < 4000) {
+      setErrors({ acceptRules: 'Revise com calma as informações antes de gerar o Pix.' });
+      return;
+    }
+    if (!tsToken) {
+      errs.acceptRules = 'Confirme a verificação anti-robô antes de gerar o Pix.';
+    }
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
@@ -760,6 +795,14 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
   return (
     <>
+      {isOpen && (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          strategy="lazyOnload"
+          onLoad={tryRenderTurnstile}
+        />
+      )}
+
       {/* QUIZ INTERACTIVE POPUP MODAL — external page scroll, no internal modal scroll */}
       {quizVisible && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start sm:items-center">
@@ -1087,6 +1130,17 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                             </div>
 
                             <div className="p-1">
+                              {/* anti-bot: campo isca invisível para humanos */}
+                              <input
+                                type="text"
+                                name="website"
+                                value={honey}
+                                onChange={(e) => setHoney(e.target.value)}
+                                tabIndex={-1}
+                                autoComplete="off"
+                                aria-hidden="true"
+                                className="absolute opacity-0 h-0 w-0 pointer-events-none"
+                              />
                               <label className="flex items-start gap-3 cursor-pointer">
                                 <input type="checkbox" checked={acceptRules} onChange={(e) => { setAcceptRules(e.target.checked); clearError('acceptRules'); }} className="mt-1 w-4 h-4 text-[#F0C265] bg-black border-[#2E2820] rounded focus:ring-[#F0C265]" />
                                 <span className="text-xs text-gray-300 leading-relaxed font-normal">
@@ -1094,6 +1148,12 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                 </span>
                               </label>
                               {fieldError('acceptRules')}
+                                <div className="pt-2 flex justify-center">
+                                  <div id="cf-ts" />
+                                  {!tsToken && (
+                                    <span className="font-mono text-[9px] text-gray-500 uppercase tracking-widest">Verificação anti-robô ativa</span>
+                                  )}
+                                </div>
                             </div>
                           </div>
                         )}
