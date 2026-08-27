@@ -13,7 +13,7 @@ interface StaffRow {
   email: string;
   display_name: string;
   role: 'dev' | 'admin' | 'jurado';
-  permissions: { manage_lotes?: boolean; manage_content?: boolean; manage_subscriptions?: boolean };
+  permissions: { manage_lotes?: boolean; manage_content?: boolean; manage_subscriptions?: boolean; view_sensitive_data?: boolean; manage_team?: boolean; view_audit?: boolean };
 }
 
 interface MemberFull {
@@ -85,9 +85,12 @@ interface BatchDraft {
 
 const TZ = 'America/Sao_Paulo';
 const PERM_KEYS = [
-  { key: 'manage_lotes', label: 'Gerenciar lotes e preços' },
-  { key: 'manage_content', label: 'Gerenciar conteúdo do site' },
-  { key: 'manage_subscriptions', label: 'Gerenciar inscrições e pagamentos' },
+  { key: 'manage_lotes', label: 'Gerenciar lotes, preços e live' },
+  { key: 'manage_content', label: 'Gerenciar conteúdo do site (datas, link, preço Dia 0, FAQ)' },
+  { key: 'manage_subscriptions', label: 'Gerenciar inscrições, pagamentos e notas' },
+  { key: 'view_sensitive_data', label: 'Visualizar dados pessoais dos inscritos (CPF, contato)' },
+  { key: 'manage_team', label: 'Gerenciar acessos da equipe' },
+  { key: 'view_audit', label: 'Visualizar o histórico de auditoria' },
 ] as const;
 
 const PROJECT_STATUS: Record<string, { label: string; cls: string }> = {
@@ -141,15 +144,15 @@ function Notice({ kind, children }: { kind: 'ok' | 'err' | 'info'; children: Rea
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="block font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-wider">{label}</label>
+      <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">{label}</label>
       {children}
     </div>
   );
 }
 
 const inputCls = "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-2.5 text-white text-xs outline-none focus:border-[#E3B552] font-mono";
-const btnGold = "bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black font-display font-black text-[10px] uppercase tracking-widest py-2.5 px-4 rounded-xl border-none shadow-[0_0_15px_rgba(240,194,101,0.2)] disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-transform";
-const btnGhost = "font-mono text-[10px] font-bold text-white bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl uppercase tracking-wider hover:bg-white/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
+const btnGold = "bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black font-display font-black text-xs uppercase tracking-widest py-2.5 px-4 rounded-xl border-none shadow-[0_0_15px_rgba(240,194,101,0.2)] disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-transform";
+const btnGhost = "font-mono text-xs font-bold text-white bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl uppercase tracking-wider hover:bg-white/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
 
 export default function SagradoPage() {
   const [booting, setBooting] = useState(true);
@@ -210,6 +213,9 @@ export default function SagradoPage() {
   const canLotes = isDev || !!perms.manage_lotes;
   const canContent = isDev || !!perms.manage_content;
   const canSubs = isDev || !!perms.manage_subscriptions;
+  const canSensitive = isDev || !!perms.view_sensitive_data;
+  const canTeam = isDev || (isAdminRole && !!perms.manage_team);
+  const canAudit = isDev || (isAdminRole && !!perms.view_audit);
 
   const loadLive = useCallback(async () => {
     const { data } = await supabase.from('live_broadcast').select('status').eq('id', 1).maybeSingle();
@@ -274,6 +280,19 @@ export default function SagradoPage() {
   const PAGE_SIZE = 25;
 
   const loadProjects = useCallback(async () => {
+    if (me?.role === 'jurado') {
+      const { data: juryData } = await supabase.rpc('list_projects_for_jury');
+      const rows = ((juryData || []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id), name: String(r.name), style: String(r.style || ''),
+        bio: String(r.bio || ''), instagram: (r.instagram as string) || null,
+        video_link: (r.video_link as string) || null, photo_url: (r.photo_url as string) || null,
+        status: String(r.status), created_at: String(r.created_at),
+        members: [{ count: Number(r.members_count || 0) }], subscriptions: []
+      }));
+      setProjects(rows as unknown as ProjectRow[]);
+      setTotalCount(rows.length);
+      return;
+    }
     let query = supabase
       .from('projects')
       .select('id, name, style, bio, instagram, video_link, photo_url, status, created_at, members(count), subscriptions(status, amount_paid, batches(name))', { count: 'exact' });
@@ -285,7 +304,7 @@ export default function SagradoPage() {
       .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
     if (data) setProjects(data as unknown as ProjectRow[]);
     setTotalCount(count ?? 0);
-  }, [searchQ, statusFilter, loteFilter, page]);
+  }, [searchQ, statusFilter, loteFilter, page, me?.role]);
 
   const loadAudit = useCallback(async () => {
     const { data } = await supabase.rpc('list_audit', { p_limit: 150 });
@@ -334,11 +353,12 @@ export default function SagradoPage() {
     if (canContent) available.push('conteudo');
     if (canSubs) available.push('inscritos');
     if (isJudge) available.push('avaliacao');
-    if (isDev) available.push('equipe');
+    if (canTeam) available.push('equipe');
+    if (canAudit) available.push('auditoria');
     available.push('conta');
     setTab(t => (available.includes(t) ? t : available[0]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authed, me?.role, canLotes, canContent, canSubs, isJudge]);
+  }, [authed, me?.role, canLotes, canContent, canSubs, canTeam, canAudit, isJudge]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -614,7 +634,7 @@ export default function SagradoPage() {
       {booting ? (
         <div className="min-h-screen flex flex-col items-center justify-center gap-4">
           <Loader2 className="w-8 h-8 text-[#F0C265] animate-spin" />
-          <span className="font-mono text-[10px] uppercase tracking-widest text-gray-400">Verificando sessão segura...</span>
+          <span className="font-mono text-xs uppercase tracking-widest text-gray-400">Verificando sessão segura...</span>
         </div>
       ) : !authed ? (
         <div className="min-h-screen flex items-center justify-center px-6 py-16">
@@ -636,7 +656,7 @@ export default function SagradoPage() {
                 {loggingIn ? 'Autenticando...' : 'Entrar'}
               </button>
             </form>
-            <Link href="/" className="inline-block text-[10px] font-mono text-gray-500 hover:text-white uppercase tracking-widest">← Voltar ao site</Link>
+            <Link href="/" className="inline-block text-xs font-mono text-gray-500 hover:text-white uppercase tracking-widest">← Voltar ao site</Link>
           </div>
         </div>
       ) : (
@@ -647,12 +667,12 @@ export default function SagradoPage() {
               <div className="w-10 h-10 rounded bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] flex items-center justify-center font-display font-black text-black text-xl border border-black shadow-md">P</div>
               <div>
                 <span className="font-display font-black text-white text-md tracking-tight uppercase block leading-none">CENTRAL PEDRA PROFANA</span>
-                <span className="font-mono text-[9px] text-[#F0C265] tracking-widest block uppercase mt-1">{me?.display_name || me?.email}</span>
+                <span className="font-mono text-[11px] text-[#F0C265] tracking-widest block uppercase mt-1">{me?.display_name || me?.email}</span>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Link href="/v2" className="text-[10px] font-mono text-gray-400 hover:text-white uppercase tracking-widest">Ver site</Link>
-              <button onClick={handleLogout} className="flex items-center gap-1.5 font-mono text-[10px] font-bold text-gray-400 hover:text-red-400 uppercase tracking-widest transition-colors">
+              <Link href="/v2" className="text-xs font-mono text-gray-400 hover:text-white uppercase tracking-widest">Ver site</Link>
+              <button onClick={handleLogout} className="flex items-center gap-1.5 font-mono text-xs font-bold text-gray-400 hover:text-red-400 uppercase tracking-widest transition-colors">
                 <LogOut className="w-3.5 h-3.5" /> Sair
               </button>
             </div>
@@ -666,15 +686,15 @@ export default function SagradoPage() {
               { id: 'conteudo', label: 'Conteúdo do site', icon: FileText, show: canContent },
               { id: 'inscritos', label: 'Inscrições', icon: ClipboardList, show: canSubs },
               { id: 'avaliacao', label: 'Avaliação', icon: Star, show: isJudge },
-              { id: 'equipe', label: 'Equipe', icon: Users, show: isDev || isAdminRole },
-              { id: 'auditoria', label: 'Auditoria', icon: History, show: isDev || isAdminRole },
+              { id: 'equipe', label: 'Equipe', icon: Users, show: canTeam },
+              { id: 'auditoria', label: 'Auditoria', icon: History, show: canAudit },
               { id: 'conta', label: 'Minha conta', icon: UserCog, show: true },
             ].filter(t => t.show).map(t => (
               <button
                 key={t.id}
                 type="button"
                 onClick={() => setTab(t.id)}
-                className={`flex items-center gap-1.5 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-wider rounded-xl whitespace-nowrap transition-colors ${
+                className={`flex items-center gap-1.5 px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider rounded-xl whitespace-nowrap transition-colors ${
                   tab === t.id ? 'bg-[#F0C265] text-black' : 'text-gray-400 hover:text-white bg-white/5 border border-white/5'
                 }`}
               >
@@ -694,13 +714,13 @@ export default function SagradoPage() {
                   { label: 'Pagas', value: String(projects.filter(p => p.status === 'paid').length), accent: 'text-[#10B981]' },
                 ].map(s => (
                   <div key={s.label} className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-1.5">
-                    <span className="font-mono text-[9px] text-gray-400 uppercase tracking-widest block">{s.label}</span>
+                    <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest block">{s.label}</span>
                     <span className={`font-display font-black text-2xl block ${s.accent}`}>{s.value}</span>
                   </div>
                 ))}
               </div>
               <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-2">
-                <span className="font-mono text-[9px] text-gray-400 uppercase tracking-widest block">Datas vigentes no site</span>
+                <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest block">Datas vigentes no site</span>
                 <p className="text-xs text-gray-300 font-mono">Lote ativo termina: <strong className="text-white">{fmtDate(batches.find(b => b.status === 'ativo')?.ends_at)}</strong></p>
                 <p className="text-xs text-gray-300 font-mono">Lançamento da live: <strong className="text-white">{fmtDate(settings.live_launch)}</strong></p>
               </div>
@@ -717,16 +737,16 @@ export default function SagradoPage() {
                 <div className="flex justify-between items-center border-b border-white/5 pb-3">
                   <div className="flex items-center gap-2.5">
                     <h3 className="font-display font-bold text-white uppercase">🔴 Live — Dia 0</h3>
-                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded font-mono uppercase border ${
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded font-mono uppercase border ${
                       liveStatus === 'ao_vivo' ? 'bg-red-500/15 text-red-400 border-red-500/30 animate-pulse'
                       : liveStatus === 'encerrada' ? 'bg-[#121215] text-gray-500 border-white/5'
                       : 'bg-[#121215] text-gray-400 border-white/5'}`}>
                       {liveStatus}
                     </span>
                   </div>
-                  <span className="font-mono text-[9px] text-gray-400 uppercase">Lançamento: {fmtDate(settings.live_launch)}</span>
+                  <span className="font-mono text-[11px] text-gray-400 uppercase">Lançamento: {fmtDate(settings.live_launch)}</span>
                 </div>
-                <p className="text-xs text-gray-300 leading-relaxed">
+                <p className="text-sm text-gray-300 leading-relaxed">
                   Colocar a live no ar pausa automaticamente qualquer lote ativo (o Dia 0 passa a valer). Ativar um lote depois encerra a transmissão.
                 </p>
                 <div className="flex flex-wrap gap-2.5">
@@ -748,7 +768,7 @@ export default function SagradoPage() {
                     <div className="flex justify-between items-center border-b border-white/5 pb-3">
                       <div className="flex items-center gap-2.5">
                         <h3 className="font-display font-bold text-white uppercase">{b.name}</h3>
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded font-mono uppercase border ${
+                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded font-mono uppercase border ${
                           b.status === 'ativo' ? 'bg-[#10B981]/15 text-[#10B981] border-[#10B981]/30'
                           : b.status === 'encerrado' ? 'bg-[#121215] text-gray-500 border-white/5'
                           : 'bg-[#121215] text-gray-400 border-white/5'}`}>
@@ -820,11 +840,11 @@ export default function SagradoPage() {
                   {faqs.map((f, idx) => (
                     <div key={f.id} className="bg-black/40 border border-white/5 rounded-xl p-4 space-y-3">
                       <div className="flex justify-between items-center gap-2">
-                        <span className="font-mono text-[9px] text-gray-500 uppercase tracking-widest">#{idx + 1} {f.active ? '' : '· oculta no site'}</span>
+                        <span className="font-mono text-[11px] text-gray-500 uppercase tracking-widest">#{idx + 1} {f.active ? '' : '· oculta no site'}</span>
                         <div className="flex items-center gap-1">
                           <button type="button" disabled={idx === 0 || busy === 'faq-move'} onClick={() => moveFaq(idx, -1)} className="p-1.5 text-gray-400 hover:text-white disabled:opacity-30"><ArrowUp className="w-3.5 h-3.5" /></button>
                           <button type="button" disabled={idx === faqs.length - 1 || busy === 'faq-move'} onClick={() => moveFaq(idx, 1)} className="p-1.5 text-gray-400 hover:text-white disabled:opacity-30"><ArrowDown className="w-3.5 h-3.5" /></button>
-                          <button type="button" onClick={() => { const u = { ...f, active: !f.active }; setFaqs(list => list.map(x => x.id === f.id ? u : x)); saveFaq(u); }} className={`font-mono text-[9px] font-bold px-2 py-1 rounded uppercase border ${f.active ? 'text-[#10B981] border-[#10B981]/30 bg-[#10B981]/10' : 'text-gray-400 border-white/10 bg-white/5'}`}>
+                          <button type="button" onClick={() => { const u = { ...f, active: !f.active }; setFaqs(list => list.map(x => x.id === f.id ? u : x)); saveFaq(u); }} className={`font-mono text-[11px] font-bold px-2 py-1 rounded uppercase border ${f.active ? 'text-[#10B981] border-[#10B981]/30 bg-[#10B981]/10' : 'text-gray-400 border-white/10 bg-white/5'}`}>
                             {f.active ? 'visível' : 'oculta'}
                           </button>
                           <DeleteFaqButton onDelete={() => deleteFaq(f)} />
@@ -843,7 +863,10 @@ export default function SagradoPage() {
                 </div>
 
                 <div className="bg-black/40 border border-dashed border-[#E3B552]/30 rounded-xl p-4 space-y-3">
-                  <span className="font-mono text-[9px] text-[#F0C265] uppercase tracking-widest font-bold">Nova pergunta</span>
+                  <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-bold">Nova pergunta</span>
+                <p className="text-[11px] text-gray-400 font-mono leading-relaxed">
+                  Tags dinâmicas disponíveis (substituídas no site pelos valores atuais): <span className="text-[#F0C265]">[data-lote1]</span> <span className="text-[#F0C265]">[data-lote2]</span> <span className="text-[#F0C265]">[data-lote3]</span> término de cada lote • <span className="text-[#F0C265]">[data-live]</span> lançamento da live • <span className="text-[#F0C265]">[data-link-live]</span> link da transmissão • <span className="text-[#F0C265]">[data-preco-lote1]</span> <span className="text-[#F0C265]">[data-preco-lote2]</span> <span className="text-[#F0C265]">[data-preco-lote3]</span> <span className="text-[#F0C265]">[data-preco-dia0]</span> preços • <span className="text-[#F0C265]">[data-vagas]</span> vagas restantes do lote vigente.
+                </p>
                   <input className={inputCls} value={newFaq.question} onChange={(e) => setNewFaq(p => ({ ...p, question: e.target.value }))} placeholder="Pergunta" />
                   <textarea className={`${inputCls} resize-none`} rows={2} value={newFaq.answer} onChange={(e) => setNewFaq(p => ({ ...p, answer: e.target.value }))} placeholder="Resposta" />
                   <div className="flex justify-end items-center gap-3">
@@ -874,30 +897,30 @@ export default function SagradoPage() {
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/5 pb-4">
                         <div>
                           <h3 className="font-display font-black text-xl text-white uppercase leading-tight">{p.name}</h3>
-                          <span className="font-mono text-[10px] text-gray-400 uppercase block mt-1">{p.style || '—'} • cadastrada em {fmtDate(p.created_at)}</span>
+                          <span className="font-mono text-xs text-gray-400 uppercase block mt-1">{p.style || '—'} • cadastrada em {fmtDate(p.created_at)}</span>
                         </div>
-                        <span className={`text-[9px] font-bold px-2.5 py-1 rounded font-mono uppercase border shrink-0 ${st.cls}`}>{st.label}</span>
+                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded font-mono uppercase border shrink-0 ${st.cls}`}>{st.label}</span>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="md:col-span-2 space-y-1">
-                          <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">BIOGRAFIA OFICIAL:</span>
+                          <span className="font-mono text-xs text-gray-400 uppercase font-bold block">BIOGRAFIA OFICIAL:</span>
                           <p className="text-xs text-gray-200 leading-relaxed">{proj.bio || '—'}</p>
                         </div>
                         <div className="space-y-1">
-                          <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">INSTAGRAM:</span>
+                          <span className="font-mono text-xs text-gray-400 uppercase font-bold block">INSTAGRAM:</span>
                           {proj.instagram
                             ? <a href={`https://instagram.com/${String(proj.instagram).replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[#F0C265] font-bold text-xs font-mono hover:underline break-all">{String(proj.instagram)}</a>
                             : <span className="text-xs text-gray-500 font-mono">—</span>}
                         </div>
                         <div className="space-y-1">
-                          <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">LINK DA MÚSICA / VÍDEO:</span>
+                          <span className="font-mono text-xs text-gray-400 uppercase font-bold block">LINK DA MÚSICA / VÍDEO:</span>
                           {proj.video_link
                             ? <a href={String(proj.video_link)} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline text-xs font-mono break-all">{String(proj.video_link)}</a>
                             : <span className="text-xs text-gray-500 font-mono">—</span>}
                         </div>
                         <div className="space-y-1 md:col-span-2">
-                          <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">FOTO DE DIVULGAÇÃO ENVIADA:</span>
+                          <span className="font-mono text-xs text-gray-400 uppercase font-bold block">FOTO DE DIVULGAÇÃO ENVIADA:</span>
                           {proj.photo_url && String(proj.photo_url).startsWith('http') ? (
                             <img
                               src={String(proj.photo_url)}
@@ -912,15 +935,17 @@ export default function SagradoPage() {
                       </div>
 
                       <div className="space-y-3">
-                        <span className="font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-widest block">Integrantes ({detail?.members.length ?? 0})</span>
+                        <span className="font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-widest block">
+                          Integrantes ({detail?.members.length ?? 0}){!canSensitive && detail && detail.members.length > 0 && <span className="text-gray-500"> • dados pessoais restritos</span>}
+                        </span>
                         <div className="space-y-2">
                           {(detail?.members || []).map((m, i) => (
                             <div key={i} className={`p-3 rounded-xl border ${m.is_responsible ? 'border-[#F0C265]/20 bg-[#F0C265]/5' : 'border-white/5 bg-black/30'}`}>
                               <div className="flex justify-between items-center gap-2">
-                                <span className="text-xs font-bold text-white">{m.name} {m.is_responsible && <span className="font-mono text-[8px] text-[#F0C265] uppercase">(líder responsável)</span>}</span>
-                                <span className="font-mono text-[9px] text-gray-500">#{i + 1}</span>
+                                <span className="text-xs font-bold text-white">{m.name} {m.is_responsible && <span className="font-mono text-xs text-[#F0C265] uppercase">(líder responsável)</span>}</span>
+                                <span className="font-mono text-[11px] text-gray-500">#{i + 1}</span>
                               </div>
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 font-mono text-[10px] text-gray-300">
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 font-mono text-xs text-gray-300">
                                 <span>CPF: {m.cpf || '—'}</span>
                                 <span>Nasc.: {m.birth_date || '—'}</span>
                                 <span>WhatsApp: {m.phone || '—'}</span>
@@ -932,8 +957,8 @@ export default function SagradoPage() {
                       </div>
 
                       <div className="space-y-2 bg-black/40 border border-white/5 rounded-xl p-4">
-                        <span className="font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-widest block">Recibo da cobrança{detail && detail.subsTotal > 1 ? ` (mais recente de ${detail.subsTotal})` : ''}</span>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-[10px] text-gray-300">
+                        <span className="font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-widest block">Recibo da cobrança{detail && detail.subsTotal > 1 ? ` (mais recente de ${detail.subsTotal})` : ''}</span>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs text-gray-300">
                           <span>Valor: <strong className="text-[#10B981]">{sub?.amount_paid != null ? `R$ ${sub.amount_paid},00` : '—'}</strong></span>
                           <span>Lote: {sub?.batch_name || '—'}</span>
                           <span>Cobrança: {sub?.status || '—'}</span>
@@ -944,9 +969,9 @@ export default function SagradoPage() {
 
                       {(detail?.scores?.length ?? 0) > 0 && (
                         <div className="space-y-2 bg-black/40 border border-white/5 rounded-xl p-4">
-                          <span className="font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-widest block">Notas do júri</span>
+                          <span className="font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-widest block">Notas do júri</span>
                           {detail!.scores.map((sc, i) => (
-                            <div key={i} className="flex flex-wrap justify-between gap-2 font-mono text-[10px] text-gray-300 border-b border-white/5 pb-1.5 last:border-none">
+                            <div key={i} className="flex flex-wrap justify-between gap-2 font-mono text-xs text-gray-300 border-b border-white/5 pb-1.5 last:border-none">
                               <span className="text-white font-bold">{sc.juror}</span>
                               <span>Apres. {sc.presentation} • Compos. {sc.composition} • Estét. {sc.aesthetics} • Média <strong className="text-[#F0C265]">{((sc.presentation + sc.composition + sc.aesthetics) / 3).toFixed(1)}</strong></span>
                               {sc.notes && <span className="w-full text-gray-500">“{sc.notes}”</span>}
@@ -957,28 +982,28 @@ export default function SagradoPage() {
 
                       {canSubs && (
                         <div className="border-t border-white/5 pt-4 space-y-2">
-                          <span className="font-mono text-[9px] text-gray-400 uppercase tracking-widest block font-bold">Ações sobre esta inscrição</span>
+                          <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest block font-bold">Ações sobre esta inscrição</span>
                           <div className="flex flex-wrap gap-2.5">
                             {(p.status === 'pending' || p.status === 'failed') && (
-                              <button type="button" onClick={() => confirmPayment(p)} disabled={busy === `pay-${p.id}`} className="bg-[#10B981] text-black font-mono text-[9px] font-bold px-3 py-2 rounded uppercase disabled:opacity-50">
+                              <button type="button" onClick={() => confirmPayment(p)} disabled={busy === `pay-${p.id}`} className="bg-[#10B981] text-black font-mono text-[11px] font-bold px-3 py-2 rounded uppercase disabled:opacity-50">
                                 {busy === `pay-${p.id}` ? '...' : 'Confirmar pagamento'}
                               </button>
                             )}
                             {p.status === 'paid' && (
-                              <button type="button" onClick={() => setProjectState(p, 'suspended', 'Inscrição suspensa.')} disabled={busy === `st-${p.id}`} className="bg-orange-500 text-black font-mono text-[9px] font-bold px-3 py-2 rounded uppercase disabled:opacity-50">Suspender</button>
+                              <button type="button" onClick={() => setProjectState(p, 'suspended', 'Inscrição suspensa.')} disabled={busy === `st-${p.id}`} className="bg-orange-500 text-black font-mono text-[11px] font-bold px-3 py-2 rounded uppercase disabled:opacity-50">Suspender</button>
                             )}
                             {p.status !== 'blocked' && (
-                              <button type="button" onClick={() => setProjectState(p, 'blocked', 'Inscrição bloqueada.')} disabled={busy === `st-${p.id}`} className="bg-red-600 text-white font-mono text-[9px] font-bold px-3 py-2 rounded uppercase disabled:opacity-50">Bloquear</button>
+                              <button type="button" onClick={() => setProjectState(p, 'blocked', 'Inscrição bloqueada.')} disabled={busy === `st-${p.id}`} className="bg-red-600 text-white font-mono text-[11px] font-bold px-3 py-2 rounded uppercase disabled:opacity-50">Bloquear</button>
                             )}
                             {p.status === 'paid' && (
-                              <button type="button" onClick={() => setProjectState(p, 'refunded', 'Inscrição marcada como reembolsada.')} disabled={busy === `st-${p.id}`} className="bg-white/10 text-gray-300 font-mono text-[9px] font-bold px-3 py-2 rounded uppercase border border-white/10 disabled:opacity-50">Marcar reembolsada</button>
+                              <button type="button" onClick={() => setProjectState(p, 'refunded', 'Inscrição marcada como reembolsada.')} disabled={busy === `st-${p.id}`} className="bg-white/10 text-gray-300 font-mono text-[11px] font-bold px-3 py-2 rounded uppercase border border-white/10 disabled:opacity-50">Marcar reembolsada</button>
                             )}
                             {(p.status === 'suspended' || p.status === 'blocked' || p.status === 'refunded') && (
-                              <button type="button" onClick={() => setProjectState(p, 'paid', 'Inscrição reativada como paga.')} disabled={busy === `st-${p.id}`} className="bg-[#10B981] text-black font-mono text-[9px] font-bold px-3 py-2 rounded uppercase disabled:opacity-50">Reativar (paga)</button>
+                              <button type="button" onClick={() => setProjectState(p, 'paid', 'Inscrição reativada como paga.')} disabled={busy === `st-${p.id}`} className="bg-[#10B981] text-black font-mono text-[11px] font-bold px-3 py-2 rounded uppercase disabled:opacity-50">Reativar (paga)</button>
                             )}
                           </div>
                           {notice[`st-${p.id}`] && <Notice kind={notice[`st-${p.id}`].kind}>{notice[`st-${p.id}`].msg}</Notice>}
-                          <p className="text-[10px] text-gray-500 font-mono leading-relaxed">Estas ações alteram apenas o estado da inscrição — os dados cadastrados pela banda permanecem intactos para análise da gerência.</p>
+                          <p className="text-xs text-gray-500 font-mono leading-relaxed">Estas ações alteram apenas o estado da inscrição — os dados cadastrados pela banda permanecem intactos para análise da gerência.</p>
                         </div>
                       )}
                     </div>
@@ -1006,7 +1031,7 @@ export default function SagradoPage() {
                   </div>
 
                   {(searchQ || statusFilter || loteFilter) && (
-                    <button type="button" onClick={() => { setSearchQ(''); setStatusFilter(''); setLoteFilter(''); setPage(0); }} className="font-mono text-[9px] text-[#F0C265] hover:underline uppercase font-bold">
+                    <button type="button" onClick={() => { setSearchQ(''); setStatusFilter(''); setLoteFilter(''); setPage(0); }} className="font-mono text-[11px] text-[#F0C265] hover:underline uppercase font-bold">
                       Limpar filtros
                     </button>
                   )}
@@ -1026,13 +1051,13 @@ export default function SagradoPage() {
                         >
                           <div className="space-y-0.5 min-w-0">
                             <span className="text-sm font-bold text-white block truncate">{p.name}</span>
-                            <span className="font-mono text-[10px] text-gray-400 uppercase block">
+                            <span className="font-mono text-xs text-gray-400 uppercase block">
                               {p.style || '—'} • {count} integrante{count === 1 ? '' : 's'} • {fmtDate(p.created_at)} {sub?.batches?.name ? `• ${sub.batches.name}` : ''} {sub?.amount_paid ? `• R$ ${sub.amount_paid},00` : ''}
                             </span>
                           </div>
                           <div className="flex items-center gap-2.5 shrink-0">
-                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded font-mono uppercase border ${st.cls}`}>{st.label}</span>
-                            <span className="flex items-center gap-1 font-mono text-[9px] font-bold text-[#F0C265] uppercase"><Eye className="w-3 h-3" /> Ficha</span>
+                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded font-mono uppercase border ${st.cls}`}>{st.label}</span>
+                            <span className="flex items-center gap-1 font-mono text-[11px] font-bold text-[#F0C265] uppercase"><Eye className="w-3 h-3" /> Ficha</span>
                           </div>
                         </button>
                       );
@@ -1042,7 +1067,7 @@ export default function SagradoPage() {
                   {totalCount > PAGE_SIZE && (
                     <div className="flex justify-between items-center border-t border-white/5 pt-4">
                       <button type="button" disabled={page === 0 || busy !== null} onClick={() => setPage(p => Math.max(0, p - 1))} className={btnGhost}>← Anterior</button>
-                      <span className="font-mono text-[10px] text-gray-400 uppercase">Página {page + 1} de {Math.ceil(totalCount / PAGE_SIZE)}</span>
+                      <span className="font-mono text-xs text-gray-400 uppercase">Página {page + 1} de {Math.ceil(totalCount / PAGE_SIZE)}</span>
                       <button type="button" disabled={(page + 1) * PAGE_SIZE >= totalCount || busy !== null} onClick={() => setPage(p => p + 1)} className={btnGhost}>Próxima →</button>
                     </div>
                   )}
@@ -1074,7 +1099,7 @@ export default function SagradoPage() {
                       <button type="button" onClick={() => setOpenJury(o => (o === p.id ? null : p.id))} className="w-full flex justify-between items-center gap-3 text-left">
                         <div>
                           <span className="text-sm font-bold text-white block">{p.name}</span>
-                          <span className="font-mono text-[10px] text-gray-400 uppercase block">{p.style || '—'} • {p.members?.[0]?.count ?? 0} integrante{(p.members?.[0]?.count ?? 0) === 1 ? '' : 's'}</span>
+                          <span className="font-mono text-xs text-gray-400 uppercase block">{p.style || '—'} • {p.members?.[0]?.count ?? 0} integrante{(p.members?.[0]?.count ?? 0) === 1 ? '' : 's'}</span>
                         </div>
                         <span className="font-mono text-lg text-[#F0C265] font-black shrink-0">{avg}</span>
                       </button>
@@ -1082,9 +1107,9 @@ export default function SagradoPage() {
                       {openJury === p.id && (
                         <div className="space-y-4 border-t border-white/5 pt-4">
                           <div className="space-y-2">
-                            <span className="font-mono text-[9px] text-gray-400 uppercase tracking-widest block font-bold">Ficha artística</span>
+                            <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest block font-bold">Ficha artística</span>
                             <p className="text-xs text-gray-200 leading-relaxed">{p.bio || 'Sem biografia cadastrada.'}</p>
-                            <div className="flex flex-wrap gap-3 font-mono text-[10px]">
+                            <div className="flex flex-wrap gap-3 font-mono text-xs">
                               {p.instagram && <a href={`https://instagram.com/${String(p.instagram).replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[#F0C265] hover:underline">{String(p.instagram)}</a>}
                               {p.video_link && <a href={String(p.video_link)} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all">ouvir/ver música ↗</a>}
                               <span className="text-gray-500">foto: {p.photo_url ? 'enviada ✓' : '—'}</span>
@@ -1117,7 +1142,7 @@ export default function SagradoPage() {
           })()}
 
           {/* EQUIPE */}
-          {tab === 'equipe' && (isDev || isAdminRole) && (
+          {tab === 'equipe' && canTeam && (
             <div className="space-y-4 fade-up-800">
               <Notice kind="info">Crie acessos da equipe e ajuste os nomes de exibição. A senha inicial é definida aqui — a pessoa deve trocá-la em Minha conta após o primeiro acesso.</Notice>
 
@@ -1131,9 +1156,9 @@ export default function SagradoPage() {
                     <div className="flex justify-between items-center border-b border-white/5 pb-3">
                       <div>
                         <h3 className="font-display font-bold text-white">{cur.display_name || cur.email}</h3>
-                        <span className="font-mono text-[9px] text-gray-500 block">{cur.email}{self ? ' • você' : ''}</span>
+                        <span className="font-mono text-[11px] text-gray-500 block">{cur.email}{self ? ' • você' : ''}</span>
                       </div>
-                      <span className={`font-mono text-[9px] font-bold px-2.5 py-1 rounded-full uppercase border ${cur.role === 'dev' ? 'text-[#F0C265] border-[#F0C265]/40 bg-[#F0C265]/10' : cur.role === 'jurado' ? 'text-blue-300 border-blue-400/30 bg-blue-400/10' : 'text-gray-400 border-white/10 bg-white/5'}`}>
+                      <span className={`font-mono text-[11px] font-bold px-2.5 py-1 rounded-full uppercase border ${cur.role === 'dev' ? 'text-[#F0C265] border-[#F0C265]/40 bg-[#F0C265]/10' : cur.role === 'jurado' ? 'text-blue-300 border-blue-400/30 bg-blue-400/10' : 'text-gray-400 border-white/10 bg-white/5'}`}>
                         {cur.role}
                       </span>
                     </div>
@@ -1152,19 +1177,21 @@ export default function SagradoPage() {
                     </div>
 
                     <div className={`space-y-2 ${cur.role === 'admin' ? '' : 'hidden'}`}>
-                      <span className="font-mono text-[9px] text-gray-400 uppercase tracking-widest block font-bold">Funções liberadas no painel</span>
-                      {PERM_KEYS.map(pk => (
-                        <label key={pk.key} className="flex items-center gap-3 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            className="w-4 h-4 bg-black border-white/20 rounded focus:ring-[#F0C265]"
-                            checked={isDev && cur.role === 'dev' ? true : !!cur.permissions?.[pk.key]}
-                            disabled={self}
-                            onChange={(e) => upd({ permissions: { ...cur.permissions, [pk.key]: e.target.checked } })}
-                          />
-                          <span className="text-xs text-gray-300">{pk.label}</span>
-                        </label>
-                      ))}
+                      <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest block font-bold">Funções liberadas no painel</span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                        {PERM_KEYS.map(pk => (
+                          <label key={pk.key} className="flex items-start gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="mt-0.5 w-4 h-4 bg-black border-white/20 rounded focus:ring-[#F0C265]"
+                              checked={isDev && cur.role === 'dev' ? true : !!cur.permissions?.[pk.key]}
+                              disabled={self}
+                              onChange={(e) => upd({ permissions: { ...cur.permissions, [pk.key]: e.target.checked } })}
+                            />
+                            <span className="text-xs text-gray-300 leading-snug">{pk.label}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="flex justify-end items-center gap-3 flex-wrap">
@@ -1183,7 +1210,7 @@ export default function SagradoPage() {
                   <div key={s.id} className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
                     <div className="border-b border-white/5 pb-3">
                       <h3 className="font-display font-bold text-white">{s.display_name || s.email}</h3>
-                      <span className="font-mono text-[9px] text-gray-500 block">{s.email}</span>
+                      <span className="font-mono text-[11px] text-gray-500 block">{s.email}</span>
                     </div>
                     <Field label="Nome de exibição">
                       <input className={inputCls} value={s.display_name} onChange={(e) => upd({ display_name: e.target.value })} />
@@ -1199,8 +1226,8 @@ export default function SagradoPage() {
               })}
 
               <div className="bg-black/40 border border-dashed border-[#E3B552]/30 rounded-xl p-4 space-y-3">
-                <span className="font-mono text-[9px] text-[#F0C265] uppercase tracking-widest font-bold flex items-center gap-1.5"><UserPlus className="w-3.5 h-3.5" /> Criar novo acesso</span>
-                <p className="text-[10px] text-gray-500 font-mono">Se o e-mail pertencer a um acesso desativado, ele será reativado no nível escolhido (a senha continua a anterior).</p>
+                <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-bold flex items-center gap-1.5"><UserPlus className="w-3.5 h-3.5" /> Criar novo acesso</span>
+                <p className="text-xs text-gray-500 font-mono">Se o e-mail pertencer a um acesso desativado, ele será reativado no nível escolhido (a senha continua a anterior).</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <Field label="E-mail"><input className={inputCls} value={invite.email} onChange={(e) => setInvite(p => ({ ...p, email: e.target.value }))} placeholder="pessoa@pedraprofana.com" /></Field>
                   <Field label="Nome de exibição"><input className={inputCls} value={invite.name} onChange={(e) => setInvite(p => ({ ...p, name: e.target.value }))} placeholder="Como aparece no painel" /></Field>
@@ -1225,10 +1252,10 @@ export default function SagradoPage() {
           )}
 
           {/* AUDITORIA */}
-          {tab === 'auditoria' && (isDev || isAdminRole) && (
+          {tab === 'auditoria' && canAudit && (
             <div className="space-y-4 fade-up-800">
               <div className="flex justify-between items-center">
-                <span className="font-mono text-[10px] text-gray-400 uppercase tracking-widest">Histórico das ações internas ({audit.length})</span>
+                <span className="font-mono text-xs text-gray-400 uppercase tracking-widest">Histórico das ações internas ({audit.length})</span>
                 <button type="button" onClick={openAuditTab} className={btnGhost}>Atualizar</button>
               </div>
               {audit.length === 0 && (
@@ -1244,10 +1271,10 @@ export default function SagradoPage() {
                     <div key={String(a.id)} className="bg-black/40 border border-white/5 rounded-xl p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                       <div className="min-w-0">
                         <span className="text-xs text-white font-bold block">{String(a.actor_name || '—')} <span className="text-gray-400 font-normal">{String(a.action)}</span></span>
-                        <span className="font-mono text-[10px] text-[#F0C265] block truncate">{String(a.target || '')}</span>
-                        {detailText && <span className="font-mono text-[9px] text-gray-500 block">{detailText}</span>}
+                        <span className="font-mono text-xs text-[#F0C265] block truncate">{String(a.target || '')}</span>
+                        {detailText && <span className="font-mono text-[11px] text-gray-500 block">{detailText}</span>}
                       </div>
-                      <span className="font-mono text-[9px] text-gray-500 shrink-0">{fmtDate(String(a.created_at))}</span>
+                      <span className="font-mono text-[11px] text-gray-500 shrink-0">{fmtDate(String(a.created_at))}</span>
                     </div>
                   );
                 })}
@@ -1290,7 +1317,7 @@ export default function SagradoPage() {
           )}
 
           <div className="border-t border-white/5 mt-8 pt-5 text-center">
-            <span className="font-mono text-[9px] text-[#5C5248] uppercase tracking-widest">Estúdio Pedra Profana • Área interna</span>
+            <span className="font-mono text-[11px] text-[#5C5248] uppercase tracking-widest">Estúdio Pedra Profana • Área interna</span>
           </div>
         </div>
       )}
@@ -1303,7 +1330,7 @@ export default function SagradoPage() {
             alt="Foto de divulgação ampliada"
             className="legal-pop max-h-[80vh] max-w-full rounded-2xl border-2 border-[#F0C265]/40 shadow-2xl"
           />
-          <button type="button" className="mt-5 font-mono text-[10px] text-gray-400 hover:text-white uppercase tracking-widest border border-white/10 px-4 py-2 rounded-full">
+          <button type="button" className="mt-5 font-mono text-xs text-gray-400 hover:text-white uppercase tracking-widest border border-white/10 px-4 py-2 rounded-full">
             Fechar
           </button>
         </div>
@@ -1316,15 +1343,15 @@ function DisableStaffButton({ onDisable, busy }: { onDisable: () => void; busy: 
   const [armed, setArmed] = useState(false);
   if (!armed) {
     return (
-      <button type="button" onClick={() => setArmed(true)} disabled={busy} className="font-mono text-[10px] font-bold text-red-400/80 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 px-4 py-2.5 rounded-xl uppercase tracking-wider transition-colors">
+      <button type="button" onClick={() => setArmed(true)} disabled={busy} className="font-mono text-xs font-bold text-red-400/80 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 px-4 py-2.5 rounded-xl uppercase tracking-wider transition-colors">
         Desativar acesso
       </button>
     );
   }
   return (
     <span className="flex items-center gap-2">
-      <span className="font-mono text-[9px] text-gray-400 uppercase">Confirmar?</span>
-      <button type="button" onClick={() => { setArmed(false); onDisable(); }} disabled={busy} className="bg-red-600 text-white font-mono text-[9px] font-bold px-3 py-2.5 rounded-xl uppercase disabled:opacity-50">
+      <span className="font-mono text-[11px] text-gray-400 uppercase">Confirmar?</span>
+      <button type="button" onClick={() => { setArmed(false); onDisable(); }} disabled={busy} className="bg-red-600 text-white font-mono text-[11px] font-bold px-3 py-2.5 rounded-xl uppercase disabled:opacity-50">
         {busy ? '...' : 'Desativar'}
       </button>
       <button type="button" onClick={() => setArmed(false)} className="p-2 text-gray-400 hover:text-white"><X className="w-3.5 h-3.5" /></button>
@@ -1343,7 +1370,7 @@ function DeleteFaqButton({ onDelete }: { onDelete: () => void }) {
   }
   return (
     <span className="flex items-center gap-1">
-      <button type="button" onClick={onDelete} className="font-mono text-[9px] font-bold px-2 py-1 rounded uppercase bg-red-600 text-white">Confirmar</button>
+      <button type="button" onClick={onDelete} className="font-mono text-[11px] font-bold px-2 py-1 rounded uppercase bg-red-600 text-white">Confirmar</button>
       <button type="button" onClick={() => setArmed(false)} className="p-1 text-gray-400 hover:text-white"><X className="w-3.5 h-3.5" /></button>
     </span>
   );

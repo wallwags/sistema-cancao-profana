@@ -230,7 +230,7 @@ export default function MinhaInscricaoPage() {
             </div>
             <div>
               <span className="font-display font-black text-white text-lg tracking-tight uppercase block leading-none">CANÇÃO PROFANA</span>
-              <span className="font-mono text-[9px] text-[#F0C265] tracking-widest block uppercase mt-1">PORTAL DO CANDIDATO</span>
+              <span className="font-mono text-[11px] text-[#F0C265] tracking-widest block uppercase mt-1">PORTAL DO CANDIDATO</span>
             </div>
             <p className="text-xs text-gray-400">
               Digite o CPF do responsável legal cadastrado no quiz para localizar a inscrição e acompanhar o status de matrícula em tempo real.
@@ -239,7 +239,7 @@ export default function MinhaInscricaoPage() {
 
           <form onSubmit={handleCpfLookup} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="block font-mono text-[10px] text-[#F0C265] font-bold uppercase tracking-wider">CPF do Líder Responsável</label>
+              <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase tracking-wider">CPF do Líder Responsável</label>
               <div className="relative">
                 <input 
                   type="text" 
@@ -299,14 +299,14 @@ export default function MinhaInscricaoPage() {
             </div>
             <div>
               <span className="font-display font-black text-white text-md tracking-tight uppercase block leading-none">CANÇÃO PROFANA</span>
-              <span className="font-mono text-[9px] text-[#F0C265] tracking-widest block uppercase mt-1">PORTAL DO CANDIDATO</span>
+              <span className="font-mono text-[11px] text-[#F0C265] tracking-widest block uppercase mt-1">PORTAL DO CANDIDATO</span>
             </div>
           </div>
           
           <div className="flex gap-4 items-center">
             <button 
               onClick={handleClearLookup} 
-              className="font-mono text-[9px] text-gray-400 hover:text-red-400 transition-colors uppercase font-bold"
+              className="font-mono text-[11px] text-gray-400 hover:text-red-400 transition-colors uppercase font-bold"
             >
               Sair / Outra Busca
             </button>
@@ -330,13 +330,13 @@ export default function MinhaInscricaoPage() {
           
           <div className="relative z-10 flex justify-between items-center w-full">
             <div className="space-y-1">
-              <span className="bg-[#F0C265] text-black font-mono text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
+              <span className="bg-[#F0C265] text-black font-mono text-[11px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
                 SESSÕES DE ESTÚDIO 2026
               </span>
               <h2 className="text-white font-display font-black text-xl sm:text-2xl uppercase tracking-tight leading-none mt-2">
                 {data.name}
               </h2>
-              <p className="text-[10px] sm:text-xs text-[#A89880] font-medium tracking-wide">
+              <p className="text-xs sm:text-xs text-[#A89880] font-medium tracking-wide">
                 Estúdio Pedra Profana • Concurso Canção Profana
               </p>
             </div>
@@ -351,7 +351,7 @@ export default function MinhaInscricaoPage() {
         {/* LIVE STATUS BAR (REACTIVE - Sync trigger replaced by Criptografia Ativa trigger) */}
         <div className="vst-input-groove p-4 flex flex-col sm:flex-row justify-between items-center gap-4 border border-white/5">
           <div>
-            <span className="font-mono text-[9px] text-gray-400 block uppercase font-bold">STATUS DA MATRÍCULA:</span>
+            <span className="font-mono text-[11px] text-gray-400 block uppercase font-bold">STATUS DA MATRÍCULA:</span>
             <div className="flex items-center gap-2 mt-1">
               {data.status === 'paid' && (
                 <>
@@ -391,7 +391,7 @@ export default function MinhaInscricaoPage() {
               )}
             </div>
           </div>
-          <span className="bg-black/50 border border-[#D4A843]/30 px-3.5 py-1.5 rounded-full font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-wider shadow">
+          <span className="bg-black/50 border border-[#D4A843]/30 px-3.5 py-1.5 rounded-full font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider shadow">
             ● CONEXÃO CRIPTOGRAFADA ATIVA
           </span>
         </div>
@@ -400,32 +400,32 @@ export default function MinhaInscricaoPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-white/5 pb-6">
             <div className="space-y-1">
-              <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">PROJETO / DUPLA DE RAP:</span>
+              <span className="font-mono text-xs text-gray-400 uppercase font-bold block">PROJETO / DUPLA DE RAP:</span>
               <span className="text-white font-bold text-md block">{data.name}</span>
             </div>
             <div className="space-y-1">
-              <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">ESTILO MUSICAL:</span>
+              <span className="font-mono text-xs text-gray-400 uppercase font-bold block">ESTILO MUSICAL:</span>
               <span className="text-white font-bold text-md block">{data.style}</span>
             </div>
             <div className="col-span-1 md:col-span-2 space-y-1">
-              <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">BIOGRAFIA OFICIAL:</span>
-              <p className="text-xs text-[#A89880] leading-relaxed font-normal">{data.bio}</p>
+              <span className="font-mono text-xs text-gray-400 uppercase font-bold block">BIOGRAFIA OFICIAL:</span>
+              <p className="text-sm text-[#A89880] leading-relaxed font-normal">{data.bio}</p>
             </div>
             {data.instagram && (
               <div className="space-y-1">
-                <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">INSTAGRAM:</span>
+                <span className="font-mono text-xs text-gray-400 uppercase font-bold block">INSTAGRAM:</span>
                 <span className="text-[#F0C265] font-bold text-xs block font-mono">{data.instagram}</span>
               </div>
             )}
             {data.video_link && (
               <div className="space-y-1">
-                <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">LINK DE VÍDEO DA MÚSICA:</span>
+                <span className="font-mono text-xs text-gray-400 uppercase font-bold block">LINK DE VÍDEO DA MÚSICA:</span>
                 <a href={data.video_link} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline text-xs block font-mono truncate">{data.video_link}</a>
               </div>
             )}
             {data.photo_url && (
               <div className="col-span-1 md:col-span-2 space-y-1">
-                <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">FOTO DE DIVULGAÇÃO ENVIADA:</span>
+                <span className="font-mono text-xs text-gray-400 uppercase font-bold block">FOTO DE DIVULGAÇÃO ENVIADA:</span>
                 <span className="text-xs font-mono text-gray-300 block">✓ {data.photo_url}</span>
               </div>
             )}
@@ -435,26 +435,26 @@ export default function MinhaInscricaoPage() {
           {leader && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-white/5 pb-6">
               <div className="space-y-1">
-                <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">LÍDER RESPONSÁVEL:</span>
+                <span className="font-mono text-xs text-gray-400 uppercase font-bold block">LÍDER RESPONSÁVEL:</span>
                 <span className="text-white font-bold text-xs block">{leader.name}</span>
               </div>
               <div className="space-y-1">
-                <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">WHATSAPP:</span>
+                <span className="font-mono text-xs text-gray-400 uppercase font-bold block">WHATSAPP:</span>
                 <span className="text-white font-bold text-xs block font-mono">{leader.phone || '-'}</span>
               </div>
               <div className="space-y-1">
-                <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">CPF LÍDER:</span>
+                <span className="font-mono text-xs text-gray-400 uppercase font-bold block">CPF LÍDER:</span>
                 <span className="text-white font-bold text-xs block font-mono">{leader.cpf}</span>
               </div>
               {leader.email && (
                 <div className="space-y-1">
-                  <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">E-MAIL:</span>
+                  <span className="font-mono text-xs text-gray-400 uppercase font-bold block">E-MAIL:</span>
                   <span className="text-white font-bold text-xs block font-mono truncate">{leader.email}</span>
                 </div>
               )}
               {data.amount_paid !== undefined && (
                 <div className="space-y-1">
-                  <span className="font-mono text-[8px] text-gray-400 uppercase font-bold block">VALOR PAGO ({data.batch_name || 'LOTE'}):</span>
+                  <span className="font-mono text-xs text-gray-400 uppercase font-bold block">VALOR PAGO ({data.batch_name || 'LOTE'}):</span>
                   <span className="text-lime font-black text-xs block font-mono">R$ {data.amount_paid},00</span>
                 </div>
               )}
@@ -463,20 +463,20 @@ export default function MinhaInscricaoPage() {
 
           {/* LINEUP MEMBER SHOWN AS TRACK ROWS */}
           <div className="space-y-4">
-            <span className="font-mono text-[9px] text-[#F0C265] font-bold uppercase tracking-widest block">ROSTER DA BANDA (QUEUE DE INTEGRANTES)</span>
+            <span className="font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-widest block">ROSTER DA BANDA (QUEUE DE INTEGRANTES)</span>
             
             <div className="space-y-3">
               {/* Leader Row */}
               {leader && (
                 <div className="vst-input-groove p-3 flex justify-between items-center border border-[#F0C265]/20 bg-[#F0C265]/5">
                   <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-[#F0C265]/20 text-[#F0C265] flex items-center justify-center font-mono text-[9px] font-bold border border-[#F0C265]/35">1</span>
+                    <span className="w-6 h-6 rounded-full bg-[#F0C265]/20 text-[#F0C265] flex items-center justify-center font-mono text-[11px] font-bold border border-[#F0C265]/35">1</span>
                     <div>
                       <span className="text-xs font-bold text-white block">{leader.name}</span>
-                      <span className="font-mono text-[8px] text-gray-400 tracking-wider uppercase block mt-0.5">Líder Responsável • CPF: {leader.cpf}</span>
+                      <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Líder Responsável • CPF: {leader.cpf}</span>
                     </div>
                   </div>
-                  <span className="font-mono text-[8px] text-[#10B981] bg-[#10B981]/15 px-2.5 py-0.5 rounded border border-[#10B981]/25 uppercase font-bold tracking-wider">Líder</span>
+                  <span className="font-mono text-xs text-[#10B981] bg-[#10B981]/15 px-2.5 py-0.5 rounded border border-[#10B981]/25 uppercase font-bold tracking-wider">Líder</span>
                 </div>
               )}
 
@@ -484,13 +484,13 @@ export default function MinhaInscricaoPage() {
               {regularMembers.map((m, i) => (
                 <div key={i} className="vst-input-groove p-3 flex justify-between items-center border border-white/5">
                   <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-[#E3B552]/10 text-[#F0C265] flex items-center justify-center font-mono text-[9px] font-bold border border-[#E3B552]/20">{i + 2}</span>
+                    <span className="w-6 h-6 rounded-full bg-[#E3B552]/10 text-[#F0C265] flex items-center justify-center font-mono text-[11px] font-bold border border-[#E3B552]/20">{i + 2}</span>
                     <div>
                       <span className="text-xs font-bold text-white block">{m.name}</span>
-                      <span className="font-mono text-[8px] text-gray-400 tracking-wider uppercase block mt-0.5">Integrante {i + 2} • CPF: {m.cpf}</span>
+                      <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Integrante {i + 2} • CPF: {m.cpf}</span>
                     </div>
                   </div>
-                  <span className="font-mono text-[8px] text-[#10B981] bg-[#10B981]/15 px-2.5 py-0.5 rounded border border-[#10B981]/25 uppercase font-bold tracking-wider">Apto</span>
+                  <span className="font-mono text-xs text-[#10B981] bg-[#10B981]/15 px-2.5 py-0.5 rounded border border-[#10B981]/25 uppercase font-bold tracking-wider">Apto</span>
                 </div>
               ))}
             </div>
@@ -498,7 +498,7 @@ export default function MinhaInscricaoPage() {
         </div>
 
         <div className="border-t border-white/5 pt-5 text-center">
-          <span className="font-mono text-[9px] text-[#5C5248] uppercase">QUALQUER INCONSISTÊNCIA CADASTRAL DEVE SER NOTIFICADA À DIREÇÃO DO Estúdio Pedra Profana.</span>
+          <span className="font-mono text-[11px] text-[#5C5248] uppercase">QUALQUER INCONSISTÊNCIA CADASTRAL DEVE SER NOTIFICADA À DIREÇÃO DO Estúdio Pedra Profana.</span>
         </div>
 
       </div>

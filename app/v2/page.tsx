@@ -49,7 +49,7 @@ export default function Page() {
     { q: 'Quem pode participar do concurso?', a: 'O concurso é aberto a qualquer artista independente ou banda que apresente um repertório autoral (com pelo menos uma música escrita majoritariamente em português ou instrumental). A banda precisa ter no mínimo 2 e no máximo 7 integrantes ativos.' },
     { q: 'Como funciona o sistema de votação durante a live?', a: 'A votação possui três canais complementares de avaliação: 1. Voto dos Jurados (Índio, Naraiane e Matheus T dão notas de 0 a 10 nos critérios de Apresentação, Composição e Estética); 2. Voto da Equipe do Estúdio (Nota baseada no envolvimento); 3. Voto Popular (Computado logo após cada live sessions, onde o volume absoluto de votos destrava as vagas de avanço).' },
     { q: 'Quantas músicas posso inscrever no concurso?', a: 'Cada grupo pode inscrever um repertório de no máximo 3 músicas para se apresentar e gravar nas transmissões oficiais.' },
-    { q: 'Qual é o prazo final para inscrição?', a: 'A campanha completa de captação dura no máximo 28 dias. O Lote 1 vigora nos primeiros 10 dias de abertura; o Lote 2 nos dias 11 a 20; e o Lote 3 estende-se do dia 21 até o encerramento do prazo regulamentar.' },
+    { q: 'Qual é o prazo final para inscrição?', a: 'As inscrições do lote vigente terminam em [data-lote1]. Depois disso, o lote seguinte abre automaticamente, conforme o cronograma de lotes exibido na seção de investimento. Lote 2: [data-lote2]. Lote 3: [data-lote3].' },
     { q: 'Como recebo a confirmação da minha inscrição?', a: 'Assim que o Pix é validado, o status da sua matrícula aparece automaticamente no portal "Minha Inscrição", vinculado ao e-mail informado no cadastro. Leve o código do seu passe no dia da gravação.' },
     { q: 'O que acontece se eu me inscrever e não puder participar?', a: 'Caso ocorram imprevistos justificáveis, o grupo deve notificar a equipe de estúdio com no mínimo 5 dias de antecedência para realocação em novas datas sob disponibilidade. Em casos extremos, a inscrição pode ser transferida para outro projeto parceiro sob análise técnica.' },
     { q: 'Posso inscrever uma música em parceria ou coautoria?', a: 'Sim! Com certeza. Desde que a banda detranque os direitos autorais para as transmissões oficiais da gravação e pelo menos uma das faixas do repertório de 3 músicas seja de autoria e em língua portuguesa.' },
@@ -60,6 +60,7 @@ export default function Page() {
   const [liveLaunch, setLiveLaunch] = useState<string | null>(null);
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
   const [dia0Price, setDia0Price] = useState<number>(25);
+  const [loteDates, setLoteDates] = useState<Record<string, string | null>>({});
 
   // Quiz modal: mounted on demand, kept mounted afterwards so state/draft persists
   const [isQuizOpen, setIsQuizOpen] = useState(false);
@@ -111,6 +112,7 @@ export default function Page() {
           const b1 = batches[0];
           const b2 = batches[1];
           const b3 = batches[2];
+          setLoteDates({ lote1: b1.ends_at ?? null, lote2: b2.ends_at ?? null, lote3: b3.ends_at ?? null });
 
           setLotesConfig({
             lote1: { status: b1.status, vagasRestantes: b1.vagas_restantes, valor: Number(b1.price_per_member), desc: 'Primeiras inscrições. Menor preço histórico.' },
@@ -225,6 +227,26 @@ export default function Page() {
         vagasRestantes: Math.max(0, prev.lote1.vagasRestantes - 1)
       }
     }));
+  };
+
+  const resolveTags = (text: string): string => {
+    const fmt = (iso?: string | null) => {
+      const d = iso ? new Date(String(iso).replace(' ', 'T')) : null;
+      if (!d || isNaN(d.getTime())) return 'a definir';
+      return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }).format(d);
+    };
+    const activeBatch = lotesConfig.lote1.status === 'ativo' ? lotesConfig.lote1 : (lotesConfig.lote2.status === 'ativo' ? lotesConfig.lote2 : lotesConfig.lote3);
+    return text
+      .replaceAll('[data-lote1]', fmt(loteDates.lote1))
+      .replaceAll('[data-lote2]', fmt(loteDates.lote2))
+      .replaceAll('[data-lote3]', fmt(loteDates.lote3))
+      .replaceAll('[data-live]', formatLaunch(liveLaunch))
+      .replaceAll('[data-link-live]', liveUrl || 'em breve')
+      .replaceAll('[data-preco-lote1]', `R$ ${lotesConfig.lote1.valor},00`)
+      .replaceAll('[data-preco-lote2]', `R$ ${lotesConfig.lote2.valor},00`)
+      .replaceAll('[data-preco-lote3]', `R$ ${lotesConfig.lote3.valor},00`)
+      .replaceAll('[data-preco-dia0]', `R$ ${dia0Price},00`)
+      .replaceAll('[data-vagas]', String(activeBatch.vagasRestantes));
   };
 
   const formatLaunch = (iso?: string | null): string => {
@@ -599,12 +621,7 @@ export default function Page() {
           </div>
 
           <div data-reveal-group className="space-y-4 max-w-4xl mx-auto">
-            {faqList.map((f, i) => {
-              const prazoAnswer = countdownTarget
-                ? `As inscrições do lote vigente terminam em ${formatLaunch(countdownTarget)}. Depois disso, o lote seguinte abre automaticamente, conforme o cronograma de lotes exibido na seção de investimento.`
-                : f.a;
-              const answer = f.q.toLowerCase().includes('prazo final') ? prazoAnswer : f.a;
-              return (
+            {faqList.map((f, i) => (
               <div
                 key={i}
                 className="reveal-hidden bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-xl p-5 sm:p-6 cursor-pointer hover:border-[#E3B552]/40 transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B]"
@@ -621,13 +638,12 @@ export default function Page() {
                 <div className={`faq-collapse ${activeFaq === i ? 'faq-open' : ''}`}>
                   <div>
                     <p className="text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3 font-normal font-[Inter]">
-                      {answer}
+                      {resolveTags(f.a)}
                     </p>
                   </div>
                 </div>
               </div>
-              );
-            })}
+            ))}
           </div>
         </section>
 
