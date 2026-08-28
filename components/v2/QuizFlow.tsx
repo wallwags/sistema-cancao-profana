@@ -97,6 +97,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const quizClosingRef = useRef(false);
   const checkoutClosingRef = useRef(false);
   const quizOpenedAt = useRef<number>(0);
+  const demoRef = useRef(false);
   const funnelLogged = useRef<Set<string>>(new Set());
   const tsRenderedRef = useRef(false);
   const [honey, setHoney] = useState('');
@@ -535,7 +536,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       setErrors({ acceptRules: 'Revise com calma as informações antes de gerar o Pix.' });
       return;
     }
-    if (!tsToken) {
+    if (!tsToken && !demoRef.current) {
       errs.acceptRules = 'Confirme a verificação anti-robô antes de gerar o Pix.';
     }
     setErrors(errs);
@@ -636,11 +637,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     setIsCheckoutLoading(true);
 
     try {
-      // Wait for the background save to finish (max 8s) — fixes the stale-id race
-      const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000));
-      const id = savePromiseRef.current
-        ? await Promise.race([savePromiseRef.current, timeout])
-        : saveIdRef.current;
+      // Espera o registro da banda terminar (o polling já só dispara após o save)
+      const id = savePromiseRef.current ? await savePromiseRef.current : saveIdRef.current;
 
       if (!id) {
         webhookDoneRef.current = false;
@@ -729,6 +727,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
   // ---------- Demo filler (production-safe: fills valid data, validations stay on) ----------
   const fillDemoData = () => {
+    demoRef.current = true;
     if (quizStep === 1) {
       setProjectName("[DEMO] Os Profanos do Ritmo");
       setProjectStyle("Rock Autoral");
@@ -1092,9 +1091,9 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                   </div>
                                 </div>
                                 <div className="text-right shrink-0">
-                                  <span className="font-mono text-sm text-gray-300 block font-bold">TAXA TOTAL DO GRUPO:</span>
-                                  <span className="text-3xl font-display font-black text-[#F0C265] block mt-1">R$ {totalCost},00</span>
-                                  <span className="text-xs text-gray-300 font-mono block mt-1 uppercase">E mais {selectedMembers}kg de alimento</span>
+                                  <span className="font-mono text-sm text-gray-300 block font-bold">SUA PARTE AGORA (LÍDER):</span>
+                                  <span className="text-3xl font-display font-black text-[#F0C265] block mt-1">R$ {activePrice},00</span>
+                                  <span className="text-xs text-gray-300 font-mono block mt-1 uppercase">Cada integrante paga a própria parte pelo link — total da banda: R$ {totalCost},00</span>
                                 </div>
                               </div>
                             </div>
@@ -1219,12 +1218,13 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
                   {/* 10m guarantee countdown positioned below the green total */}
                   {!checkoutExpired ? (
-                    <div className={`flex items-center justify-center gap-2 font-mono text-[10px] bg-[#8B1E1E]/20 border py-1.5 px-3 rounded-full w-max mx-auto shadow-inner ${checkoutTimeLeft <= 120 ? 'border-red-500/40 text-red-300 animate-pulse' : 'border-[#8B1E1E]/30 text-[#FFF2D4]'}`}>
-                      <span className="relative flex h-1.5 w-1.5 shrink-0">
+                    <div className={`flex items-center justify-center gap-2 font-mono font-black bg-[#8B1E1E]/30 border-2 py-2 px-4 rounded-full w-max mx-auto shadow-[0_0_18px_rgba(139,30,30,0.45)] ${checkoutTimeLeft <= 120 ? 'border-red-500 text-red-200 animate-pulse shadow-[0_0_25px_rgba(239,68,68,0.5)]' : 'border-[#F0C265]/60 text-[#FFF2D4]'}`}>
+                      <span className="relative flex h-2 w-2 shrink-0">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F0C265] opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#F0C265]"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#F0C265]"></span>
                       </span>
-                      <span>Preço garantido por: {formatCheckoutTime(checkoutTimeLeft)}</span>
+                      <span className="text-[11px] uppercase tracking-widest">Preço garantido por</span>
+                      <span className="text-sm text-[#F0C265]">{formatCheckoutTime(checkoutTimeLeft)}</span>
                     </div>
                   ) : (
                     <span className="font-mono text-[10px] text-red-400 block uppercase font-bold tracking-widest">Tempo do preço garantido esgotado</span>
@@ -1252,7 +1252,14 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                     </button>
                   )}
                   {checkoutError && (
-                    <p className="text-[11px] text-red-400 font-mono text-center">⚠ {checkoutError}</p>
+                    <div className="bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3 flex items-start gap-2.5">
+                      <span className="text-red-400 text-base leading-none mt-0.5">⚠</span>
+                      <div className="text-left">
+                        <span className="text-xs text-red-300 font-bold uppercase tracking-wide block">Atenção</span>
+                        <span className="text-xs text-red-200/90 leading-snug">{checkoutError}</span>
+                      </div>
+                      <button type="button" onClick={() => setCheckoutError(null)} className="ml-auto text-red-300/70 hover:text-white text-lg leading-none">×</button>
+                    </div>
                   )}
                 </div>
               )}

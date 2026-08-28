@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { 
   Shield, Music, Users, Calendar, CheckCircle, Clock, 
@@ -39,6 +40,7 @@ export default function MinhaInscricaoPage() {
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [searchCpf, setSearchCpf] = useState('');
+  const router = useRouter();
   const [data, setData] = useState<RegistrationData | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -125,8 +127,16 @@ export default function MinhaInscricaoPage() {
     }
   };
 
-  // Check for saved project keys on mount
+  // Acesso por link especial: /minha-inscricao?k=<codigo-do-convite>
+  // Sem k=, redireciona para a landing. Com k=, o CPF continua sendo a prova de posse.
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const k = (params.get('k') || '').replace(/[^a-z0-9]/g, '').slice(0, 12);
+    if (!k) {
+      router.replace('/v2');
+      return;
+    }
+    localStorage.setItem('access_key_v2', k);
     const savedId = localStorage.getItem('current_project_id');
     const savedCpf = localStorage.getItem('current_cpf_v2');
     if (savedId && savedCpf) {
@@ -135,6 +145,7 @@ export default function MinhaInscricaoPage() {
       if (savedId) localStorage.removeItem('current_project_id');
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle Lookup by Leader CPF
@@ -189,6 +200,7 @@ export default function MinhaInscricaoPage() {
       // If found, store the lookup keys and load the full project
       localStorage.setItem('current_project_id', foundId);
       localStorage.setItem('current_cpf_v2', searchCpf);
+      localStorage.setItem('access_key_v2', (new URLSearchParams(window.location.search)).get('k') || localStorage.getItem('access_key_v2') || '');
       await loadProject(foundId);
     } catch (err: any) {
       console.error(err);
@@ -201,6 +213,8 @@ export default function MinhaInscricaoPage() {
   // Handle Logout/Clear
   const handleClearLookup = () => {
     localStorage.removeItem('current_project_id');
+    localStorage.removeItem('current_cpf_v2');
+    localStorage.removeItem('access_key_v2');
     setProjectId(null);
     setData(null);
     setSearchCpf('');
