@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { Trash2, Plus, X, Copy, Share2 } from 'lucide-react';
-import Link from 'next/link';
 import Script from 'next/script';
 import { supabase } from '../../lib/supabase';
 import {
@@ -1068,36 +1067,34 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                 </div>
                               </div>
 
-                              <div className="border-t border-white/5 pt-4 flex flex-col sm:flex-row justify-between items-baseline gap-4">
-                                <div className="space-y-2">
-                                  <span className="font-mono text-sm text-[#F0C265] font-bold block">RETORNO GARANTIDO INCLUÍDO:</span>
-                                  <div className="space-y-1.5 text-[10px] md:text-xs text-gray-400 font-mono">
-                                    <div className="flex items-center gap-2">
-                                      <span>• Gravação e Transmissão de Live no Estúdio:</span>
-                                      <span className="line-through">R$ 1.500,00</span>
-                                      <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span>• Mixagem e Masterização Multicanal Profissional:</span>
-                                      <span className="line-through">R$ 600,00</span>
-                                      <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span>• Direção Artística e Sessão de Fotos:</span>
-                                      <span className="line-through">R$ 500,00</span>
-                                      <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span>• Assessoria de Imprensa e Kit de Divulgação:</span>
-                                      <span className="line-through">R$ 400,00</span>
-                                      <span className="text-lime font-bold uppercase text-[10px]">Custo R$ 0</span>
-                                    </div>
+                              <div className="border-t border-white/5 pt-4 space-y-4">
+                                <div>
+                                  <span className="font-mono text-sm text-[#F0C265] font-bold block mb-2.5">RETORNO GARANTIDO INCLUÍDO:</span>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    {[
+                                      { t: 'Gravação + Live no Estúdio', v: 'R$ 1.500' },
+                                      { t: 'Mixagem e Masterização', v: 'R$ 600' },
+                                      { t: 'Direção Artística + Fotos', v: 'R$ 500' },
+                                      { t: 'Assessoria e Kit de Divulgação', v: 'R$ 400' },
+                                    ].map(b => (
+                                      <div key={b.t} className="bg-black/40 border border-white/5 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
+                                        <span className="text-xs text-gray-200 leading-snug">{b.t}</span>
+                                        <span className="text-right shrink-0">
+                                          <span className="block text-[11px] text-gray-500 line-through leading-none">{b.v}</span>
+                                          <span className="block text-[11px] text-[#10B981] font-black uppercase leading-tight">Grátis</span>
+                                        </span>
+                                      </div>
+                                    ))}
                                   </div>
                                 </div>
-                                <div className="text-right shrink-0">
-                                  <span className="font-mono text-sm text-gray-300 block font-bold">SUA PARTE AGORA (LÍDER):</span>
-                                  <span className="text-3xl font-display font-black text-[#F0C265] block mt-1">R$ {activePrice},00</span>
-                                  <span className="text-xs text-gray-300 font-mono block mt-1 uppercase">Cada integrante paga a própria parte pelo link — total da banda: R$ {totalCost},00</span>
+
+                                <div className="bg-[#F0C265]/10 border border-[#F0C265]/30 rounded-2xl p-4 text-center">
+                                  <span className="font-mono text-xs text-gray-300 uppercase tracking-widest font-bold block">Sua parte agora (líder)</span>
+                                  <span className="font-display font-black text-4xl text-[#F0C265] block leading-tight mt-0.5">R$ {activePrice},00</span>
+                                  <span className="text-xs text-gray-400 block mt-1 leading-relaxed">
+                                    Cada integrante paga a própria parte pelo link exclusivo.<br />
+                                    Total da banda: <strong className="text-gray-200">R$ {totalCost},00</strong> + {selectedMembers}kg de alimento
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -1126,10 +1123,12 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                         )}
                     </div>
 
-                    {/* verificação anti-robô — ativa desde a abertura */}
-                    <div className="flex justify-center pt-1 shrink-0">
-                      <div id="cf-ts" />
-                    </div>
+                    {/* verificação anti-robô — somente na primeira etapa */}
+                    {quizStep === 1 && (
+                      <div className="flex justify-center pt-1 shrink-0">
+                        <div id="cf-ts" />
+                      </div>
+                    )}
 
                     {/* CONTROLS */}
                     <div className="border-t border-[#2C2C2C] pt-4 flex justify-between items-center gap-4 shrink-0">
@@ -1361,9 +1360,13 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
                 {/* Convite da banda */}
                 {inviteCode && (
-                  <div className="space-y-3 bg-black/40 border border-[#F0C265]/25 rounded-2xl p-4">
-                    <span className="font-mono text-[10px] text-[#F0C265] uppercase tracking-widest font-black block">🔗 Link exclusivo da banda — envie aos integrantes</span>
-                    <p className="text-xs text-gray-300 leading-relaxed">Cada integrante acessa, confirma os próprios dados e paga a parte dele. A banda ativa no concurso ao atingir {bandResult?.minimo ?? 2} partes pagas{bandResult ? ` (agora: ${bandResult.pago})` : ''}.</p>
+                  <div className="space-y-3.5 bg-black/40 border border-[#F0C265]/25 rounded-2xl p-5 text-left">
+                    <span className="font-mono text-xs text-[#F0C265] uppercase tracking-widest font-black block">🔗 Link exclusivo da banda</span>
+                    <p className="text-sm text-gray-200 leading-relaxed">Envie aos integrantes: cada um acessa, confirma os próprios dados e paga a parte dele.</p>
+                    <p className="text-sm text-white leading-snug">
+                      A banda ativa no concurso ao atingir <strong className="text-[#F0C265]">{bandResult?.minimo ?? 2} partes pagas</strong>
+                      {bandResult ? <> — agora: <strong className="text-[#F0C265]">{bandResult.pago}</strong></> : ''}.
+                    </p>
                     <div className="flex flex-col sm:flex-row gap-2.5">
                       <button
                         type="button"
@@ -1374,15 +1377,15 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                             setTimeout(() => setInviteCopied(false), 2500);
                           } catch { /* clipboard */ }
                         }}
-                        className="w-full sm:flex-1 font-mono text-xs font-bold text-white bg-white/5 border border-white/10 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-colors uppercase"
+                        className="w-full sm:flex-1 font-mono text-sm font-bold text-white bg-white/10 border border-white/15 px-3 py-3 rounded-xl hover:bg-white/15 transition-colors uppercase"
                       >
-                        {inviteCopied ? '✓ Link copiado!' : 'Copiar link do convite'}
+                        {inviteCopied ? '✓ Link copiado!' : 'Copiar link'}
                       </button>
                       <a
                         href={`/api/wa/${inviteCode}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full sm:flex-1 flex items-center justify-center gap-1.5 font-mono text-xs font-bold text-black bg-[#10B981] px-3 py-2.5 rounded-xl uppercase tracking-wide"
+                        className="w-full sm:flex-1 flex items-center justify-center gap-1.5 font-mono text-sm font-bold text-black bg-[#10B981] px-3 py-3 rounded-xl uppercase tracking-wide"
                       >
                         Enviar por WhatsApp
                       </a>
@@ -1399,12 +1402,12 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   >
                     {shareCopied ? '✓ Convocação Copiada!' : (<><Share2 className="w-3.5 h-3.5" /> Compartilhar</>)}
                   </button>
-                  <Link
-                    href="/minha-inscricao"
+                  <a
+                    href={inviteCode ? `/minha-inscricao?k=${inviteCode}` : '/v2'}
                     className="w-full sm:w-1/2 btn-gold-shimmer px-4 py-3 rounded-full text-xs uppercase tracking-widest font-black text-black text-center"
                   >
                     Ver minha inscrição
-                  </Link>
+                  </a>
                 </div>
               </div>
 
