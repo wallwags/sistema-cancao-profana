@@ -1135,9 +1135,9 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                   Já existe{similarBands.length > 1 ? 'm' : ''} banda{similarBands.length > 1 ? 's' : ''} com nome parecido inscrita{similarBands.length > 1 ? 's' : ''}: <strong className="text-white">{similarBands.join(', ')}</strong>.
                                   Sua banda é uma delas ou é outra banda mesmo?
                                 </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                  <button type="button" onClick={() => setSimilarChoice('mine')} className="font-mono text-xs font-bold text-black bg-[#F0C265] px-3 py-2.5 rounded-xl uppercase">É a minha banda</button>
-                                  <button type="button" onClick={() => setSimilarChoice('other')} className="font-mono text-xs font-bold text-white border border-white/20 px-3 py-2.5 rounded-xl uppercase hover:bg-white/5">É outra banda</button>
+                                <div className="grid grid-cols-2 gap-2.5">
+                                  <button type="button" onClick={() => setSimilarChoice('mine')} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-[#10B981]/25 active:scale-[0.98] transition-transform">Sim</button>
+                                  <button type="button" onClick={() => setSimilarChoice('other')} className="font-mono text-sm font-black text-white bg-gradient-to-b from-red-500 to-red-700 px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-red-900/30 active:scale-[0.98] transition-transform">Não</button>
                                 </div>
                               </div>
                             )}
@@ -1179,10 +1179,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                     {/* CONTROLS */}
                     <div className="border-t border-[#2C2C2C] pt-4 space-y-3 shrink-0">
                       <div className="flex justify-between items-center">
-                        <div className="flex flex-col">
-                          <span className="text-xs text-[#B3B3B3] font-mono uppercase tracking-widest block font-bold">PASSO ATIVO</span>
-                          <span className="text-sm text-[#F0EAE0] font-bold font-mono">0{quizStep}/05</span>
-                        </div>
+                        <span className="text-sm text-[#F0EAE0] font-bold font-mono">0{quizStep}/05</span>
                         <button type="button" onClick={fillDemoData} className="font-mono text-[11px] font-bold text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/20 px-3 py-1.5 rounded-lg uppercase hover:bg-[#F0C265] hover:text-black transition-colors">🧪 Testar Demo</button>
                       </div>
 

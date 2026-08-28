@@ -194,8 +194,8 @@ export default function MinhaInscricaoPage() {
                     {pendentes > 0 ? `${pendentes} parte(s) da banda ainda não foi paga` : `${faltam} pagamento(s) para a banda ativar`}
                   </span>
                   <p className="text-sm text-gray-200 leading-snug mt-1.5">
-                    A banda entra no concurso com <strong className="text-white">no mínimo {minReq}</strong> e{' '}
-                    <strong className="text-white">no máximo 7</strong> partes pagas (uma por integrante).
+                    A banda entra no concurso com <strong className="text-white">no mínimo 2</strong> e{' '}
+                    <strong className="text-white">no máximo 7</strong> integrantes pagos (cada um paga a própria parte pelo link).
                     {faltam > 0 && <> Faltam <strong className="text-[#F0C265]">{faltam}</strong>.</>}
                   </p>
                 </div>
