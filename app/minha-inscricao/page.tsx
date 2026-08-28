@@ -144,7 +144,7 @@ export default function MinhaInscricaoPage() {
   const regularMembers = data.members.filter(m => !m.is_responsible);
 
   return (
-    <div className="py-16 px-4 bg-[#05070B] min-h-screen text-[#F0EAE0] flex items-center justify-center relative overflow-hidden">
+    <div className="pt-10 pb-16 px-4 bg-[#05070B] min-h-screen text-[#F0EAE0] flex items-center justify-center relative overflow-hidden">
       {/* Background radial gold glow leaks */}
       <div className="absolute -right-32 -top-32 w-80 h-80 bg-[#E3B552]/10 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute -left-32 -bottom-32 w-80 h-80 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -195,7 +195,7 @@ export default function MinhaInscricaoPage() {
                   </span>
                   <p className="text-sm text-gray-200 leading-snug mt-1.5">
                     A banda entra no concurso com <strong className="text-white">no mínimo {minReq}</strong> e{' '}
-                    <strong className="text-white">no máximo {data.total_members ?? 7}</strong> partes pagas.
+                    <strong className="text-white">no máximo 7</strong> partes pagas (uma por integrante).
                     {faltam > 0 && <> Faltam <strong className="text-[#F0C265]">{faltam}</strong>.</>}
                   </p>
                 </div>
@@ -208,12 +208,12 @@ export default function MinhaInscricaoPage() {
                 </div>
                 <div className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-center">
                   <span className="font-mono text-[10px] text-gray-400 uppercase tracking-widest block">Partes pendentes</span>
-                  <span className="font-display font-black text-xl text-amber-400 block">{pendentes}</span>
+                  <span className="font-display font-black text-xl text-amber-400 block">{Math.max(0, (data.total_members ?? 0) - paidCount)}</span>
                 </div>
               </div>
 
               {/* tags informativas (não clicáveis) — visual passivo */}
-              <div className="flex flex-wrap gap-2 relative">
+              <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-thin pb-1 relative">
                 <span className="inline-flex items-center gap-1.5 text-[11px] text-gray-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-md">
                   <Clock className="w-3 h-3 text-amber-400" />
                   Lote encerra em {endsIn !== null ? `${endsIn} dia${endsIn === 1 ? '' : 's'}` : '—'}
@@ -226,7 +226,7 @@ export default function MinhaInscricaoPage() {
                 )}
                 <span className="inline-flex items-center gap-1.5 text-[11px] text-gray-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-md">
                   <Music className="w-3 h-3 text-[#F0C265]" />
-                  Mín. {minReq} partes · Máx. {data.total_members ?? 7}
+                  Min. {minReq} / Máx. 7 integrantes
                 </span>
               </div>
 
@@ -428,7 +428,7 @@ export default function MinhaInscricaoPage() {
                     <span className="w-6 h-6 rounded-full bg-[#F0C265]/20 text-[#F0C265] flex items-center justify-center font-mono text-[11px] font-bold border border-[#F0C265]/35">1</span>
                     <div>
                       <span className="text-sm font-bold text-white block">{leader.name}</span>
-                      <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Líder Responsável • CPF: {leader.cpf ? leader.cpf.slice(0, 3) + '.***.***-' + leader.cpf.slice(-2) : '---'}</span>
+                      <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Líder Responsável • CPF: {leader.cpf ? '***.' + leader.cpf.slice(4, 7) + '.***' : '---'}</span>
                       <span className={`font-mono text-xs uppercase font-bold block mt-0.5 ${leader.payment_status === 'paid' ? 'text-[#10B981]' : 'text-amber-500'}`}>
                         {leader.payment_status === 'paid' ? '✓ Parte paga' : '⏳ Parte pendente'}
                       </span>
@@ -445,7 +445,7 @@ export default function MinhaInscricaoPage() {
                     <span className="w-6 h-6 rounded-full bg-[#E3B552]/10 text-[#F0C265] flex items-center justify-center font-mono text-[11px] font-bold border border-[#E3B552]/20">{i + 2}</span>
                     <div>
                       <span className="text-sm font-bold text-white block">{m.name}</span>
-                      <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Integrante {i + 2} • CPF: {m.cpf ? m.cpf.slice(0, 3) + '.***.***-' + m.cpf.slice(-2) : 'aguardando confirmação'}</span>
+                      <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Integrante {i + 2} • CPF: {m.cpf ? '***.' + m.cpf.slice(4, 7) + '.***' : 'aguardando confirmação'}</span>
                       {m.payment_status && (
                         <span className={`font-mono text-xs uppercase font-bold block mt-0.5 ${m.payment_status === 'paid' ? 'text-[#10B981]' : 'text-amber-500'}`}>
                           {m.payment_status === 'paid' ? '✓ Parte paga' : (m.cpf ? '⏳ Parte pendente' : '⏳ Aguardando confirmação')}

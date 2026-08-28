@@ -78,6 +78,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [inviteCopied, setInviteCopied] = useState(false);
   const [bandResult, setBandResult] = useState<{ pago: number; minimo: number; total: number; ativa: boolean } | null>(null);
   const [similarBands, setSimilarBands] = useState<string[]>([]);
+  const [similarChoice, setSimilarChoice] = useState<'none' | 'mine' | 'other'>('none');
   const sessionRef = useRef<string>('');
   const inviteCodeRef = useRef<string>('');
 
@@ -154,6 +155,15 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     }).then(() => funnelLogged.current.add(key)).catch(() => {});
   };
 
+  // checa nomes de banda parecidos antes do pagamento
+  const checkSimilarBands = async () => {
+    if (!projectName.trim()) return;
+    try {
+      const { data } = await supabase.rpc('find_similar_bands', { p_name: projectName.trim() });
+      setSimilarBands((data || []).map(String));
+    } catch { /* silencioso */ }
+  };
+
   // ---------- GSAP choreography ----------
   // Open/close sync: logical isOpen -> visible mirror
   useEffect(() => {
@@ -175,7 +185,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
   // Step transition — enter-only (slide-in with direction), no exit choreography
   useIsomorphicLayoutEffect(() => {
-    if (quizVisible && !draftToRestore) logFunnel('quiz_step', String(quizStep));
+    if (quizVisible && !draftToRestore) {
+      logFunnel('quiz_step', String(quizStep));
+      if (quizStep === 5) checkSimilarBands();
+    }
     if (quizVisible && stepRef.current && !draftToRestore) {
       gsap.fromTo(stepRef.current,
         { x: slideDirection === 'next' ? 48 : -48, opacity: 0 },
@@ -550,6 +563,9 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     if (quizOpenedAt.current && Date.now() - quizOpenedAt.current < 4000) {
       setErrors({ acceptRules: 'Revise com calma as informações antes de gerar o Pix.' });
       return;
+    }
+    if (similarBands.length > 0 && similarChoice === 'none') {
+      errs.acceptRules = 'Confirme se sua banda é uma das bandas com nome parecido listadas acima.';
     }
     if (!tsToken && !demoRef.current) {
       errs.acceptRules = 'Confirme a verificação anti-robô antes de gerar o Pix.';
@@ -1060,8 +1076,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Revisar Matrícula</h3>
                             <p className="text-sm text-gray-300">Confirme os dados consolidados do sinal.</p>
 
-                            <div className="bg-black/50 p-5 rounded-2xl border border-white/5 space-y-4 text-xs font-mono">
-                              <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-black/50 p-4 md:p-5 rounded-2xl border border-white/5 space-y-3 md:space-y-4 text-xs font-mono">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                                 <div>
                                   <span className="text-gray-400 block text-xs font-bold uppercase">PROJETO BANDA:</span>
                                   <span className="font-bold text-white text-sm block mt-1">{projectName || '-'}</span>
@@ -1112,6 +1128,23 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                               </div>
                             </div>
 
+                            {similarBands.length > 0 && similarChoice === 'none' && (
+                              <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl p-4 space-y-3">
+                                <span className="font-mono text-xs text-amber-400 uppercase tracking-widest font-black block">⚠ Atenção — nome parecido</span>
+                                <p className="text-sm text-amber-100/90 leading-relaxed">
+                                  Já existe{similarBands.length > 1 ? 'm' : ''} banda{similarBands.length > 1 ? 's' : ''} com nome parecido inscrita{similarBands.length > 1 ? 's' : ''}: <strong className="text-white">{similarBands.join(', ')}</strong>.
+                                  Sua banda é uma delas ou é outra banda mesmo?
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                  <button type="button" onClick={() => setSimilarChoice('mine')} className="font-mono text-xs font-bold text-black bg-[#F0C265] px-3 py-2.5 rounded-xl uppercase">É a minha banda</button>
+                                  <button type="button" onClick={() => setSimilarChoice('other')} className="font-mono text-xs font-bold text-white border border-white/20 px-3 py-2.5 rounded-xl uppercase hover:bg-white/5">É outra banda</button>
+                                </div>
+                              </div>
+                            )}
+                            {similarBands.length > 0 && similarChoice === 'other' && (
+                              <p className="text-[11px] text-amber-300/80 font-mono">Ok — registraremos como uma banda diferente. Nomes parecidos ficam sinalizados para a organização.</p>
+                            )}
+
                             <div className="p-1">
                               {/* anti-bot: campo isca invisível para humanos */}
                               <input
@@ -1144,23 +1177,23 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                     )}
 
                     {/* CONTROLS */}
-                    <div className="border-t border-[#2C2C2C] pt-4 flex justify-between items-center gap-4 shrink-0">
-                      <div className="flex flex-col">
-                        <span className="text-xs text-[#B3B3B3] font-mono uppercase tracking-widest block font-bold">PASSO ATIVO</span>
-                        <span className="text-sm text-[#F0EAE0] font-bold font-mono">0{quizStep}/05</span>
+                    <div className="border-t border-[#2C2C2C] pt-4 space-y-3 shrink-0">
+                      <div className="flex justify-between items-center">
+                        <div className="flex flex-col">
+                          <span className="text-xs text-[#B3B3B3] font-mono uppercase tracking-widest block font-bold">PASSO ATIVO</span>
+                          <span className="text-sm text-[#F0EAE0] font-bold font-mono">0{quizStep}/05</span>
+                        </div>
+                        <button type="button" onClick={fillDemoData} className="font-mono text-[11px] font-bold text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/20 px-3 py-1.5 rounded-lg uppercase hover:bg-[#F0C265] hover:text-black transition-colors">🧪 Testar Demo</button>
                       </div>
 
                       <div className="flex gap-2.5">
-                        {/* Golden test demo filler button (fills valid data; validations stay active) */}
-                        <button type="button" onClick={fillDemoData} className="font-mono text-xs font-bold text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/20 px-3.5 py-2 rounded-xl uppercase hover:bg-[#F0C265] hover:text-black transition-colors">Testar Demo</button>
-
                         {quizStep > 1 && (
-                          <button type="button" onClick={handleQuizPrev} className="font-mono text-xs font-bold text-white border border-white/10 bg-white/5 px-5 py-2.5 rounded-xl uppercase">Voltar</button>
+                          <button type="button" onClick={handleQuizPrev} className="font-mono text-xs font-bold text-white border border-white/10 bg-white/5 px-5 py-3 rounded-xl uppercase flex-1 sm:flex-none">Voltar</button>
                         )}
                         {quizStep < 5 ? (
-                          <button type="button" onClick={handleQuizNext} className="btn-gold-shimmer px-7 py-2.5 rounded uppercase border-none text-black">Continuar</button>
+                          <button type="button" onClick={handleQuizNext} className="btn-gold-shimmer px-7 py-3 rounded uppercase border-none text-black flex-1 sm:flex-none">Continuar</button>
                         ) : (
-                          <button type="button" onClick={handleLaunchCheckout} className="font-mono text-xs font-bold text-black bg-lime px-7 py-2.5 rounded-xl uppercase border-none">
+                          <button type="button" onClick={handleLaunchCheckout} className="font-mono text-xs font-bold text-black bg-lime px-7 py-3 rounded-xl uppercase border-none flex-1 sm:flex-none">
                             Gerar Pix
                           </button>
                         )}
@@ -1335,8 +1368,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
                 <div className="grid grid-cols-2 gap-4 text-left border border-white/5 p-4 rounded-2xl bg-black/30 font-mono text-[11px]">
                   <div>
-                    <span className="text-gray-500 uppercase block text-[9px]">CÓDIGO ID BANDA:</span>
-                    <span className="text-xs font-black text-white font-mono block mt-0.5">{ticketCode}</span>
+                    <span className="text-gray-500 uppercase block text-[9px]">CÓDIGO DE ACESSO DA BANDA:</span>
+                    <span className="text-xs font-black text-[#F0C265] font-mono block mt-0.5">{(inviteCode || '').toUpperCase()}</span>
                   </div>
                   <div>
                     <span className="text-gray-500 uppercase block text-[9px]">ROSTER CONECTADO:</span>
@@ -1370,16 +1403,6 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   </div>
                   <span className="font-mono text-[8px] text-gray-500 uppercase tracking-widest block">Pedra Profana Backstage Access</span>
                 </div>
-
-                {similarBands.length > 0 && (
-                  <div className="space-y-1.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-left">
-                    <span className="font-mono text-xs text-amber-400 uppercase tracking-widest font-black block">⚠ Nome parecido já inscrito</span>
-                    <p className="text-sm text-amber-100/90 leading-relaxed">
-                      Já existe{similarBands.length > 1 ? 'm' : ''} banda{similarBands.length > 1 ? 's' : ''} com nome parecido: <strong className="text-white">{similarBands.join(', ')}</strong>.
-                      Se for a mesma banda, não insira novamente — use o link de convite que o líder enviou.
-                    </p>
-                  </div>
-                )}
 
                 {/* Convite da banda */}
                 {inviteCode && (
