@@ -41,6 +41,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [membersList, setMembersList] = useState<Array<{ name: string; cpf: string; birth: string }>>([]);
   const [selectedMembers, setSelectedMembers] = useState(1);
   const [acceptRules, setAcceptRules] = useState(false);
+  const [minPayable, setMinPayable] = useState(2);
 
   // Inline add-member form
   const [isAddingMemberInline, setIsAddingMemberInline] = useState(false);
@@ -74,6 +75,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
   // Success ticket
   const [ticketCode, setTicketCode] = useState('CP-2026-');
+  const [inviteCode, setInviteCode] = useState('');
+  const [inviteCopied, setInviteCopied] = useState(false);
+  const [bandResult, setBandResult] = useState<{ pago: number; minimo: number; total: number; ativa: boolean } | null>(null);
+  const sessionRef = useRef<string>('');
 
   const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next');
 
@@ -92,6 +97,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const quizClosingRef = useRef(false);
   const checkoutClosingRef = useRef(false);
   const quizOpenedAt = useRef<number>(0);
+  const funnelLogged = useRef<Set<string>>(new Set());
   const tsRenderedRef = useRef(false);
   const [honey, setHoney] = useState('');
   const [tsToken, setTsToken] = useState('');
@@ -123,6 +129,25 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     setSelectedMembers(1 + membersList.length);
   }, [membersList]);
 
+  useEffect(() => {
+    setMinPayable(m => Math.min(Math.max(2, m), Math.max(2, selectedMembers)));
+  }, [selectedMembers]);
+
+  // ---------- funil ----------
+  const logFunnel = (event: string, step = '') => {
+    const key = event + ':' + step;
+    if (funnelLogged.current.has(key)) return;
+    if (!sessionRef.current && typeof window !== 'undefined') {
+      sessionRef.current = sessionStorage.getItem('cp_funnel_session') || '';
+      if (!sessionRef.current) {
+        sessionRef.current = Math.random().toString(36).slice(2) + Date.now().toString(36);
+        sessionStorage.setItem('cp_funnel_session', sessionRef.current);
+      }
+    }
+    supabase.rpc('log_funnel_event', { p_ref: sessionRef.current, p_event: event, p_step: step })
+      .then(() => funnelLogged.current.add(key));
+  };
+
   // ---------- GSAP choreography ----------
   // Open/close sync: logical isOpen -> visible mirror
   useEffect(() => {
@@ -144,6 +169,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
   // Step transition — enter-only (slide-in with direction), no exit choreography
   useIsomorphicLayoutEffect(() => {
+    if (quizVisible && !draftToRestore) logFunnel('quiz_step', String(quizStep));
     if (quizVisible && stepRef.current && !draftToRestore) {
       gsap.fromTo(stepRef.current,
         { x: slideDirection === 'next' ? 48 : -48, opacity: 0 },
@@ -444,9 +470,9 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   };
 
   // ---------- Database save (network/adblock resilient with local fallback) ----------
+  // Registro da banda: gravação atômica no servidor (projeto + líder + integrantes + lote + convite)
   const saveRegistrationToSupabase = async (): Promise<string> => {
     try {
-      // Upload da foto comprimida (se existir no navegador) para o Storage
       let photoUrl: string | null = null;
       const dataUrl = typeof window !== 'undefined' ? localStorage.getItem('temp_compressed_photo') : null;
       if (dataUrl && dataUrl.startsWith('data:image')) {
@@ -462,126 +488,39 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
             const { data: pub } = supabase.storage.from('project-photos').getPublicUrl(path);
             photoUrl = pub?.publicUrl || null;
           }
-        } catch { /* segue com fallback de nome de arquivo */ }
-      }
-      // Probe whether the members table supports the email column (self-healing)
-      let supportsEmail = true;
-      try {
-        const probe = await supabase.from('members').select('email').limit(1);
-        if (probe.error) supportsEmail = false;
-      } catch { supportsEmail = false; }
-
-      // 1. Fetch active batch id
-      const { data: activeBatch } = await supabase
-        .from('batches')
-        .select('*')
-        .eq('status', 'ativo')
-        .single();
-
-      const batchId = activeBatch?.id || 'f68532e8-68c9-4cc4-bd38-976f4083e628';
-      const batchPrice = activeBatch ? Number(activeBatch.price_per_member) : activePrice;
-
-      // 2. Insert into projects
-      const { data: project, error: pError } = await supabase
-        .from('projects')
-        .insert({
-          name: projectName,
-          style: projectStyle,
-          bio: projectBio,
-          photo_url: photoUrl || projectPhotoName || 'default_photo.png',
-          instagram: projectInstagram || null,
-          video_link: projectVideoLink || null,
-          status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (pError || !project) {
-        throw new Error(pError?.message || "Não foi possível criar o projeto no banco de dados.");
+        } catch { /* segue sem foto */ }
       }
 
-      // 3. Insert responsible leader into members (with e-mail when supported)
-      const leaderPayload: Record<string, any> = {
-        project_id: project.id,
-        name: respName,
-        cpf: respCpf,
-        birth_date: respBirth,
-        phone: respPhone,
-        is_responsible: true
-      };
-      if (supportsEmail && respEmail.trim()) leaderPayload.email = respEmail.trim();
+      const membersPayload = membersList.map(m => ({ name: m.name, cpf: m.cpf, birth: m.birth }));
+      const minPay = Math.min(Math.max(2, minPayable), 1 + membersList.length);
 
-      const { error: leaderError } = await supabase.from('members').insert(leaderPayload);
-      if (leaderError) throw leaderError;
+      const { data, error } = await supabase.rpc('create_band_registration', {
+        p_name: projectName,
+        p_style: projectStyle,
+        p_bio: projectBio,
+        p_photo_url: photoUrl || 'default_photo.png',
+        p_instagram: projectInstagram || null,
+        p_video_link: projectVideoLink || null,
+        p_leader: { name: respName, cpf: respCpf, birth: respBirth, phone: respPhone, email: respEmail },
+        p_members: membersPayload,
+        p_min_payable: minPay
+      });
 
-      // 4. Insert other members
-      if (membersList && membersList.length > 0) {
-        const otherMembers = membersList
-          .filter(m => m.name.trim() !== '')
-          .map((m) => ({
-            project_id: project.id,
-            name: m.name,
-            cpf: m.cpf,
-            birth_date: m.birth,
-            phone: '',
-            is_responsible: false
-          }));
+      if (error || !data) throw new Error(error?.message || 'Falha ao registrar a banda.');
 
-        if (otherMembers.length > 0) {
-          const { error: membersError } = await supabase.from('members').insert(otherMembers);
-          if (membersError) throw membersError;
-        }
-      }
-
-      // 5. Insert pending subscription
-      const { error: subError } = await supabase
-        .from('subscriptions')
-        .insert({
-          project_id: project.id,
-          batch_id: batchId,
-          amount_paid: batchPrice * selectedMembers,
-          status: 'pending',
-          charge_id: 'pix_simulation_' + Math.random().toString(36).substring(2, 9)
-        });
-
-      if (subError) throw subError;
-
-      // Clean draft upon successful generation
+      setInviteCode(data.invite_code);
       localStorage.removeItem('quiz_draft_v2');
-
       localStorage.removeItem('temp_compressed_photo');
-      localStorage.setItem('current_project_id', project.id);
-      return project.id;
+      localStorage.setItem('current_project_id', data.project_id);
+      localStorage.setItem('current_cpf_v2', respCpf);
+      return data.project_id;
     } catch (err: any) {
-      console.warn("Supabase connection issue (possibly blocked by adblocker, CORS, or connection outage). Triggering robust local simulation fallback:", err);
-
-      const mockId = 'mock_proj_' + Math.random().toString(36).substring(2, 9);
-
-      const localBackup = {
-        id: mockId,
-        name: projectName,
-        style: projectStyle,
-        bio: projectBio,
-        photo_url: projectPhotoName || 'default_photo.png',
-        instagram: projectInstagram || null,
-        video_link: projectVideoLink || null,
-        email: respEmail || null,
-        status: 'pending',
-        members: [
-          { name: respName, cpf: respCpf, birth_date: respBirth, phone: respPhone, email: respEmail || null, is_responsible: true },
-          ...membersList.map(m => ({ name: m.name, cpf: m.cpf, birth_date: m.birth, phone: '', is_responsible: false }))
-        ],
-        amount_paid: selectedMembers * activePrice,
-        batch_name: activeLoteName
-      };
-
-      try {
-        localStorage.setItem('fallback_project_' + mockId, JSON.stringify(localBackup));
-        localStorage.setItem('current_project_id', mockId);
-        localStorage.removeItem('quiz_draft_v2');
-        localStorage.removeItem('temp_compressed_photo');
-      } catch { /* storage unavailable */ }
-      return mockId;
+      console.warn('Falha no registro da banda:', err);
+      setCheckoutError('Não foi possível concluir o registro agora. Verifique sua conexão e tente de novo — seus dados continuam aqui.');
+      setShowManualConfirm(true);
+      webhookDoneRef.current = false;
+      setIsCheckoutLoading(false);
+      return '';
     }
   };
 
@@ -615,6 +554,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     setIsCheckoutOpen(true);
     setCheckoutVisible(true);
     setIsCheckoutLoading(false);
+    logFunnel('checkout_opened');
 
     savePromiseRef.current = saveRegistrationToSupabase().then(id => {
       saveIdRef.current = id;
@@ -632,6 +572,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
   const closeCheckout = () => {
     if (checkoutClosingRef.current) return;
+    if (!webhookDoneRef.current && !checkoutExpired) logFunnel('checkout_abandoned');
     checkoutClosingRef.current = true;
     const finish = () => {
       checkoutClosingRef.current = false;
@@ -709,14 +650,23 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         return;
       }
 
-      if (id.startsWith('mock_proj_')) {
-        const fallbackData = localStorage.getItem('fallback_project_' + id);
-        if (fallbackData) {
-          const parsed = JSON.parse(fallbackData);
-          parsed.status = 'paid';
-          localStorage.setItem('fallback_project_' + id, JSON.stringify(parsed));
-        }
+      if (!inviteCode) {
+        webhookDoneRef.current = false;
+        setIsCheckoutLoading(false);
+        setShowManualConfirm(true);
+        setCheckoutError('Registro não localizado. Tente novamente.');
+        return;
       }
+
+      const { data: payRes, error: payErr } = await supabase.rpc('confirm_leader_payment', { p_code: inviteCode });
+      if (payErr || !payRes) {
+        webhookDoneRef.current = false;
+        setIsCheckoutLoading(false);
+        setShowManualConfirm(true);
+        setCheckoutError('Não foi possível confirmar agora. Use "Verificar novamente" em instantes.');
+        return;
+      }
+      setBandResult({ pago: Number(payRes.pago), minimo: Number(payRes.minimo), total: Number(payRes.total), ativa: Boolean(payRes.banda_ativa) });
 
       setTicketCode(deriveTicketCode(id));
       onPaymentSuccess();
@@ -1254,8 +1204,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
                 <div className="text-center space-y-3 w-full">
                   <div>
-                    <span className="font-mono text-[10px] text-gray-500 block uppercase font-bold">TOTAL CONVERSÃO:</span>
-                    <span className="text-2xl font-mono font-black text-lime block mt-0.5">R$ {totalCost},00</span>
+                    <span className="font-mono text-[10px] text-gray-500 block uppercase font-bold">SUA PARTE (LÍDER):</span>
+                    <span className="text-2xl font-mono font-black text-lime block mt-0.5">R$ {activePrice},00</span>
   </div>
 
                   {/* Live polling status line (feedback while QR is on screen) */}
@@ -1398,6 +1348,37 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   </div>
                   <span className="font-mono text-[8px] text-gray-500 uppercase tracking-widest block">Pedra Profana Backstage Access</span>
                 </div>
+
+                {/* Convite da banda */}
+                {inviteCode && (
+                  <div className="space-y-3 bg-black/40 border border-[#F0C265]/25 rounded-2xl p-4">
+                    <span className="font-mono text-[10px] text-[#F0C265] uppercase tracking-widest font-black block">🔗 Link exclusivo da banda — envie aos integrantes</span>
+                    <p className="text-xs text-gray-300 leading-relaxed">Cada integrante acessa, confirma os próprios dados e paga a parte dele. A banda ativa no concurso ao atingir {bandResult?.minimo ?? 2} partes pagas{bandResult ? ` (agora: ${bandResult.pago})` : ''}.</p>
+                    <div className="flex flex-col sm:flex-row gap-2.5">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(`${window.location.origin}/v2?b=${inviteCode}`);
+                            setInviteCopied(true);
+                            setTimeout(() => setInviteCopied(false), 2500);
+                          } catch { /* clipboard */ }
+                        }}
+                        className="w-full sm:flex-1 font-mono text-xs font-bold text-white bg-white/5 border border-white/10 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-colors uppercase"
+                      >
+                        {inviteCopied ? '✓ Link copiado!' : 'Copiar link do convite'}
+                      </button>
+                      <a
+                        href={`/api/wa/${inviteCode}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full sm:flex-1 flex items-center justify-center gap-1.5 font-mono text-xs font-bold text-black bg-[#10B981] px-3 py-2.5 rounded-xl uppercase tracking-wide"
+                      >
+                        Enviar por WhatsApp
+                      </a>
+                    </div>
+                  </div>
+                )}
 
                 {/* Viral Stage Pass share CTA buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">

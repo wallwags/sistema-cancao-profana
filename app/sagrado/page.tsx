@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import {
   Shield, LayoutDashboard, Tags, FileText, ClipboardList, Users, UserCog,
-  LogOut, Check, X, Plus, ArrowUp, ArrowDown, Trash2, KeyRound, Loader2, Star, Eye, History, UserPlus
+  LogOut, Check, X, Plus, ArrowUp, ArrowDown, Trash2, KeyRound, Loader2, Star, Eye, History, UserPlus, BarChart3
 } from 'lucide-react';
 
 interface StaffRow {
@@ -18,12 +18,15 @@ interface StaffRow {
 }
 
 interface MemberFull {
+  id?: string;
   name: string;
-  cpf: string;
-  birth_date: string;
-  phone: string | null;
+  cpf?: string;
+  birth_date?: string;
+  phone?: string | null;
   email?: string | null;
   is_responsible: boolean;
+  payment_status?: string;
+  claimed_at?: string | null;
 }
 
 interface ScoreView {
@@ -70,6 +73,9 @@ interface ProjectRow {
   video_link?: string | null;
   photo_url?: string | null;
   status: string;
+  stage?: number;
+  min_payable?: number;
+  total_members?: number;
   created_at: string;
   members?: { count: number }[];
   subscriptions?: { status: string; amount_paid: number; batches?: { name: string } }[];
@@ -96,6 +102,7 @@ const PERM_KEYS = [
 
 const PROJECT_STATUS: Record<string, { label: string; cls: string }> = {
   pending: { label: 'pendente', cls: 'bg-amber-500/15 text-amber-500 border-amber-500/30' },
+  awaiting_members: { label: 'aguardando integrantes', cls: 'bg-sky-500/15 text-sky-400 border-sky-500/30' },
   paid: { label: 'paga', cls: 'bg-[#10B981]/15 text-[#10B981] border-[#10B981]/30' },
   failed: { label: 'negada', cls: 'bg-red-500/15 text-red-400 border-red-500/30' },
   blocked: { label: 'bloqueada', cls: 'bg-red-900/30 text-red-300 border-red-800/40' },
@@ -180,7 +187,7 @@ export default function SagradoPage() {
   const [newFaq, setNewFaq] = useState({ question: '', answer: '' });
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [detailId, setDetailId] = useState<string | null>(null);
-  const [detail, setDetail] = useState<{ proj: Record<string, unknown> | null; members: MemberFull[]; sub: Record<string, unknown> | null; subsTotal: number; scores: ScoreView[] } | null>(null);
+  const [detail, setDetail] = useState<{ proj: Record<string, unknown> | null; members: MemberFull[]; sub: Record<string, unknown> | null; subsTotal: number; scores: ScoreView[]; member_edits: Array<Record<string, unknown>>; invite_code: string | null; whatsapp_clicks: number } | null>(null);
   const [ownScores, setOwnScores] = useState<Record<string, JuryDraft>>({});
   const [juryDraft, setJuryDraft] = useState<Record<string, JuryDraft>>({});
   const [openJury, setOpenJury] = useState<string | null>(null);
@@ -194,6 +201,7 @@ export default function SagradoPage() {
   const [paidCount, setPaidCount] = useState(0);
   const [jurySearch, setJurySearch] = useState('');
   const [photoView, setPhotoView] = useState<string | null>(null);
+  const [funnel, setFunnel] = useState<Record<string, unknown> | null>(null);
 
   // account
   const [newName, setNewName] = useState('');
@@ -318,6 +326,11 @@ export default function SagradoPage() {
     setAudit((data || []) as Array<Record<string, unknown>>);
   }, []);
 
+  const loadFunnel = useCallback(async () => {
+    const { data } = await supabase.rpc('get_funnel_stats');
+    setFunnel((data || null) as Record<string, unknown> | null);
+  }, []);
+
   useEffect(() => {
     (async () => {
       const ok = await loadStaff();
@@ -341,6 +354,7 @@ export default function SagradoPage() {
 
   useEffect(() => {
     if (authed && tab === 'auditoria') loadAudit();
+    if (authed && tab === 'funil') loadFunnel();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authed, tab]);
 
@@ -359,6 +373,7 @@ export default function SagradoPage() {
     if (canLotes) available.push('lotes');
     if (canContent) available.push('conteudo');
     if (canSubs) available.push('inscritos');
+    if (canSubs) available.push('funil');
     if (isJudge) available.push('avaliacao');
     if (canTeam) available.push('equipe');
     if (canAudit) available.push('auditoria');
@@ -525,13 +540,16 @@ export default function SagradoPage() {
     setDetailId(id);
     setDetail(null);
     const { data: prof, error } = await supabase.rpc('get_project_profile', { p_id: id });
-    if (error || !prof) { setDetail({ proj: null, members: [], sub: null, subsTotal: 0, scores: [] }); return; }
+    if (error || !prof) { setDetail({ proj: null, members: [], sub: null, subsTotal: 0, scores: [], member_edits: [], invite_code: null, whatsapp_clicks: 0 }); return; }
     setDetail({
       proj: (prof.project || null) as Record<string, unknown> | null,
       members: (prof.members || []) as unknown as MemberFull[],
       sub: (prof.subscription || null) as Record<string, unknown> | null,
       subsTotal: prof.subscriptions_total ?? 0,
-      scores: (prof.scores || []) as ScoreView[]
+      scores: (prof.scores || []) as ScoreView[],
+      member_edits: (prof.member_edits || []) as Array<Record<string, unknown>>,
+      invite_code: (prof.invite_code as string) || null,
+      whatsapp_clicks: Number(prof.whatsapp_clicks || 0)
     });
   };
 
@@ -695,6 +713,7 @@ export default function SagradoPage() {
               { id: 'avaliacao', label: 'Avaliação', icon: Star, show: isJudge },
               { id: 'equipe', label: 'Equipe', icon: Users, show: canTeam },
               { id: 'auditoria', label: 'Auditoria', icon: History, show: canAudit },
+              { id: 'funil', label: 'Funil', icon: BarChart3, show: canSubs },
               { id: 'conta', label: 'Minha conta', icon: UserCog, show: true },
             ].filter(t => t.show).map(t => (
               <button
@@ -974,6 +993,23 @@ export default function SagradoPage() {
                             <div key={i} className={`p-3 rounded-xl border ${m.is_responsible ? 'border-[#F0C265]/20 bg-[#F0C265]/5' : 'border-white/5 bg-black/30'}`}>
                               <div className="flex justify-between items-center gap-2">
                                 <span className="text-xs font-bold text-white">{m.name} {m.is_responsible && <span className="font-mono text-xs text-[#F0C265] uppercase">(líder responsável)</span>}</span>
+                                <span className="flex items-center gap-2 shrink-0">
+                                  {m.payment_status && (
+                                    <span className={`font-mono text-[11px] font-bold uppercase px-2 py-0.5 rounded border ${m.payment_status === 'paid' ? 'text-[#10B981] border-[#10B981]/30 bg-[#10B981]/10' : 'text-amber-500 border-amber-500/30 bg-amber-500/10'}`}>
+                                      {m.payment_status === 'paid' ? 'parte paga' : m.claimed_at ? 'parte pendente' : 'não confirmado'}
+                                    </span>
+                                  )}
+                                  {canSubs && m.payment_status !== 'paid' && m.claimed_at && m.id && (
+                                    <button type="button" onClick={async () => {
+                                      setBusy(`mem-${m.id}`);
+                                      const { error } = await supabase.rpc('staff_confirm_member_payment', { p_member_id: m.id });
+                                      setBusy(null);
+                                      if (!error) await openDetail(p.id); else setMsg(`mem-${m.id}`, 'err', 'Erro ao confirmar.');
+                                    }} disabled={busy === `mem-${m.id}`} className="bg-[#10B981] text-black font-mono text-[11px] font-bold px-2 py-1 rounded uppercase disabled:opacity-50">
+                                      {busy === `mem-${m.id}` ? '...' : 'Confirmar'}
+                                    </button>
+                                  )}
+                                </span>
                                 <span className="font-mono text-[11px] text-gray-500">#{i + 1}</span>
                               </div>
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 font-mono text-xs text-gray-300">
@@ -988,7 +1024,7 @@ export default function SagradoPage() {
                       </div>
 
                       <div className="space-y-2 bg-black/40 border border-white/5 rounded-xl p-4">
-                        <span className="font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-widest block">Recibo da cobrança{detail && detail.subsTotal > 1 ? ` (mais recente de ${detail.subsTotal})` : ''}</span>
+                        <span className="font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-widest block">Recibo da cobrança{detail && detail.subsTotal > 1 ? ` (mais recente de ${detail.subsTotal})` : ''}{detail?.invite_code ? ' — convite: link ativo' : ' — modelo antigo (pagamento único)'}</span>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs text-gray-300">
                           <span>Valor: <strong className="text-[#10B981]">{sub?.amount_paid != null ? `R$ ${sub.amount_paid},00` : '—'}</strong></span>
                           <span>Lote: {sub?.batch_name || '—'}</span>
@@ -997,6 +1033,19 @@ export default function SagradoPage() {
                           <span className="md:col-span-2">Pago em: {fmtDate(sub?.paid_at ?? null)}</span>
                         </div>
                       </div>
+
+                      {detail && detail.member_edits && detail.member_edits.length > 0 && (
+                        <div className="space-y-2 bg-black/40 border border-amber-500/20 rounded-xl p-4">
+                          <span className="font-mono text-[11px] text-amber-400 font-bold uppercase tracking-widest block">Histórico de edições dos integrantes</span>
+                          {detail.member_edits.map((e: Record<string, unknown>, i: number) => (
+                            <div key={i} className="font-mono text-xs text-gray-300 border-b border-white/5 pb-1.5 last:border-none">
+                              <strong className="text-white">{String(e.member)}</strong> alterou <span className="text-amber-400">{String(e.field)}</span>:
+                              <span className="text-red-400/80 line-through"> {String(e.old_value)}</span> → <span className="text-[#10B981]">{String(e.new_value)}</span>
+                              <span className="text-gray-500"> • {fmtDate(String(e.created_at))}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
                       {(detail?.scores?.length ?? 0) > 0 && (
                         <div className="space-y-2 bg-black/40 border border-white/5 rounded-xl p-4">
@@ -1169,6 +1218,90 @@ export default function SagradoPage() {
                 })}
               </div>
             </div>
+            );
+          })()}
+
+          {/* FUNIL */}
+          {tab === 'funil' && canSubs && (() => {
+            const f = (funnel || {}) as Record<string, any>;
+            const checkout = (f.checkout || {}) as Record<string, number>;
+            const convites = (f.convites || {}) as Record<string, number>;
+            const steps = (f.quiz_steps || []) as Array<{ step: string; n: number }>;
+            const maxStep = Math.max(1, ...steps.map(x => Number(x.n) || 0));
+            const bars: Array<{ label: string; value: number; cls: string }> = [
+              { label: 'Checkouts abertos', value: Number(checkout.abertos || 0), cls: 'from-[#F0C265] to-[#B88A28]' },
+              { label: 'Abandonados', value: Number(checkout.abandonados || 0), cls: 'from-red-500 to-red-700' },
+              { label: 'Pagos (líder)', value: Number(checkout.pagos_lider || 0), cls: 'from-[#10B981] to-[#059669]' },
+              { label: 'Pagos (integrantes)', value: Number(checkout.pagos_integrante || 0), cls: 'from-emerald-400 to-[#10B981]' },
+            ];
+            const maxBar = Math.max(1, ...bars.map(b => b.value));
+            const invBars: Array<{ label: string; value: number; cls: string }> = [
+              { label: 'Convites abertos', value: Number(convites.abertos || 0), cls: 'from-[#F0C265] to-[#B88A28]' },
+              { label: 'Confirmados', value: Number(convites.confirmados || 0), cls: 'from-[#10B981] to-[#059669]' },
+              { label: 'Descartados', value: Number(convites.descartados || 0), cls: 'from-gray-500 to-gray-700' },
+              { label: 'Cliques no WhatsApp', value: Number(convites.whatsapp || 0), cls: 'from-green-400 to-green-600' },
+            ];
+            const maxInv = Math.max(1, ...invBars.map(b => b.value));
+            return (
+              <div className="space-y-4 fade-up-800">
+                <div className="flex justify-between items-center">
+                  <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold">Visão do funil de inscrições</span>
+                  <button type="button" onClick={loadFunnel} className={btnGhost}>Atualizar</button>
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    { label: 'Bandas inscritas', value: String(f.bandas ?? 0), accent: 'text-[#F0C265]' },
+                    { label: 'Bandas ativas', value: String(f.ativas ?? 0), accent: 'text-[#10B981]' },
+                    { label: 'Aguardando integrantes', value: String(f.aguardando ?? 0), accent: 'text-sky-400' },
+                    { label: 'Integrantes informados', value: String(f.integrantes_informados ?? 0), accent: 'text-white' },
+                    { label: 'Partes pagas', value: String(f.integrantes_pagos ?? 0), accent: 'text-[#10B981]' },
+                    { label: 'Receita confirmada', value: `R$ ${Number(f.receita ?? 0).toFixed(0)}`, accent: 'text-[#F0C265]' },
+                  ].map(c => (
+                    <div key={c.label} className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 space-y-1">
+                      <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest block">{c.label}</span>
+                      <span className={`font-display font-black text-2xl block ${c.accent}`}>{c.value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-5 space-y-3">
+                  <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Etapas do quiz (visitas por passo)</span>
+                  {steps.length === 0 && <p className="text-xs text-gray-500 font-mono">Sem visitas registradas ainda.</p>}
+                  {steps.map(st => (
+                    <div key={st.step} className="space-y-1">
+                      <div className="flex justify-between font-mono text-[11px] text-gray-300"><span>Passo {st.step}</span><span>{st.n}</span></div>
+                      <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-[#FFF2D4] to-[#B88A28]" style={{ width: `${(Number(st.n) / maxStep) * 100}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-5 space-y-3">
+                  <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Checkout</span>
+                  {bars.map(b => (
+                    <div key={b.label} className="space-y-1">
+                      <div className="flex justify-between font-mono text-[11px] text-gray-300"><span>{b.label}</span><span>{b.value}</span></div>
+                      <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full bg-gradient-to-r ${b.cls}`} style={{ width: `${(b.value / maxBar) * 100}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-5 space-y-3">
+                  <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Convites de integrantes</span>
+                  {invBars.map(b => (
+                    <div key={b.label} className="space-y-1">
+                      <div className="flex justify-between font-mono text-[11px] text-gray-300"><span>{b.label}</span><span>{b.value}</span></div>
+                      <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full bg-gradient-to-r ${b.cls}`} style={{ width: `${(b.value / maxInv) * 100}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             );
           })()}
 

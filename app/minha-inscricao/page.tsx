@@ -17,6 +17,7 @@ interface Member {
   phone: string | null;
   email?: string | null;
   is_responsible: boolean;
+  payment_status?: string;
 }
 
 interface RegistrationData {
@@ -474,6 +475,9 @@ export default function MinhaInscricaoPage() {
                     <div>
                       <span className="text-xs font-bold text-white block">{leader.name}</span>
                       <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Líder Responsável • CPF: {leader.cpf}</span>
+                      <span className={`font-mono text-xs uppercase font-bold block mt-0.5 ${leader.payment_status === 'paid' ? 'text-[#10B981]' : 'text-amber-500'}`}>
+                        {leader.payment_status === 'paid' ? '✓ Parte paga' : '⏳ Parte pendente'}
+                      </span>
                     </div>
                   </div>
                   <span className="font-mono text-xs text-[#10B981] bg-[#10B981]/15 px-2.5 py-0.5 rounded border border-[#10B981]/25 uppercase font-bold tracking-wider">Líder</span>
@@ -488,6 +492,11 @@ export default function MinhaInscricaoPage() {
                     <div>
                       <span className="text-xs font-bold text-white block">{m.name}</span>
                       <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Integrante {i + 2} • CPF: {m.cpf}</span>
+                      {m.payment_status && (
+                        <span className={`font-mono text-xs uppercase font-bold block mt-0.5 ${m.payment_status === 'paid' ? 'text-[#10B981]' : 'text-amber-500'}`}>
+                          {m.payment_status === 'paid' ? '✓ Parte paga' : (m.cpf ? '⏳ Parte pendente' : '⏳ Aguardando confirmação')}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <span className="font-mono text-xs text-[#10B981] bg-[#10B981]/15 px-2.5 py-0.5 rounded border border-[#10B981]/25 uppercase font-bold tracking-wider">Apto</span>

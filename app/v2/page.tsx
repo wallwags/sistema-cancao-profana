@@ -15,6 +15,7 @@ import { supabase } from '../../lib/supabase';
 
 // Quiz + checkout + success load on demand (keeps landing First Load JS lean)
 const QuizFlow = dynamic(() => import('../../components/v2/QuizFlow'), { ssr: false });
+const InviteSheet = dynamic(() => import('../../components/v2/InviteSheet'), { ssr: false });
 
 interface LoteState {
   status: 'ativo' | 'encerrado' | 'em_breve';
@@ -60,6 +61,7 @@ export default function Page() {
   const [liveLaunch, setLiveLaunch] = useState<string | null>(null);
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
   const [dia0Price, setDia0Price] = useState<number>(25);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [loteDates, setLoteDates] = useState<Record<string, string | null>>({});
 
   // Quiz modal: mounted on demand, kept mounted afterwards so state/draft persists
@@ -71,6 +73,13 @@ export default function Page() {
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
 
   const headerRef = useRef<HTMLDivElement | null>(null);
+
+  // Link de convite de integrante: ?b=codigo
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const b = (params.get('b') || '').replace(/[^a-z0-9]/g, '').slice(0, 12);
+    if (b) setInviteCode(b);
+  }, []);
 
   // Sync pricing configurations from Supabase on mount
   useEffect(() => {
@@ -730,6 +739,9 @@ export default function Page() {
           onPaymentSuccess={handlePaymentSuccess}
         />
       )}
+
+      {/* CONVITE DE INTEGRANTE — bottom sheet sobre a landing */}
+      {inviteCode && <InviteSheet inviteCode={inviteCode} onClose={() => setInviteCode(null)} />}
 
       {/* Legal popups (footer) — CSS-animated, zero JS cost when closed */}
       <TermsModal open={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
