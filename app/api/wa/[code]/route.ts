@@ -19,6 +19,8 @@ export async function GET(req: NextRequest, { params }: { params: { code: string
     ref: code,
     event: 'whatsapp_click',
     step: band?.project_id ? String(band.project_id) : '',
+    ip: (req.headers.get('x-forwarded-for') || '').split(',')[0].trim(),
+    user_agent: (req.headers.get('user-agent') || '').slice(0, 200),
   });
 
   const origin = req.nextUrl.origin;

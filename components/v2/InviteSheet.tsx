@@ -83,7 +83,7 @@ export default function InviteSheet({ inviteCode, onClose }: { inviteCode: strin
       if (error || !inv) { setError('Convite não encontrado ou inválido.'); setPhase('loading'); setData(null); return; }
       setData(inv as unknown as InviteData);
       setPhase('confirm');
-      supabase.rpc('log_funnel_event', { p_ref: inviteCode, p_event: 'invite_opened' });
+      fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ref: inviteCode, event: 'invite_opened' }) }).catch(() => {});
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inviteCode]);
@@ -91,12 +91,12 @@ export default function InviteSheet({ inviteCode, onClose }: { inviteCode: strin
   const selectedSlot = data?.slots.find(s => s.id === slotId) || null;
 
   const goConfirm = () => {
-    supabase.rpc('log_funnel_event', { p_ref: inviteCode, p_event: 'invite_confirmed' });
+    fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ref: inviteCode, event: 'invite_confirmed' }) }).catch(() => {});
     setPhase('pick');
   };
 
   const goDiscard = () => {
-    supabase.rpc('log_funnel_event', { p_ref: inviteCode, p_event: 'invite_closed' });
+    fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ref: inviteCode, event: 'invite_closed' }) }).catch(() => {});
     slideDownClose();
   };
 
@@ -270,7 +270,16 @@ export default function InviteSheet({ inviteCode, onClose }: { inviteCode: strin
                 <input className={inputCls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@email.com" />
               </div>
 
-              {error && <p className="text-xs text-red-400 font-mono">⚠ {error}</p>}
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3 flex items-start gap-2.5">
+                  <span className="text-red-400 text-base leading-none mt-0.5">⚠</span>
+                  <div className="text-left flex-1">
+                    <span className="text-xs text-red-300 font-bold uppercase tracking-wide block">Atenção</span>
+                    <span className="text-xs text-red-200/90 leading-snug">{error}</span>
+                  </div>
+                  <button type="button" onClick={() => setError('')} className="text-red-300/70 hover:text-white text-lg leading-none">×</button>
+                </div>
+              )}
 
               <button onClick={submitClaim} disabled={busy} className="btn-gold-shimmer w-full py-3.5 rounded-full text-sm uppercase tracking-widest font-black text-black disabled:opacity-50">
                 {busy ? 'Confirmando...' : 'Revisar meus dados'}
@@ -303,7 +312,16 @@ export default function InviteSheet({ inviteCode, onClose }: { inviteCode: strin
                 <span className="font-display font-black text-2xl text-[#F0C265]">R$ {price},00</span>
               </div>
 
-              {error && <p className="text-xs text-red-400 font-mono">⚠ {error}</p>}
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3 flex items-start gap-2.5">
+                  <span className="text-red-400 text-base leading-none mt-0.5">⚠</span>
+                  <div className="text-left flex-1">
+                    <span className="text-xs text-red-300 font-bold uppercase tracking-wide block">Atenção</span>
+                    <span className="text-xs text-red-200/90 leading-snug">{error}</span>
+                  </div>
+                  <button type="button" onClick={() => setError('')} className="text-red-300/70 hover:text-white text-lg leading-none">×</button>
+                </div>
+              )}
 
               <button onClick={startCheckout} className="font-mono text-sm font-bold text-black bg-[#10B981] py-4 rounded-full w-full uppercase tracking-widest">
                 Gerar Pix e pagar R$ {price},00
@@ -356,7 +374,16 @@ export default function InviteSheet({ inviteCode, onClose }: { inviteCode: strin
                   Já paguei — verificar novamente
                 </button>
               )}
-              {error && <p className="text-xs text-red-400 font-mono">⚠ {error}</p>}
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3 flex items-start gap-2.5">
+                  <span className="text-red-400 text-base leading-none mt-0.5">⚠</span>
+                  <div className="text-left flex-1">
+                    <span className="text-xs text-red-300 font-bold uppercase tracking-wide block">Atenção</span>
+                    <span className="text-xs text-red-200/90 leading-snug">{error}</span>
+                  </div>
+                  <button type="button" onClick={() => setError('')} className="text-red-300/70 hover:text-white text-lg leading-none">×</button>
+                </div>
+              )}
             </div>
           )}
 

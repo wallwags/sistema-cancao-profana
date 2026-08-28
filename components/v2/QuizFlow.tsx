@@ -145,8 +145,12 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         sessionStorage.setItem('cp_funnel_session', sessionRef.current);
       }
     }
-    supabase.rpc('log_funnel_event', { p_ref: sessionRef.current, p_event: event, p_step: step })
-      .then(() => funnelLogged.current.add(key));
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref: sessionRef.current, event, step }),
+      keepalive: true
+    }).then(() => funnelLogged.current.add(key)).catch(() => {});
   };
 
   // ---------- GSAP choreography ----------
@@ -198,9 +202,9 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   }, [successVisible]);
 
   useEffect(() => {
-    if (quizVisible && quizStep === 5) tryRenderTurnstile();
+    if (quizVisible) setTimeout(tryRenderTurnstile, 350);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quizVisible, quizStep]);
+  }, [quizVisible]);
 
   // Close quiz with exit animation, then unmount + notify parent
   const requestCloseQuiz = () => {
@@ -1117,15 +1121,14 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                 </span>
                               </label>
                               {fieldError('acceptRules')}
-                                <div className="pt-2 flex justify-center">
-                                  <div id="cf-ts" />
-                                  {!tsToken && (
-                                    <span className="font-mono text-[9px] text-gray-500 uppercase tracking-widest">Verificação anti-robô ativa</span>
-                                  )}
-                                </div>
                             </div>
                           </div>
                         )}
+                    </div>
+
+                    {/* verificação anti-robô — ativa desde a abertura */}
+                    <div className="flex justify-center pt-1 shrink-0">
+                      <div id="cf-ts" />
                     </div>
 
                     {/* CONTROLS */}

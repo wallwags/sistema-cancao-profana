@@ -136,15 +136,30 @@ function fmtDate(v?: string | null): string {
 }
 
 function Notice({ kind, children }: { kind: 'ok' | 'err' | 'info'; children: React.ReactNode }) {
-  if (!children) return null;
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    setVisible(true);
+    if (kind === 'err') {
+      const t = setTimeout(() => setVisible(false), 9000);
+      return () => clearTimeout(t);
+    }
+  }, [kind, children]);
+  if (!children || !visible) return null;
   const cls = kind === 'ok'
     ? 'bg-[#10B981]/15 border-[#10B981]/30 text-[#10B981]'
     : kind === 'err'
-      ? 'bg-red-500/15 border-red-500/30 text-red-400'
+      ? 'bg-red-500/10 border-red-500/40 text-red-300'
       : 'bg-white/5 border-white/10 text-gray-300';
   return (
-    <div className={`border rounded-xl px-4 py-2.5 text-xs font-mono leading-relaxed ${cls}`}>
-      {children}
+    <div className={`border rounded-xl px-4 py-3 flex items-start gap-2.5 text-xs leading-relaxed ${cls}`}>
+      <span className="text-base leading-none mt-0.5">{kind === 'ok' ? '✓' : kind === 'err' ? '⚠' : 'ℹ'}</span>
+      <div className="flex-1">
+        {kind === 'err' && <span className="text-[11px] font-bold uppercase tracking-wide block">Atenção</span>}
+        <span className="font-mono leading-snug">{children}</span>
+      </div>
+      {kind === 'err' && (
+        <button type="button" onClick={() => setVisible(false)} className="text-red-300/70 hover:text-white text-lg leading-none">×</button>
+      )}
     </div>
   );
 }
@@ -1221,41 +1236,49 @@ export default function SagradoPage() {
             );
           })()}
 
-          {/* FUNIL */}
+          {/* FUNIL — infográfico */}
           {tab === 'funil' && canSubs && (() => {
             const f = (funnel || {}) as Record<string, any>;
             const checkout = (f.checkout || {}) as Record<string, number>;
             const convites = (f.convites || {}) as Record<string, number>;
             const steps = (f.quiz_steps || []) as Array<{ step: string; n: number }>;
-            const maxStep = Math.max(1, ...steps.map(x => Number(x.n) || 0));
-            const bars: Array<{ label: string; value: number; cls: string }> = [
-              { label: 'Checkouts abertos', value: Number(checkout.abertos || 0), cls: 'from-[#F0C265] to-[#B88A28]' },
-              { label: 'Abandonados', value: Number(checkout.abandonados || 0), cls: 'from-red-500 to-red-700' },
-              { label: 'Pagos (líder)', value: Number(checkout.pagos_lider || 0), cls: 'from-[#10B981] to-[#059669]' },
-              { label: 'Pagos (integrantes)', value: Number(checkout.pagos_integrante || 0), cls: 'from-emerald-400 to-[#10B981]' },
+            const stepMap: Record<string, number> = {};
+            steps.forEach(x => { stepMap[x.step] = Number(x.n); });
+
+            const s1 = stepMap['1'] || 0;
+            const s3 = stepMap['3'] || 0;
+            const s5 = stepMap['5'] || 0;
+            const stages = [
+              { label: 'Abriu o quiz', n: s1, w: 100 },
+              { label: 'Chegou aos dados pessoais', n: s3, w: 78 },
+              { label: 'Revisão final', n: s5, w: 60 },
+              { label: 'Abriu o checkout', n: Number(checkout.abertos || 0), w: 46 },
+              { label: 'Confirmou a parte', n: Number(checkout.pagos_lider || 0), w: 36 },
             ];
-            const maxBar = Math.max(1, ...bars.map(b => b.value));
+            const maxStage = Math.max(1, ...stages.map(x => x.n));
+            const shades = ['from-[#FFF2D4] to-[#F0C265]', 'from-[#F0C265] to-[#E3B552]', 'from-[#E3B552] to-[#D4A843]', 'from-[#D4A843] to-[#B88A28]', 'from-[#B88A28] to-[#8B6F47]'];
+
             const invBars: Array<{ label: string; value: number; cls: string }> = [
               { label: 'Convites abertos', value: Number(convites.abertos || 0), cls: 'from-[#F0C265] to-[#B88A28]' },
-              { label: 'Confirmados', value: Number(convites.confirmados || 0), cls: 'from-[#10B981] to-[#059669]' },
-              { label: 'Descartados', value: Number(convites.descartados || 0), cls: 'from-gray-500 to-gray-700' },
+              { label: 'Confirmações', value: Number(convites.confirmados || 0), cls: 'from-[#10B981] to-[#059669]' },
               { label: 'Cliques no WhatsApp', value: Number(convites.whatsapp || 0), cls: 'from-green-400 to-green-600' },
+              { label: 'Partes pagas por integrante', value: Number(checkout.pagos_integrante || 0), cls: 'from-emerald-400 to-[#10B981]' },
             ];
             const maxInv = Math.max(1, ...invBars.map(b => b.value));
+
             return (
-              <div className="space-y-4 fade-up-800">
+              <div className="space-y-5 fade-up-800">
                 <div className="flex justify-between items-center">
-                  <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold">Visão do funil de inscrições</span>
+                  <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold">Funil de inscrições</span>
                   <button type="button" onClick={loadFunnel} className={btnGhost}>Atualizar</button>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* cards sintéticos */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
-                    { label: 'Bandas inscritas', value: String(f.bandas ?? 0), accent: 'text-[#F0C265]' },
-                    { label: 'Bandas ativas', value: String(f.ativas ?? 0), accent: 'text-[#10B981]' },
-                    { label: 'Aguardando integrantes', value: String(f.aguardando ?? 0), accent: 'text-sky-400' },
-                    { label: 'Integrantes informados', value: String(f.integrantes_informados ?? 0), accent: 'text-white' },
-                    { label: 'Partes pagas', value: String(f.integrantes_pagos ?? 0), accent: 'text-[#10B981]' },
+                    { label: 'Visitantes únicos', value: String(f.visitantes_unicos ?? 0), accent: 'text-[#F0C265]' },
+                    { label: 'IPs únicos', value: String(f.ips_unicos ?? 0), accent: 'text-white' },
+                    { label: 'Bandas ativas', value: `${String(f.ativas ?? 0)}/${String(f.bandas ?? 0)}`, accent: 'text-[#10B981]' },
                     { label: 'Receita confirmada', value: `R$ ${Number(f.receita ?? 0).toFixed(0)}`, accent: 'text-[#F0C265]' },
                   ].map(c => (
                     <div key={c.label} className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 space-y-1">
@@ -1265,41 +1288,66 @@ export default function SagradoPage() {
                   ))}
                 </div>
 
-                <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-5 space-y-3">
-                  <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Etapas do quiz (visitas por passo)</span>
-                  {steps.length === 0 && <p className="text-xs text-gray-500 font-mono">Sem visitas registradas ainda.</p>}
-                  {steps.map(st => (
-                    <div key={st.step} className="space-y-1">
-                      <div className="flex justify-between font-mono text-[11px] text-gray-300"><span>Passo {st.step}</span><span>{st.n}</span></div>
-                      <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-[#FFF2D4] to-[#B88A28]" style={{ width: `${(Number(st.n) / maxStep) * 100}%` }} />
+                {/* funil em trapézios */}
+                <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-6 space-y-1.5">
+                  <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block mb-3">Do primeiro clique à vaga confirmada</span>
+                  {stages.map((st, i) => {
+                    const prev = i > 0 ? stages[i - 1].n : st.n;
+                    const conv = prev > 0 ? Math.round((st.n / prev) * 100) : 100;
+                    return (
+                      <div key={st.label} className="relative">
+                        {i > 0 && (
+                          <div className="flex justify-center items-center gap-2 py-0.5">
+                            <span className={`font-mono text-[11px] font-black px-2 py-0.5 rounded-full border ${conv >= 70 ? 'text-[#10B981] border-[#10B981]/30 bg-[#10B981]/10' : conv >= 40 ? 'text-[#F0C265] border-[#F0C265]/30 bg-[#F0C265]/10' : 'text-red-400 border-red-500/30 bg-red-500/10'}`}>
+                              {conv}%
+                            </span>
+                          </div>
+                        )}
+                        <div className="mx-auto" style={{ width: `${st.w}%` }}>
+                          <div
+                            className={`h-14 rounded-lg bg-gradient-to-b ${shades[i]} flex items-center justify-center gap-3 shadow-lg`}
+                            style={{ clipPath: 'polygon(4% 0, 96% 0, 100% 100%, 0% 100%)', opacity: 0.55 + 0.45 * (st.n / maxStage) }}
+                          >
+                            <span className="font-display font-black text-lg text-black">{st.n}</span>
+                            <span className="font-mono text-[11px] text-black/80 uppercase tracking-widest font-bold">{st.label}</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
-                <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-5 space-y-3">
-                  <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Checkout</span>
-                  {bars.map(b => (
-                    <div key={b.label} className="space-y-1">
-                      <div className="flex justify-between font-mono text-[11px] text-gray-300"><span>{b.label}</span><span>{b.value}</span></div>
-                      <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full bg-gradient-to-r ${b.cls}`} style={{ width: `${(b.value / maxBar) * 100}%` }} />
+                {/* convites + integrantes */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-5 space-y-3">
+                    <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Convites de integrantes</span>
+                    {invBars.map(b => (
+                      <div key={b.label} className="space-y-1">
+                        <div className="flex justify-between font-mono text-[11px] text-gray-300"><span>{b.label}</span><span>{b.value}</span></div>
+                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full bg-gradient-to-r ${b.cls}`} style={{ width: `${(b.value / maxInv) * 100}%` }} />
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
 
-                <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-5 space-y-3">
-                  <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Convites de integrantes</span>
-                  {invBars.map(b => (
-                    <div key={b.label} className="space-y-1">
-                      <div className="flex justify-between font-mono text-[11px] text-gray-300"><span>{b.label}</span><span>{b.value}</span></div>
-                      <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full bg-gradient-to-r ${b.cls}`} style={{ width: `${(b.value / maxInv) * 100}%` }} />
-                      </div>
+                  <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-5 space-y-3">
+                    <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Bandas</span>
+                    <div className="space-y-2.5">
+                      {[
+                        { l: 'Aguardando integrantes', v: Number(f.aguardando ?? 0), max: Math.max(1, Number(f.bandas ?? 0)), cls: 'from-amber-400 to-amber-600' },
+                        { l: 'Ativas no concurso', v: Number(f.ativas ?? 0), max: Math.max(1, Number(f.bandas ?? 0)), cls: 'from-[#10B981] to-[#059669]' },
+                        { l: 'Integrantes com parte paga', v: Number(f.integrantes_pagos ?? 0), max: Math.max(1, Number(f.integrantes_pagos ?? 1)), cls: 'from-emerald-400 to-emerald-600' },
+                      ].map(b => (
+                        <div key={b.l} className="space-y-1">
+                          <div className="flex justify-between font-mono text-[11px] text-gray-300"><span>{b.l}</span><span>{b.v}</span></div>
+                          <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full bg-gradient-to-r ${b.cls}`} style={{ width: `${(b.v / b.max) * 100}%` }} />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
             );

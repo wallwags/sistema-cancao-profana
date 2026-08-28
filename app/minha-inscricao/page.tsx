@@ -23,13 +23,19 @@ interface Member {
 
 interface RegistrationData {
   id: string;
+  invite_code?: string | null;
+  min_payable?: number;
+  total_members?: number;
+  entry_price?: number;
   name: string;
   style: string;
   bio: string;
   photo_url: string | null;
   instagram: string | null;
   video_link: string | null;
-  status: 'pending' | 'paid' | 'failed' | 'blocked' | 'suspended' | 'refunded';
+  status: 'pending' | 'paid' | 'failed' | 'blocked' | 'suspended' | 'refunded' | 'awaiting_members';
+  lote_ends?: string | null;
+  vagas_lote?: number;
   members: Member[];
   amount_paid?: number;
   batch_name?: string;
@@ -41,6 +47,7 @@ export default function MinhaInscricaoPage() {
   const [searching, setSearching] = useState(false);
   const [searchCpf, setSearchCpf] = useState('');
   const router = useRouter();
+  const [linkCopied, setLinkCopied] = useState(false);
   const [data, setData] = useState<RegistrationData | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -54,81 +61,45 @@ export default function MinhaInscricaoPage() {
     return value;
   };
 
-  // Load project by ID with defensive local storage fallback (for adblockers / offline)
-  const loadProject = async (id: string) => {
+  // Acesso exclusivo por link: /minha-inscricao?k=<código único da banda>
+  const loadBandByCode = async (code: string) => {
     setLoading(true);
     setErrorMsg(null);
-    try {
-      // Check for local mock fallback first (Item 2 offline simulation)
-      if (id.startsWith('mock_proj_')) {
-        const fallbackData = localStorage.getItem('fallback_project_' + id);
-        if (fallbackData) {
-          const parsed = JSON.parse(fallbackData);
-          setData(parsed);
-          setProjectId(id);
-          setLoading(false);
-          return;
-        }
-      }
-
-      const savedCpf = localStorage.getItem('current_cpf_v2');
-      if (!savedCpf) {
-        throw new Error("Sessão expirada. Busque novamente pelo CPF do responsável.");
-      }
-
-      const { data: reg, error: rpcError } = await supabase
-        .rpc('get_registration', { p_id: id, p_cpf: savedCpf });
-
-      if (rpcError || !reg || !reg.project) {
-        throw new Error("Não encontramos nenhum projeto com este identificador.");
-      }
-
-      const project = reg.project;
-      const typedMembers: Member[] = (reg.members || []).map((m: any) => ({
-        name: m.name,
-        cpf: m.cpf,
-        birth_date: m.birth_date,
-        phone: m.phone,
-        email: m.email ?? null,
-        is_responsible: m.is_responsible
-      }));
-
-      const sub = (reg.subscriptions || [])[0] || null;
-
-      setData({
-        id: project.id,
-        name: project.name,
-        style: project.style,
-        bio: project.bio,
-        photo_url: project.photo_url,
-        instagram: project.instagram || null,
-        video_link: project.video_link || null,
-        status: project.status,
-        members: typedMembers,
-        amount_paid: sub ? Number(sub.amount_paid) : undefined,
-        batch_name: sub?.batch_name || undefined
-      });
-
-      setProjectId(id);
-    } catch (err: any) {
-      console.warn("Database lookup issue. Trying local storage cache as fail-safe:", err);
-      
-      // Fallback check on standard local storage cache
-      const cachedProject = localStorage.getItem('fallback_project_' + id);
-      if (cachedProject) {
-        setData(JSON.parse(cachedProject));
-        setProjectId(id);
-      } else {
-        setErrorMsg(err.message || "Erro de conexão ao carregar inscrição.");
-        setData(null);
-      }
-    } finally {
-      setLoading(false);
+    const { data: reg, error } = await supabase.rpc('get_registration_by_code', { p_code: code });
+    if (error || !reg || !reg.project) {
+      router.replace('/v2');
+      return;
     }
+    const project = reg.project;
+    const typedMembers: Member[] = (reg.members || []).map((m: any) => ({
+      name: m.name,
+      cpf: m.cpf,
+      birth_date: m.birth_date,
+      phone: m.phone,
+      email: m.email ?? null,
+      is_responsible: m.is_responsible,
+      payment_status: m.payment_status
+    }));
+    setData({
+      id: project.id,
+      invite_code: project.invite_code,
+      min_payable: project.min_payable,
+      total_members: project.total_members,
+      entry_price: project.entry_price,
+      name: project.name,
+      style: project.style,
+      bio: project.bio,
+      photo_url: project.photo_url,
+      instagram: project.instagram || null,
+      video_link: project.video_link || null,
+      status: project.status,
+      members: typedMembers,
+      lote_ends: reg.lote_ends,
+      vagas_lote: reg.vagas_restantes_lote
+    });
+    setLoading(false);
   };
 
-  // Acesso por link especial: /minha-inscricao?k=<codigo-do-convite>
-  // Sem k=, redireciona para a landing. Com k=, o CPF continua sendo a prova de posse.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const k = (params.get('k') || '').replace(/[^a-z0-9]/g, '').slice(0, 12);
@@ -136,89 +107,16 @@ export default function MinhaInscricaoPage() {
       router.replace('/v2');
       return;
     }
-    localStorage.setItem('access_key_v2', k);
-    const savedId = localStorage.getItem('current_project_id');
-    const savedCpf = localStorage.getItem('current_cpf_v2');
-    if (savedId && savedCpf) {
-      loadProject(savedId);
-    } else {
-      if (savedId) localStorage.removeItem('current_project_id');
-      setLoading(false);
-    }
+    loadBandByCode(k);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Handle Lookup by Leader CPF
-  const handleCpfLookup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchCpf.length < 14) {
-      setErrorMsg("Por favor, digite um CPF válido completo.");
-      return;
-    }
-
-    setSearching(true);
-    setErrorMsg(null);
-
-    try {
-      // First, scan local backup storages for offline matched candidates
-      let localFoundId = null;
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('fallback_project_')) {
-          const raw = localStorage.getItem(key);
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            const matchedLeader = parsed.members?.find((m: any) => m.cpf === searchCpf && m.is_responsible);
-            if (matchedLeader) {
-              localFoundId = parsed.id;
-              break;
-            }
-          }
-        }
-      }
-
-      if (localFoundId) {
-        localStorage.setItem('current_project_id', localFoundId);
-        localStorage.setItem('current_cpf_v2', searchCpf);
-        await loadProject(localFoundId);
-        setSearching(false);
-        return;
-      }
-
-      // 1. Scan online database if no offline match (secure lookup by CPF)
-      const { data: foundId, error: rpcError } = await supabase
-        .rpc('find_registration_by_cpf', { p_cpf: searchCpf });
-
-      if (rpcError) {
-        throw new Error("Ocorreu um erro ao consultar o banco de dados.");
-      }
-
-      if (!foundId) {
-        throw new Error("Nenhuma inscrição encontrada com este CPF de responsável líder.");
-      }
-
-      // If found, store the lookup keys and load the full project
-      localStorage.setItem('current_project_id', foundId);
-      localStorage.setItem('current_cpf_v2', searchCpf);
-      localStorage.setItem('access_key_v2', (new URLSearchParams(window.location.search)).get('k') || localStorage.getItem('access_key_v2') || '');
-      await loadProject(foundId);
-    } catch (err: any) {
-      console.error(err);
-      setErrorMsg(err.message || "Nenhuma inscrição encontrada.");
-    } finally {
-      setSearching(false);
-    }
-  };
 
   // Handle Logout/Clear
   const handleClearLookup = () => {
     localStorage.removeItem('current_project_id');
     localStorage.removeItem('current_cpf_v2');
     localStorage.removeItem('access_key_v2');
-    setProjectId(null);
-    setData(null);
-    setSearchCpf('');
-    setErrorMsg(null);
+    router.replace('/v2');
   };
 
   if (loading) {
@@ -230,66 +128,11 @@ export default function MinhaInscricaoPage() {
     );
   }
 
-  // Render Search lookup view if no project is loaded
   if (!data) {
     return (
-      <div className="py-16 px-6 bg-[#05070B] min-h-screen text-[#F0EAE0] flex items-center justify-center relative overflow-hidden">
-        {/* Background radial gold glow leaks */}
-        <div className="absolute -right-32 -top-32 w-80 h-80 bg-[#E3B552]/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute -left-32 -bottom-32 w-80 h-80 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
-
-        <div className="glass-card-2 fade-up-800 max-w-md w-full p-6 md:p-8 rounded-[32px] relative space-y-8 shadow-2xl">
-          <div className="text-center space-y-3">
-            <div className="w-12 h-12 rounded bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] flex items-center justify-center font-display font-black text-black text-2xl border border-black shadow-md mx-auto">
-              P
-            </div>
-            <div>
-              <span className="font-display font-black text-white text-lg tracking-tight uppercase block leading-none">CANÇÃO PROFANA</span>
-              <span className="font-mono text-[11px] text-[#F0C265] tracking-widest block uppercase mt-1">PORTAL DO CANDIDATO</span>
-            </div>
-            <p className="text-xs text-gray-400">
-              Digite o CPF do responsável legal cadastrado no quiz para localizar a inscrição e acompanhar o status de matrícula em tempo real.
-            </p>
-          </div>
-
-          <form onSubmit={handleCpfLookup} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase tracking-wider">CPF do Líder Responsável</label>
-              <div className="relative">
-                <input 
-                  type="text" 
-                  value={searchCpf}
-                  onChange={(e) => setSearchCpf(applyCpfMask(e.target.value))}
-                  placeholder="000.000.000-00" 
-                  className="w-full bg-black/60 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white text-xs outline-none focus:border-[#E3B552] placeholder-gray-600 font-mono"
-                  required
-                />
-                <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-3.5" />
-              </div>
-            </div>
-
-            {errorMsg && (
-              <div className="bg-red-500/15 border border-red-500/30 text-red-400 p-3.5 rounded-xl text-xs flex gap-2 items-center leading-relaxed">
-                <AlertTriangle className="w-4 h-4 shrink-0" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-
-            <button 
-              type="submit" 
-              disabled={searching}
-              className="btn-gold-shimmer w-full py-3.5 rounded-xl text-xs uppercase tracking-widest block border-none font-bold"
-            >
-              {searching ? "Localizando..." : "Buscar Inscrição"}
-            </button>
-          </form>
-
-          <div className="border-t border-white/5 pt-5 text-center">
-            <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-mono text-gray-400 hover:text-white transition-colors">
-              <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao Início
-            </Link>
-          </div>
-        </div>
+      <div className="min-h-screen bg-[#05070B] text-[#F0EAE0] flex flex-col items-center justify-center space-y-4">
+        <span className="w-10 h-10 rounded-full border-2 border-[#F0C265] border-t-transparent animate-spin"></span>
+        <span className="font-mono text-xs uppercase tracking-widest text-[#F0C265] font-bold">Abrindo sua banda...</span>
       </div>
     );
   }
@@ -330,6 +173,64 @@ export default function MinhaInscricaoPage() {
             </Link>
           </div>
         </div>
+
+        {/* URGÊNCIA — partes pendentes */}
+        {data.status === 'awaiting_members' && (() => {
+          const paidCount = data.members.filter(m => m.payment_status === 'paid').length;
+          const minReq = data.min_payable ?? 2;
+          const faltam = Math.max(0, minReq - paidCount);
+          const pendentes = data.members.filter(m => m.payment_status !== 'paid' && (m.is_responsible || m.cpf)).length;
+          const endsIn = data.lote_ends ? Math.max(0, Math.floor((new Date(String(data.lote_ends).replace(' ', 'T')).getTime() - Date.now()) / 86400000)) : null;
+          return (
+            <div className="relative overflow-hidden rounded-2xl border-2 border-[#F0C265] bg-gradient-to-br from-[#8B1E1E]/40 via-[#0B0F19]/95 to-[#8B1E1E]/25 p-4 space-y-3 shadow-[0_0_35px_rgba(240,194,101,0.25)]">
+              <div className="absolute -right-16 -top-16 w-40 h-40 bg-[#F0C265]/15 rounded-full blur-3xl pointer-events-none animate-pulse" />
+              <div className="flex items-start gap-2.5 relative">
+                <span className="text-2xl leading-none animate-pulse">⏳</span>
+                <div className="flex-1">
+                  <span className="font-mono text-xs font-black uppercase tracking-widest text-[#F0C265] block">
+                    {pendentes > 0 ? `${pendentes} parte(s) da banda ainda não foi paga` : `${faltam} pagamento(s) para a banda ativar`}
+                  </span>
+                  <p className="text-xs text-gray-200 leading-snug mt-1">
+                    A banda só entra no concurso com <strong className="text-white">{minReq} partes pagas</strong>
+                    {faltam > 0 && <> — <strong className="text-[#F0C265]">faltam {faltam}</strong></>}. Cada integrante paga a própria parte pelo link do convite.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 relative">
+                <span className="font-mono text-[11px] font-bold uppercase tracking-wider bg-red-500/15 text-red-300 border border-red-500/30 px-2.5 py-1 rounded-full animate-pulse">
+                  {endsIn !== null ? `Lote encerra em ${endsIn} dia${endsIn === 1 ? '' : 's'}` : 'Lote vigente'}
+                </span>
+                {typeof data.vagas_lote === 'number' && (
+                  <span className="font-mono text-[11px] font-bold uppercase tracking-wider bg-[#F0C265]/15 text-[#F0C265] border border-[#F0C265]/30 px-2.5 py-1 rounded-full">
+                    Restam {data.vagas_lote} vagas no lote
+                  </span>
+                )}
+                {data.invite_code && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(`${window.location.origin}/v2?b=${data.invite_code}`);
+                        setLinkCopied(true);
+                        setTimeout(() => setLinkCopied(false), 2500);
+                      } catch { /* clipboard */ }
+                    }}
+                    className="font-mono text-[11px] font-bold uppercase tracking-wider bg-white/10 text-white border border-white/20 px-2.5 py-1 rounded-full hover:bg-white/15 transition-colors"
+                  >
+                    {linkCopied ? '✓ Link copiado — envie agora' : 'Copiar link do convite'}
+                  </button>
+                )}
+                <a
+                  href={data.invite_code ? `/api/wa/${data.invite_code}` : '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-[11px] font-black uppercase tracking-wider bg-[#10B981] text-black px-2.5 py-1 rounded-full"
+                >
+                  Cobrar por WhatsApp
+                </a>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* PREMIUM PARTICIPANT STAGE PASS ID CARD (Aesthetic Visual Upgrade) */}
         <div className="relative rounded-2xl overflow-hidden h-44 border border-white/10 shadow-lg flex items-end p-5">
@@ -488,7 +389,7 @@ export default function MinhaInscricaoPage() {
                     <span className="w-6 h-6 rounded-full bg-[#F0C265]/20 text-[#F0C265] flex items-center justify-center font-mono text-[11px] font-bold border border-[#F0C265]/35">1</span>
                     <div>
                       <span className="text-xs font-bold text-white block">{leader.name}</span>
-                      <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Líder Responsável • CPF: {leader.cpf}</span>
+                      <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Líder Responsável • CPF: {leader.cpf ? leader.cpf.slice(0, 3) + '.***.***-' + leader.cpf.slice(-2) : '---'}</span>
                       <span className={`font-mono text-xs uppercase font-bold block mt-0.5 ${leader.payment_status === 'paid' ? 'text-[#10B981]' : 'text-amber-500'}`}>
                         {leader.payment_status === 'paid' ? '✓ Parte paga' : '⏳ Parte pendente'}
                       </span>
@@ -505,7 +406,7 @@ export default function MinhaInscricaoPage() {
                     <span className="w-6 h-6 rounded-full bg-[#E3B552]/10 text-[#F0C265] flex items-center justify-center font-mono text-[11px] font-bold border border-[#E3B552]/20">{i + 2}</span>
                     <div>
                       <span className="text-xs font-bold text-white block">{m.name}</span>
-                      <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Integrante {i + 2} • CPF: {m.cpf}</span>
+                      <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Integrante {i + 2} • CPF: {m.cpf ? m.cpf.slice(0, 3) + '.***.***-' + m.cpf.slice(-2) : 'aguardando confirmação'}</span>
                       {m.payment_status && (
                         <span className={`font-mono text-xs uppercase font-bold block mt-0.5 ${m.payment_status === 'paid' ? 'text-[#10B981]' : 'text-amber-500'}`}>
                           {m.payment_status === 'paid' ? '✓ Parte paga' : (m.cpf ? '⏳ Parte pendente' : '⏳ Aguardando confirmação')}
