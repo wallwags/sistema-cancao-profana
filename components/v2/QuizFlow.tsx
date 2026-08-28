@@ -545,6 +545,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
+    if (demoRef.current) {
+      setMinPayable(1 + membersList.length);
+    }
+
     // Reset checkout state and launch instantly (save runs in background)
     webhookDoneRef.current = false;
     saveIdRef.current = null;
@@ -661,13 +665,16 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
       const { data: payRes, error: payErr } = await supabase.rpc('confirm_leader_payment', { p_code: inviteCode });
       if (payErr || !payRes) {
-        webhookDoneRef.current = false;
-        setIsCheckoutLoading(false);
-        setShowManualConfirm(true);
-        setCheckoutError('Não foi possível confirmar agora. Use "Verificar novamente" em instantes.');
-        return;
+        if (!demoRef.current) {
+          webhookDoneRef.current = false;
+          setIsCheckoutLoading(false);
+          setShowManualConfirm(true);
+          setCheckoutError('Não foi possível confirmar agora. Use "Verificar novamente" em instantes.');
+          return;
+        }
+      } else {
+        setBandResult({ pago: Number(payRes.pago), minimo: Number(payRes.minimo), total: Number(payRes.total), ativa: Boolean(payRes.banda_ativa) });
       }
-      setBandResult({ pago: Number(payRes.pago), minimo: Number(payRes.minimo), total: Number(payRes.total), ativa: Boolean(payRes.banda_ativa) });
 
       setTicketCode(deriveTicketCode(id));
       onPaymentSuccess();
