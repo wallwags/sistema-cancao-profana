@@ -6,9 +6,9 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { 
-  Shield, Music, Users, Calendar, CheckCircle, Clock, 
-  AlertTriangle, ArrowLeft, Search, Phone, User, Hash,
-  XCircle, PauseCircle, RotateCcw
+  Shield, Music, Users, CheckCircle, Clock, 
+  AlertTriangle, ArrowLeft, Phone,
+  XCircle, PauseCircle, RotateCcw, ClipboardList
 } from 'lucide-react';
 
 interface Member {
@@ -36,6 +36,7 @@ interface RegistrationData {
   status: 'pending' | 'paid' | 'failed' | 'blocked' | 'suspended' | 'refunded' | 'awaiting_members';
   lote_ends?: string | null;
   vagas_lote?: number;
+  pending_edits?: number;
   members: Member[];
   amount_paid?: number;
   batch_name?: string;
@@ -86,6 +87,7 @@ export default function MinhaInscricaoPage() {
       min_payable: project.min_payable,
       total_members: project.total_members,
       entry_price: project.entry_price,
+      pending_edits: Number(reg.pending_edits || 0),
       name: project.name,
       style: project.style,
       bio: project.bio,
@@ -182,29 +184,54 @@ export default function MinhaInscricaoPage() {
           const pendentes = data.members.filter(m => m.payment_status !== 'paid' && (m.is_responsible || m.cpf)).length;
           const endsIn = data.lote_ends ? Math.max(0, Math.floor((new Date(String(data.lote_ends).replace(' ', 'T')).getTime() - Date.now()) / 86400000)) : null;
           return (
-            <div className="relative overflow-hidden rounded-2xl border-2 border-[#F0C265] bg-gradient-to-br from-[#8B1E1E]/40 via-[#0B0F19]/95 to-[#8B1E1E]/25 p-4 space-y-3 shadow-[0_0_35px_rgba(240,194,101,0.25)]">
+            <div className="relative overflow-hidden rounded-2xl border-2 border-[#F0C265] bg-gradient-to-br from-[#8B1E1E]/40 via-[#0B0F19]/95 to-[#8B1E1E]/25 p-5 space-y-4 shadow-[0_0_35px_rgba(240,194,101,0.25)]">
               <div className="absolute -right-16 -top-16 w-40 h-40 bg-[#F0C265]/15 rounded-full blur-3xl pointer-events-none animate-pulse" />
-              <div className="flex items-start gap-2.5 relative">
-                <span className="text-2xl leading-none animate-pulse">⏳</span>
+
+              <div className="flex items-start gap-3 relative">
+                <span className="text-3xl leading-none animate-pulse">⏳</span>
                 <div className="flex-1">
-                  <span className="font-mono text-xs font-black uppercase tracking-widest text-[#F0C265] block">
+                  <span className="font-display font-black text-lg text-[#F0C265] uppercase tracking-wide block leading-snug">
                     {pendentes > 0 ? `${pendentes} parte(s) da banda ainda não foi paga` : `${faltam} pagamento(s) para a banda ativar`}
                   </span>
-                  <p className="text-xs text-gray-200 leading-snug mt-1">
-                    A banda só entra no concurso com <strong className="text-white">{minReq} partes pagas</strong>
-                    {faltam > 0 && <> — <strong className="text-[#F0C265]">faltam {faltam}</strong></>}. Cada integrante paga a própria parte pelo link do convite.
+                  <p className="text-sm text-gray-200 leading-snug mt-1.5">
+                    A banda entra no concurso com <strong className="text-white">no mínimo {minReq}</strong> e{' '}
+                    <strong className="text-white">no máximo {data.total_members ?? 7}</strong> partes pagas.
+                    {faltam > 0 && <> Faltam <strong className="text-[#F0C265]">{faltam}</strong>.</>}
                   </p>
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-2.5 relative">
+                <div className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-center">
+                  <span className="font-mono text-[10px] text-gray-400 uppercase tracking-widest block">Pago até agora</span>
+                  <span className="font-display font-black text-xl text-[#10B981] block">{paidCount}</span>
+                </div>
+                <div className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-center">
+                  <span className="font-mono text-[10px] text-gray-400 uppercase tracking-widest block">Partes pendentes</span>
+                  <span className="font-display font-black text-xl text-amber-400 block">{pendentes}</span>
+                </div>
+              </div>
+
+              {/* tags informativas (não clicáveis) — visual passivo */}
               <div className="flex flex-wrap gap-2 relative">
-                <span className="font-mono text-[11px] font-bold uppercase tracking-wider bg-red-500/15 text-red-300 border border-red-500/30 px-2.5 py-1 rounded-full animate-pulse">
-                  {endsIn !== null ? `Lote encerra em ${endsIn} dia${endsIn === 1 ? '' : 's'}` : 'Lote vigente'}
+                <span className="inline-flex items-center gap-1.5 text-[11px] text-gray-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-md">
+                  <Clock className="w-3 h-3 text-amber-400" />
+                  Lote encerra em {endsIn !== null ? `${endsIn} dia${endsIn === 1 ? '' : 's'}` : '—'}
                 </span>
                 {typeof data.vagas_lote === 'number' && (
-                  <span className="font-mono text-[11px] font-bold uppercase tracking-wider bg-[#F0C265]/15 text-[#F0C265] border border-[#F0C265]/30 px-2.5 py-1 rounded-full">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] text-gray-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-md">
+                    <Users className="w-3 h-3 text-sky-400" />
                     Restam {data.vagas_lote} vagas no lote
                   </span>
                 )}
+                <span className="inline-flex items-center gap-1.5 text-[11px] text-gray-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-md">
+                  <Music className="w-3 h-3 text-[#F0C265]" />
+                  Mín. {minReq} partes · Máx. {data.total_members ?? 7}
+                </span>
+              </div>
+
+              {/* ações — sólidas, claramente clicáveis */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 relative pt-1">
                 {data.invite_code && (
                   <button
                     onClick={async () => {
@@ -214,23 +241,38 @@ export default function MinhaInscricaoPage() {
                         setTimeout(() => setLinkCopied(false), 2500);
                       } catch { /* clipboard */ }
                     }}
-                    className="font-mono text-[11px] font-bold uppercase tracking-wider bg-white/10 text-white border border-white/20 px-2.5 py-1 rounded-full hover:bg-white/15 transition-colors"
+                    className="inline-flex items-center justify-center gap-2 font-mono text-sm font-black uppercase tracking-wide text-white bg-white/10 border-2 border-white/25 px-3 py-3 rounded-xl hover:bg-white/15 transition-colors"
                   >
-                    {linkCopied ? '✓ Link copiado — envie agora' : 'Copiar link do convite'}
+                    <ClipboardList className="w-4 h-4" />
+                    {linkCopied ? '✓ Link copiado!' : 'Copiar link do convite'}
                   </button>
                 )}
                 <a
                   href={data.invite_code ? `/api/wa/${data.invite_code}` : '#'}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-mono text-[11px] font-black uppercase tracking-wider bg-[#10B981] text-black px-2.5 py-1 rounded-full"
+                  className="inline-flex items-center justify-center gap-2 font-mono text-sm font-black uppercase tracking-wide text-black bg-[#10B981] px-3 py-3 rounded-xl shadow-lg shadow-[#10B981]/25 hover:brightness-110 transition-all"
                 >
+                  <Phone className="w-4 h-4" />
                   Cobrar por WhatsApp
                 </a>
               </div>
             </div>
           );
         })()}
+
+        {/* DIVERGÊNCIA DE DADOS */}
+        {(data.pending_edits ?? 0) > 0 && (
+          <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-mono text-xs font-black uppercase tracking-widest text-amber-400 block">Dados divergentes nesta banda</span>
+              <p className="text-sm text-amber-100/90 leading-snug mt-1">
+                {data.pending_edits} campo(s) foi(ram) alterado(s) em relação ao cadastro original feito pelo líder. O líder foi sinalizado para revisar junto aos integrantes.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* PREMIUM PARTICIPANT STAGE PASS ID CARD (Aesthetic Visual Upgrade) */}
         <div className="relative rounded-2xl overflow-hidden h-44 border border-white/10 shadow-lg flex items-end p-5">
@@ -272,13 +314,13 @@ export default function MinhaInscricaoPage() {
               {data.status === 'paid' && (
                 <>
                   <CheckCircle className="w-5 h-5 text-[#10B981]" />
-                  <span className="text-[#10B981] font-display font-black text-md uppercase tracking-wider">Inscrição Ativa / Aprovada</span>
+                  <span className="text-[#10B981] font-display font-black text-lg uppercase tracking-wider">Inscrição Ativa / Aprovada</span>
                 </>
               )}
               {data.status === 'pending' && (
                 <>
                   <Clock className="w-5 h-5 text-amber-500 animate-pulse" />
-                  <span className="text-amber-500 font-display font-black text-md uppercase tracking-wider">Aguardando Compensação PIX</span>
+                  <span className="text-amber-500 font-display font-black text-lg uppercase tracking-wider">Aguardando Compensação PIX</span>
                 </>
               )}
               {data.status === 'failed' && (
@@ -307,9 +349,6 @@ export default function MinhaInscricaoPage() {
               )}
             </div>
           </div>
-          <span className="bg-black/50 border border-[#D4A843]/30 px-3.5 py-1.5 rounded-full font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider shadow">
-            ● CONEXÃO CRIPTOGRAFADA ATIVA
-          </span>
         </div>
 
         {/* CANDIDATE INFO BODY */}
@@ -317,11 +356,11 @@ export default function MinhaInscricaoPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-white/5 pb-6">
             <div className="space-y-1">
               <span className="font-mono text-xs text-gray-400 uppercase font-bold block">PROJETO / DUPLA DE RAP:</span>
-              <span className="text-white font-bold text-md block">{data.name}</span>
+              <span className="text-white font-bold text-base block">{data.name}</span>
             </div>
             <div className="space-y-1">
               <span className="font-mono text-xs text-gray-400 uppercase font-bold block">ESTILO MUSICAL:</span>
-              <span className="text-white font-bold text-md block">{data.style}</span>
+              <span className="text-white font-bold text-base block">{data.style}</span>
             </div>
             <div className="col-span-1 md:col-span-2 space-y-1">
               <span className="font-mono text-xs text-gray-400 uppercase font-bold block">BIOGRAFIA OFICIAL:</span>
@@ -352,7 +391,7 @@ export default function MinhaInscricaoPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-white/5 pb-6">
               <div className="space-y-1">
                 <span className="font-mono text-xs text-gray-400 uppercase font-bold block">LÍDER RESPONSÁVEL:</span>
-                <span className="text-white font-bold text-xs block">{leader.name}</span>
+                <span className="text-white font-bold text-sm block">{leader.name}</span>
               </div>
               <div className="space-y-1">
                 <span className="font-mono text-xs text-gray-400 uppercase font-bold block">WHATSAPP:</span>
@@ -388,7 +427,7 @@ export default function MinhaInscricaoPage() {
                   <div className="flex items-center gap-3">
                     <span className="w-6 h-6 rounded-full bg-[#F0C265]/20 text-[#F0C265] flex items-center justify-center font-mono text-[11px] font-bold border border-[#F0C265]/35">1</span>
                     <div>
-                      <span className="text-xs font-bold text-white block">{leader.name}</span>
+                      <span className="text-sm font-bold text-white block">{leader.name}</span>
                       <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Líder Responsável • CPF: {leader.cpf ? leader.cpf.slice(0, 3) + '.***.***-' + leader.cpf.slice(-2) : '---'}</span>
                       <span className={`font-mono text-xs uppercase font-bold block mt-0.5 ${leader.payment_status === 'paid' ? 'text-[#10B981]' : 'text-amber-500'}`}>
                         {leader.payment_status === 'paid' ? '✓ Parte paga' : '⏳ Parte pendente'}
@@ -405,7 +444,7 @@ export default function MinhaInscricaoPage() {
                   <div className="flex items-center gap-3">
                     <span className="w-6 h-6 rounded-full bg-[#E3B552]/10 text-[#F0C265] flex items-center justify-center font-mono text-[11px] font-bold border border-[#E3B552]/20">{i + 2}</span>
                     <div>
-                      <span className="text-xs font-bold text-white block">{m.name}</span>
+                      <span className="text-sm font-bold text-white block">{m.name}</span>
                       <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Integrante {i + 2} • CPF: {m.cpf ? m.cpf.slice(0, 3) + '.***.***-' + m.cpf.slice(-2) : 'aguardando confirmação'}</span>
                       {m.payment_status && (
                         <span className={`font-mono text-xs uppercase font-bold block mt-0.5 ${m.payment_status === 'paid' ? 'text-[#10B981]' : 'text-amber-500'}`}>

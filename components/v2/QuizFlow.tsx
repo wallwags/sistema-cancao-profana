@@ -77,7 +77,9 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [inviteCode, setInviteCode] = useState('');
   const [inviteCopied, setInviteCopied] = useState(false);
   const [bandResult, setBandResult] = useState<{ pago: number; minimo: number; total: number; ativa: boolean } | null>(null);
+  const [similarBands, setSimilarBands] = useState<string[]>([]);
   const sessionRef = useRef<string>('');
+  const inviteCodeRef = useRef<string>('');
 
   const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next');
 
@@ -199,6 +201,14 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         { scale: 1, opacity: 1, duration: 0.3, ease: 'power2.out', clearProps: 'transform' });
     }
   }, [successVisible]);
+
+  // Bloqueia o scroll do fundo enquanto qualquer popup estiver aberto
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const anyOpen = isOpen || isCheckoutOpen || isSuccessOpen;
+    document.body.style.overflow = anyOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen, isCheckoutOpen, isSuccessOpen]);
 
   useEffect(() => {
     if (quizVisible) setTimeout(tryRenderTurnstile, 350);
@@ -513,6 +523,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       if (error || !data) throw new Error(error?.message || 'Falha ao registrar a banda.');
 
       setInviteCode(data.invite_code);
+      inviteCodeRef.current = data.invite_code;
+      if (Array.isArray(data.similar_bands) && data.similar_bands.length > 0) setSimilarBands(data.similar_bands.map(String));
       localStorage.removeItem('quiz_draft_v2');
       localStorage.removeItem('temp_compressed_photo');
       localStorage.setItem('current_project_id', data.project_id);
@@ -544,10 +556,6 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     }
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
-
-    if (demoRef.current) {
-      setMinPayable(1 + membersList.length);
-    }
 
     // Reset checkout state and launch instantly (save runs in background)
     webhookDoneRef.current = false;
@@ -655,7 +663,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         return;
       }
 
-      if (!inviteCode) {
+      const codeNow = inviteCodeRef.current;
+      if (!codeNow) {
         webhookDoneRef.current = false;
         setIsCheckoutLoading(false);
         setShowManualConfirm(true);
@@ -663,18 +672,15 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         return;
       }
 
-      const { data: payRes, error: payErr } = await supabase.rpc('confirm_leader_payment', { p_code: inviteCode });
+      const { data: payRes, error: payErr } = await supabase.rpc('confirm_leader_payment', { p_code: codeNow });
       if (payErr || !payRes) {
-        if (!demoRef.current) {
-          webhookDoneRef.current = false;
-          setIsCheckoutLoading(false);
-          setShowManualConfirm(true);
-          setCheckoutError('Não foi possível confirmar agora. Use "Verificar novamente" em instantes.');
-          return;
-        }
-      } else {
-        setBandResult({ pago: Number(payRes.pago), minimo: Number(payRes.minimo), total: Number(payRes.total), ativa: Boolean(payRes.banda_ativa) });
+        webhookDoneRef.current = false;
+        setIsCheckoutLoading(false);
+        setShowManualConfirm(true);
+        setCheckoutError('Não foi possível confirmar agora. Use "Verificar novamente" em instantes.');
+        return;
       }
+      setBandResult({ pago: Number(payRes.pago), minimo: Number(payRes.minimo), total: Number(payRes.total), ativa: Boolean(payRes.banda_ativa) });
 
       setTicketCode(deriveTicketCode(id));
       onPaymentSuccess();
@@ -1364,6 +1370,16 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   </div>
                   <span className="font-mono text-[8px] text-gray-500 uppercase tracking-widest block">Pedra Profana Backstage Access</span>
                 </div>
+
+                {similarBands.length > 0 && (
+                  <div className="space-y-1.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-left">
+                    <span className="font-mono text-xs text-amber-400 uppercase tracking-widest font-black block">⚠ Nome parecido já inscrito</span>
+                    <p className="text-sm text-amber-100/90 leading-relaxed">
+                      Já existe{similarBands.length > 1 ? 'm' : ''} banda{similarBands.length > 1 ? 's' : ''} com nome parecido: <strong className="text-white">{similarBands.join(', ')}</strong>.
+                      Se for a mesma banda, não insira novamente — use o link de convite que o líder enviou.
+                    </p>
+                  </div>
+                )}
 
                 {/* Convite da banda */}
                 {inviteCode && (
