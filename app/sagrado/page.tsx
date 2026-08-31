@@ -219,6 +219,7 @@ export default function SagradoPage() {
   const [photoView, setPhotoView] = useState<string | null>(null);
   const [funnel, setFunnel] = useState<Record<string, unknown> | null>(null);
   const [slotMode, setSlotMode] = useState<'band' | 'integrante'>('band');
+  const [homeMode, setHomeMode] = useState<'classic' | 'vip'>('classic');
   const [vip, setVip] = useState<Record<string, string>>({});
   const [vipLeads, setVipLeads] = useState<Array<Record<string, unknown>>>([]);
 
@@ -306,6 +307,11 @@ export default function SagradoPage() {
     if (data === 'integrante') setSlotMode('integrante'); else setSlotMode('band');
   }, []);
 
+  const loadHomeMode = useCallback(async () => {
+    const { data } = await supabase.rpc('get_home_mode');
+    if (data === 'vip') setHomeMode('vip'); else setHomeMode('classic');
+  }, []);
+
   const loadVip = useCallback(async () => {
     const keys = ['vip_badge','vip_title_start','vip_title_highlight','vip_subtitle','vip_benefit1_title','vip_benefit1_desc','vip_benefit2_title','vip_benefit2_desc','vip_benefit3_title','vip_benefit3_desc','vip_whatsapp_url','vip_active'];
     const { data } = await supabase.from('site_settings').select('key,value').in('key', keys);
@@ -374,7 +380,7 @@ export default function SagradoPage() {
     (async () => {
       const ok = await loadStaff();
       if (ok) {
-        await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores(), loadSlotMode(), loadVip(), loadVipLeads()]);
+        await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores(), loadSlotMode(), loadVip(), loadVipLeads(), loadHomeMode()]);
       }
       setBooting(false);
     })();
@@ -440,7 +446,7 @@ export default function SagradoPage() {
       setLoggingIn(false);
       return;
     }
-    await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores(), loadSlotMode(), loadVip(), loadVipLeads()]);
+    await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores(), loadSlotMode(), loadVip(), loadVipLeads(), loadHomeMode()]);
     setLoggingIn(false);
     setPassword('');
   };
@@ -712,6 +718,17 @@ export default function SagradoPage() {
     if (error) return 'Erro ao salvar: ' + error.message;
     await loadVip();
     setMsg(`vip-${key}`, 'ok', 'Grupo VIP atualizado. A página já reflete no ar.');
+    return 'ok';
+  });
+
+  const changeHomeMode = (mode: 'classic' | 'vip') => guarded('homemode', async () => {
+    const { data: res, error } = await supabase.rpc('set_home_mode', { p_mode: mode });
+    if (error) return 'Erro: ' + error.message;
+    if (res !== 'ok') return String(res);
+    setHomeMode(mode);
+    setMsg('homemode', 'ok', mode === 'vip'
+      ? 'Página principal agora é o Grupo VIP. A landing clássica continua em /v2.'
+      : 'Página principal agora é a landing clássica (em /v2). O Grupo VIP fica em /grupovip.');
     return 'ok';
   });
 
@@ -1486,6 +1503,28 @@ export default function SagradoPage() {
             return (
               <div className="space-y-4 fade-up-800">
                 <Notice kind="info">Tudo aqui atualiza a página /grupovip no ar imediatamente após salvar.</Notice>
+
+                <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 border-[#E3B552]/40 rounded-2xl p-5 space-y-3">
+                  <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                    <div>
+                      <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Página principal do site</span>
+                      <span className="text-xs text-gray-400 leading-snug block mt-1">
+                        {homeMode === 'vip'
+                          ? 'O domínio principal abre o Grupo VIP. A landing clássica continua acessível em /v2.'
+                          : 'O domínio principal abre a landing clássica (hoje em /v2). O Grupo VIP fica em /grupovip.'}
+                      </span>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <button type="button" onClick={() => changeHomeMode('classic')} disabled={busy === 'homemode' || homeMode === 'classic'} className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-xl border transition-colors ${homeMode === 'classic' ? 'bg-[#F0C265] text-black border-black' : 'text-gray-400 border-white/10 bg-white/5 hover:text-white'}`}>
+                        Landing clássica
+                      </button>
+                      <button type="button" onClick={() => changeHomeMode('vip')} disabled={busy === 'homemode' || homeMode === 'vip'} className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-xl border transition-colors ${homeMode === 'vip' ? 'bg-[#F0C265] text-black border-black' : 'text-gray-400 border-white/10 bg-white/5 hover:text-white'}`}>
+                        Grupo VIP
+                      </button>
+                    </div>
+                  </div>
+                  {notice['homemode'] && <Notice kind={notice['homemode'].kind}>{notice['homemode'].msg}</Notice>}
+                </div>
 
                 <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
                   <div className="flex justify-between items-center border-b border-white/5 pb-3">
