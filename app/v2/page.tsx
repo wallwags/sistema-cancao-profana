@@ -145,37 +145,6 @@ export default function Page() {
   const activePrice = lotesConfig.lote1.status === 'ativo' ? lotesConfig.lote1.valor : (lotesConfig.lote2.status === 'ativo' ? lotesConfig.lote2.valor : lotesConfig.lote3.valor);
   const activeLoteName = lotesConfig.lote1.status === 'ativo' ? 'LOTE 1' : (lotesConfig.lote2.status === 'ativo' ? 'LOTE 2' : 'LOTE 3');
 
-  // Navbar retrátil: esconde ao rolar para baixo (devolve ~100px de viewport no mobile),
-  // volta ao subir ou perto do topo. rAF-throttled, transform only.
-  useEffect(() => {
-    const el = headerRef.current;
-    if (!el) return;
-    let lastY = window.scrollY;
-    let ticking = false;
-
-    const update = () => {
-      const y = window.scrollY;
-      if (y < 140) {
-        el.style.transform = 'translateY(0)';
-      } else if (y > lastY + 4) {
-        el.style.transform = 'translateY(-110%)';
-      } else if (y < lastY - 4) {
-        el.style.transform = 'translateY(0)';
-      }
-      lastY = y;
-      ticking = false;
-    };
-
-    const onScroll = () => {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(update);
-      }
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   // Scroll FX engine — reveals de seção, grupos em stagger, linha da timeline
   // desenhando e barra de vagas animando ao entrarem na viewport (uma vez só).
@@ -274,7 +243,7 @@ export default function Page() {
     <div className="bg-[#05070B] text-[#F0EAE0] min-h-screen relative font-sans antialiased">
 
       {/* UNIFIED FIXED CONTAINER FOR COUNTDOWN AND NAVBAR — retrátil ao rolar */}
-      <div ref={headerRef} className="fixed top-0 left-0 right-0 z-50 w-full bg-[#05070B]/95 backdrop-blur-md transition-transform duration-300 will-change-transform">
+      <div ref={headerRef} className="fixed top-0 left-0 right-0 z-50 w-full bg-[#05070B]/95 backdrop-blur-md">
         <CountdownBar targetDate={countdownTarget} />
         <Navbar onOpenQuiz={handleOpenQuiz} />
       </div>
