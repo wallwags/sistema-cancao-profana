@@ -18,7 +18,7 @@ export function TermsModal({ open, onClose }: LegalModalProps) {
 
         <div className="border-b border-white/5 pb-4">
           <h1 className="font-display font-black text-xl text-white uppercase tracking-tight">TERMOS DE USO DO PORTAL</h1>
-          <p className="text-[10px] text-[#F0C265] font-mono uppercase tracking-widest mt-1">CONCURSO MUSICAL CANÇÃO PROFANA — ESTÚDIO PEDRA PROFANA</p>
+          <p className="text-[10px] text-[#F0C265] font-mono uppercase tracking-widest mt-1">CONCURSO MUSICAL CANÇÃO PROFANA · ESTÚDIO PEDRA PROFANA</p>
         </div>
 
         <div className="space-y-4 text-xs sm:text-sm text-gray-300 leading-relaxed text-left max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">
@@ -73,7 +73,7 @@ export function PrivacyModal({ open, onClose }: LegalModalProps) {
 
         <div className="border-b border-white/5 pb-4">
           <h1 className="font-display font-black text-xl text-white uppercase tracking-tight">POLÍTICA DE PRIVACIDADE</h1>
-          <p className="text-[10px] text-[#F0C265] font-mono uppercase tracking-widest mt-1">TRATAMENTO DE DADOS PESSOAIS — ESTÚDIO PEDRA PROFANA</p>
+          <p className="text-[10px] text-[#F0C265] font-mono uppercase tracking-widest mt-1">TRATAMENTO DE DADOS PESSOAIS · ESTÚDIO PEDRA PROFANA</p>
         </div>
 
         <div className="space-y-4 text-xs sm:text-sm text-gray-300 leading-relaxed text-left max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">

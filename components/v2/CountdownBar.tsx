@@ -24,7 +24,7 @@ function computeLeft(targetMs: number) {
 
 export default function CountdownBar({ targetDate }: CountdownBarProps) {
   const [timeLeft, setTimeLeft] = useState({
-    days: '—',
+    days: '00',
     hours: '--',
     minutes: '--',
     seconds: '--'

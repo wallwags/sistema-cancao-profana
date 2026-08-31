@@ -581,7 +581,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       return data.project_id;
     } catch (err: any) {
       console.warn('Falha no registro da banda:', err);
-      setCheckoutError('Não foi possível concluir o registro agora. Verifique sua conexão e tente de novo — seus dados continuam aqui.');
+      setCheckoutError('Não foi possível concluir o registro agora. Verifique sua conexão e tente de novo. Seus dados continuam aqui.');
       setShowManualConfirm(true);
       webhookDoneRef.current = false;
       setIsCheckoutLoading(false);
@@ -957,7 +957,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                             )}
                                             <span className="flex-1 min-w-0">
                                               <span className="block text-sm font-bold text-white truncate">{b.name}</span>
-                                              <span className="block font-mono text-[11px] text-gray-400 uppercase">{b.style || '—'} • líder {b.leader_first} • {b.free_slots} vaga{b.free_slots === 1 ? '' : 's'} livre{b.free_slots === 1 ? '' : 's'}</span>
+                                              <span className="block font-mono text-[11px] text-gray-400 uppercase">{b.style || 'não informado'} • líder {b.leader_first} • {b.free_slots} vaga{b.free_slots === 1 ? '' : 's'} livre{b.free_slots === 1 ? '' : 's'}</span>
                                             </span>
                                             <span className="font-mono text-[11px] text-[#F0C265] uppercase font-bold shrink-0">Sou eu →</span>
                                           </button>
@@ -967,7 +967,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                   </div>
                                 )}
                                 {joinState === 'declined' && bandMatches.length > 0 && (
-                                  <p className="text-[11px] text-amber-300/80 font-mono mt-2">Ok — sua banda será registrada como uma nova. Nomes parecidos ficam sinalizados para a organização.</p>
+                                  <p className="text-[11px] text-amber-300/80 font-mono mt-2">Ok, sua banda será registrada como uma nova. Nomes parecidos ficam sinalizados para a organização.</p>
                                 )}
                               </div>
                               <div className="space-y-1">
@@ -1204,7 +1204,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                     <span className="w-8 h-8 rounded-full bg-[#E3B552]/10 text-[#F0C265] flex items-center justify-center font-mono text-xs font-bold border border-[#E3B552]/20">{index + 2}</span>
                                     <div>
                                       <span className="text-xs sm:text-sm font-bold text-white block">{m.name || `Integrante ${index + 2}`}</span>
-                                      <span className="font-mono text-[10px] text-gray-400 uppercase block mt-0.5">Integrante {index + 2} • {m.role || '—'} • CPF: {m.cpf || '---'} • Nascimento: {m.birth || '---'}</span>
+                                      <span className="font-mono text-[10px] text-gray-400 uppercase block mt-0.5">Integrante {index + 2} • {m.role || 'não informado'} • CPF: {m.cpf || '---'} • Nascimento: {m.birth || '---'}</span>
                                     </div>
                                   </div>
                                   <button type="button" onClick={() => removeQuizMember(index)} className="text-xs text-red-500 hover:text-red-400 font-bold uppercase font-mono tracking-wider flex items-center gap-1">
@@ -1276,7 +1276,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
                             {similarBands.length > 0 && similarChoice === 'none' && joinState !== 'declined' && (
                               <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl p-4 space-y-3">
-                                <span className="font-mono text-xs text-amber-400 uppercase tracking-widest font-black block">⚠ Atenção — nome parecido</span>
+                                <span className="font-mono text-xs text-amber-400 uppercase tracking-widest font-black block">⚠ Atenção: nome parecido</span>
                                 <p className="text-sm text-amber-100/90 leading-relaxed">
                                   Já existe{similarBands.length > 1 ? 'm' : ''} banda{similarBands.length > 1 ? 's' : ''} com nome parecido inscrita{similarBands.length > 1 ? 's' : ''}: <strong className="text-white">{similarBands.join(', ')}</strong>.
                                   Sua banda é uma delas ou é outra banda mesmo?
@@ -1288,7 +1288,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                               </div>
                             )}
                             {similarBands.length > 0 && similarChoice === 'other' && (
-                              <p className="text-[11px] text-amber-300/80 font-mono">Ok — registraremos como uma banda diferente. Nomes parecidos ficam sinalizados para a organização.</p>
+                              <p className="text-[11px] text-amber-300/80 font-mono">Ok, registraremos como uma banda diferente. Nomes parecidos ficam sinalizados para a organização.</p>
                             )}
 
                             <div className="p-1">
@@ -1520,7 +1520,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   </div>
                   <div className="col-span-2 border-t border-white/5 pt-3">
                     <span className="text-gray-500 uppercase block text-[9px]">RESPONSÁVEL:</span>
-                    <span className="text-xs font-black text-white font-mono block mt-0.5">{respName || '—'}</span>
+                    <span className="text-xs font-black text-white font-mono block mt-0.5">{respName || 'não informado'}</span>
                     {respEmail && <span className="text-[10px] text-gray-400 font-mono block mt-0.5">{respEmail}</span>}
                   </div>
                   <div className="col-span-2 border-t border-white/5 pt-3">
@@ -1554,7 +1554,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                     <p className="text-sm text-gray-200 leading-relaxed">Envie aos integrantes: cada um acessa, confirma os próprios dados e paga a parte dele.</p>
                     <p className="text-sm text-white leading-snug">
                       A banda ativa no concurso ao atingir <strong className="text-[#F0C265]">{bandResult?.minimo ?? 2} partes pagas</strong>
-                      {bandResult ? <> — agora: <strong className="text-[#F0C265]">{bandResult.pago}</strong></> : ''}.
+                      {bandResult ? <> agora: <strong className="text-[#F0C265]">{bandResult.pago}</strong></> : ''}.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-2.5">
                       <button

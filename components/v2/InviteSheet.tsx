@@ -202,7 +202,7 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
               <h2 className="font-display font-black text-xl text-white uppercase leading-tight">
                 Você foi convidado por <span className="text-[#F0C265]">{data.leader_first}</span> para representar <span className="text-[#F0C265]">{data.band}</span>?
               </h2>
-              <p className="text-sm text-gray-300">{data.style || '—'} • {data.total_members} integrantes • Sua parte: <strong className="text-[#F0C265]">R$ {price},00</strong></p>
+              <p className="text-sm text-gray-300">{data.style || 'não informado'} • {data.total_members} integrantes • Sua parte: <strong className="text-[#F0C265]">R$ {price},00</strong></p>
               {data.bio && <p className="text-xs text-gray-400 leading-relaxed line-clamp-3">{data.bio}</p>}
               <div className="flex flex-col gap-2.5 pt-1">
                 <button onClick={goConfirm} className="btn-gold-shimmer py-3.5 rounded-full text-sm uppercase tracking-widest font-black text-black">Sim, fui convidado(a)</button>
@@ -398,7 +398,7 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
 
               {!confirming && (
                 <button onClick={doConfirm} className="font-mono text-[11px] text-gray-400 hover:text-[#F0C265] uppercase tracking-widest w-full py-1">
-                  Já paguei — verificar novamente
+                  Já paguei. Verificar novamente
                 </button>
               )}
               {error && (

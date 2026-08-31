@@ -283,12 +283,12 @@ export default function Page() {
       <main className="max-w-6xl mx-auto px-6 pt-32 sm:pt-40 pb-10 grow space-y-24 relative z-10">
 
         {/* HERO SECTION */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-center py-2 md:py-6">
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-center">
           <div className="lg:col-span-7 space-y-4">
             <h1 className="fade-up-800 font-display font-black text-4xl sm:text-5xl lg:text-6xl text-white leading-[1.08] uppercase tracking-tightest">
               Grave seu som. Concorra à produção da sua <span className="bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(240,194,101,0.45)]">carreira</span>.
             </h1>
-            <p className="fade-up-800 [animation-delay:120ms] text-xs sm:text-sm md:text-base text-white/75 leading-relaxed max-w-xl font-normal font-[Inter]">
+            <p className="fade-up-800 [animation-delay:120ms] text-xs sm:text-sm md:text-base text-white/75 leading-relaxed max-w-xl font-normal">
               A maior vitrine de revelação musical autoral. Grave sua apresentação ao vivo com áudio e vídeo de alta fidelidade de graça e dispute uma produção completa de carreira que mudará sua história.
             </p>
             <div className="fade-up-800 [animation-delay:200ms] flex flex-wrap gap-x-5 gap-y-2 pt-2 text-[10px] sm:text-xs font-mono text-[#F0C265] uppercase tracking-widest font-black">
@@ -304,7 +304,7 @@ export default function Page() {
                 disabled={lotesConfig.live.status === 'ao_vivo'}
                 className="btn-gold-shimmer px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black shadow-[0_0_30px_rgba(227,181,82,0.35)] w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas — Live no ar' : 'INSCREVER-SE'}
+                {lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas: Live no ar' : 'INSCREVER-SE'}
               </button>
               <a
                 href="#premios"
@@ -676,7 +676,7 @@ export default function Page() {
               disabled={lotesConfig.live.status === 'ao_vivo'}
               className="btn-gold-shimmer px-10 py-4 rounded-2xl text-md shadow-[0_0_30px_rgba(240,194,101,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas — Live no ar' : 'Garantir Inscrição Lote 1'}
+              {lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas: Live no ar' : 'Garantir Inscrição Lote 1'}
             </button>
           </div>
         </section>
@@ -709,7 +709,7 @@ export default function Page() {
                 </div>
                 <div className={`faq-collapse ${activeFaq === i ? 'faq-open' : ''}`}>
                   <div>
-                    <p className="text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3 font-normal font-[Inter]">
+                    <p className="text-sm text-gray-300 mt-3 leading-relaxed border-t border-white/5 pt-3 font-normal">
                       {resolveTags(f.a)}
                     </p>
                   </div>
