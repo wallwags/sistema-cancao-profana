@@ -12,8 +12,11 @@ import {
 } from 'lucide-react';
 
 interface Member {
+  id?: string;
   name: string;
   cpf: string;
+  role_in_band?: string;
+  removed?: boolean;
   birth_date: string;
   phone: string | null;
   email?: string | null;
@@ -49,6 +52,12 @@ export default function MinhaInscricaoPage() {
   const [searchCpf, setSearchCpf] = useState('');
   const router = useRouter();
   const [linkCopied, setLinkCopied] = useState(false);
+  const [me, setMe] = useState<{ id: string; name: string; role_in_band: string; isLeader: boolean } | null>(null);
+  const [cpfGate, setCpfGate] = useState('');
+  const [accessCode, setAccessCode] = useState('');
+  const [gateError, setGateError] = useState('');
+  const [gateBusy, setGateBusy] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
   const [data, setData] = useState<RegistrationData | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -62,24 +71,25 @@ export default function MinhaInscricaoPage() {
     return value;
   };
 
-  // Acesso exclusivo por link: /minha-inscricao?k=<código único da banda>
-  const loadBandByCode = async (code: string) => {
-    setLoading(true);
-    setErrorMsg(null);
-    const { data: reg, error } = await supabase.rpc('get_registration_by_code', { p_code: code });
-    if (error || !reg || !reg.project) {
-      router.replace('/v2');
-      return;
-    }
+  const loadBandByCodeSafe = async () => {
+    if (!accessCode) return;
+    const { data: reg } = await supabase.rpc('get_registration_by_code', { p_code: accessCode });
+    if (reg && reg.project) applyRegistration(reg);
+  };
+
+  const applyRegistration = (reg: any) => {
     const project = reg.project;
     const typedMembers: Member[] = (reg.members || []).map((m: any) => ({
+      id: m.id,
       name: m.name,
       cpf: m.cpf,
       birth_date: m.birth_date,
       phone: m.phone,
       email: m.email ?? null,
       is_responsible: m.is_responsible,
-      payment_status: m.payment_status
+      payment_status: m.payment_status,
+      role_in_band: m.role_in_band,
+      removed: m.removed
     }));
     setData({
       id: project.id,
@@ -99,26 +109,33 @@ export default function MinhaInscricaoPage() {
       lote_ends: reg.lote_ends,
       vagas_lote: reg.vagas_restantes_lote
     });
-    setLoading(false);
   };
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const k = (params.get('k') || '').replace(/[^a-z0-9]/g, '').slice(0, 12);
-    if (!k) {
+  // ---------- identificação por CPF ----------
+  const identifyByCpf = async (code: string, cpf: string) => {
+    setGateBusy(true);
+    setGateError('');
+    const { data: reg, error } = await supabase.rpc('get_registration_by_code', { p_code: code });
+    if (error || !reg || !reg.project) {
+      setGateBusy(false);
       router.replace('/v2');
       return;
     }
-    loadBandByCode(k);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Handle Logout/Clear
-  const handleClearLookup = () => {
-    localStorage.removeItem('current_project_id');
-    localStorage.removeItem('current_cpf_v2');
-    localStorage.removeItem('access_key_v2');
-    router.replace('/v2');
+    const norm = (v: string) => (v || '').replace(/\D/g, '');
+    const me = (reg.members || []).find((m: any) => norm(m.cpf) === norm(cpf) && !m.removed);
+    if (!me) {
+      setGateBusy(false);
+      setGateError('CPF não localizado nesta banda. Confira com o líder.');
+      return;
+    }
+    setMe({
+      id: me.id,
+      name: me.name,
+      role_in_band: me.is_responsible ? 'Líder' : (me.role_in_band || 'Integrante'),
+      isLeader: !!me.is_responsible
+    });
+    applyRegistration(reg);
+    setGateBusy(false);
   };
 
   if (loading) {
@@ -165,10 +182,10 @@ export default function MinhaInscricaoPage() {
           
           <div className="flex gap-4 items-center">
             <button 
-              onClick={handleClearLookup} 
+              onClick={() => router.replace('/v2')} 
               className="font-mono text-[11px] text-gray-400 hover:text-red-400 transition-colors uppercase font-bold"
             >
-              Sair / Outra Busca
+              Sair
             </button>
             <Link href="/" className="flex items-center gap-1 text-xs font-mono text-[#A89880] hover:text-white transition-colors">
               <ArrowLeft className="w-3.5 h-3.5" /> Início
@@ -291,9 +308,17 @@ export default function MinhaInscricaoPage() {
               <span className="bg-[#F0C265] text-black font-mono text-[11px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
                 SESSÕES DE ESTÚDIO 2026
               </span>
-              <h2 className="text-white font-display font-black text-xl sm:text-2xl uppercase tracking-tight leading-none mt-2">
-                {data.name}
-              </h2>
+              <div className="flex items-center gap-2.5 flex-wrap mt-2">
+                <span className="text-white font-display font-black text-xl sm:text-2xl uppercase tracking-tight leading-none">
+                  Olá, {me!.name.split(' ')[0]}!
+                </span>
+                <span className="font-mono text-[11px] font-black uppercase tracking-wider bg-[#F0C265] text-black px-2.5 py-0.5 rounded-md">
+                  {me!.isLeader ? (me!.role_in_band ? `Líder · ${me!.role_in_band}` : 'Líder') : (me!.role_in_band || 'Integrante')}
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-xs text-[#A89880] font-medium tracking-wide mt-1.5">
+                {data.name} • Estúdio Pedra Profana
+              </p>
               <p className="text-xs sm:text-xs text-[#A89880] font-medium tracking-wide">
                 Estúdio Pedra Profana • Concurso Canção Profana
               </p>
@@ -453,7 +478,42 @@ export default function MinhaInscricaoPage() {
                       )}
                     </div>
                   </div>
-                  <span className="font-mono text-xs text-[#10B981] bg-[#10B981]/15 px-2.5 py-0.5 rounded border border-[#10B981]/25 uppercase font-bold tracking-wider">Apto</span>
+                  <span className="flex items-center gap-2 shrink-0">
+                    {m.payment_status === 'paid' ? (
+                      <span className="font-mono text-xs text-[#10B981] bg-[#10B981]/15 px-2.5 py-0.5 rounded border border-[#10B981]/25 uppercase font-bold tracking-wider">Apto</span>
+                    ) : (
+                      <span className="font-mono text-xs text-amber-500 bg-amber-500/15 px-2.5 py-0.5 rounded border border-amber-500/25 uppercase font-bold tracking-wider">Pendente</span>
+                    )}
+                    {me?.isLeader && m.payment_status !== 'paid' && m.id && (
+                      removing === m.id ? (
+                        <span className="flex items-center gap-1">
+                          <button
+                            onClick={async () => {
+                              setRemoving(null);
+                              const cpf = prompt('Confirme SEU CPF de líder para remover este integrante:');
+                              if (!cpf) return;
+                              const { error } = await supabase.rpc('leader_remove_member', { p_member_id: m.id, p_leader_cpf: cpf });
+                              if (error) {
+                                const msg = error.message || '';
+                                alert(
+                                  msg.includes('SOMENTE_LIDER') ? 'Somente o líder pode remover integrantes.' :
+                                  msg.includes('PAGO_NAO_REMOVIVEL') ? 'Integrante com parte paga não pode ser removido.' :
+                                  msg.includes('MINIMO_REGULAMENTO') ? 'O regulamento exige no mínimo 2 integrantes na banda.' :
+                                  'Erro ao remover. Tente novamente.'
+                                );
+                              } else {
+                                await loadBandByCodeSafe();
+                              }
+                            }}
+                            className="font-mono text-xs font-black text-white bg-red-600 px-2.5 py-1 rounded uppercase"
+                          >Confirmar</button>
+                          <button onClick={() => setRemoving(null)} className="text-gray-400 hover:text-white px-1">×</button>
+                        </span>
+                      ) : (
+                        <button onClick={() => setRemoving(m.id!)} className="font-mono text-xs text-gray-500 hover:text-red-400 uppercase font-bold transition-colors">Remover</button>
+                      )
+                    )}
+                  </span>
                 </div>
               ))}
             </div>

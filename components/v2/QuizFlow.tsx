@@ -35,18 +35,21 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [respBirth, setRespBirth] = useState('');
   const [respPhone, setRespPhone] = useState('');
   const [respEmail, setRespEmail] = useState('');
+  const [respRole, setRespRole] = useState('');
+  const [respRoleOther, setRespRoleOther] = useState('');
 
   // Natural dynamic list of additional members (roster)
-  const [membersList, setMembersList] = useState<Array<{ name: string; cpf: string; birth: string }>>([]);
+  const [membersList, setMembersList] = useState<Array<{ name: string; cpf: string; birth: string; role: string }>>([]);
   const [selectedMembers, setSelectedMembers] = useState(1);
   const [acceptRules, setAcceptRules] = useState(false);
-  const [minPayable, setMinPayable] = useState(2);
 
   // Inline add-member form
   const [isAddingMemberInline, setIsAddingMemberInline] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberCpf, setNewMemberCpf] = useState('');
   const [newMemberBirth, setNewMemberBirth] = useState('');
+  const [newMemberRole, setNewMemberRole] = useState('');
+  const [newMemberRoleOther, setNewMemberRoleOther] = useState('');
   const [memberErrors, setMemberErrors] = useState<Record<string, string>>({});
 
   // Inline validation errors (no native alerts)
@@ -132,9 +135,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     setSelectedMembers(1 + membersList.length);
   }, [membersList]);
 
-  useEffect(() => {
-    setMinPayable(m => Math.min(Math.max(2, m), Math.max(2, selectedMembers)));
-  }, [selectedMembers]);
+
 
   // ---------- funil ----------
   const logFunnel = (event: string, step = '') => {
@@ -353,6 +354,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       else if (!isValidWhatsApp(respPhone)) errs.respPhone = 'Informe um celular válido com DDD.';
       if (!respEmail.trim()) errs.respEmail = 'Informe o e-mail.';
       else if (!isValidEmail(respEmail)) errs.respEmail = 'Informe um e-mail válido.';
+      if (!respRole.trim()) errs.respRole = 'Selecione sua função na banda.';
+      else if (respRole === 'Outro' && !respRoleOther.trim()) errs.respRole = 'Descreva a função.';
     }
     if (step === 4) {
       if (isAddingMemberInline) errs.roster = 'Confirme ou descarte o integrante em preenchimento antes de avançar.';
@@ -394,11 +397,13 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     else if (!isValidCPF(newMemberCpf)) errs.newMemberCpf = 'CPF inválido.';
     if (!newMemberBirth) errs.newMemberBirth = 'Informe a data de nascimento.';
     else if (!isValidBirthDate(newMemberBirth)) errs.newMemberBirth = 'Data inválida.';
+    const effRole = newMemberRole === 'Outro' ? newMemberRoleOther.trim() : newMemberRole;
+    if (!effRole) errs.newMemberRole = 'Selecione ou descreva a função.';
     setMemberErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
     const copy = [...membersList];
-    copy.push({ name: newMemberName.trim(), cpf: newMemberCpf, birth: newMemberBirth });
+    copy.push({ name: newMemberName.trim(), cpf: newMemberCpf, birth: newMemberBirth, role: effRole });
     setMembersList(copy);
     setNewMemberName('');
     setNewMemberCpf('');
@@ -518,8 +523,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         } catch { /* segue sem foto */ }
       }
 
-      const membersPayload = membersList.map(m => ({ name: m.name, cpf: m.cpf, birth: m.birth }));
-      const minPay = Math.min(Math.max(2, minPayable), 1 + membersList.length);
+      const membersPayload = membersList.map(m => ({ name: m.name, cpf: m.cpf, birth: m.birth, role: m.role }));
 
       const { data, error } = await supabase.rpc('create_band_registration', {
         p_name: projectName,
@@ -528,9 +532,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         p_photo_url: photoUrl || 'default_photo.png',
         p_instagram: projectInstagram || null,
         p_video_link: projectVideoLink || null,
-        p_leader: { name: respName, cpf: respCpf, birth: respBirth, phone: respPhone, email: respEmail },
-        p_members: membersPayload,
-        p_min_payable: minPay
+        p_leader: { name: respName, cpf: respCpf, birth: respBirth, phone: respPhone, email: respEmail, role: leaderRoleEffective },
+        p_members: membersPayload
       });
 
       if (error || !data) throw new Error(error?.message || 'Falha ao registrar a banda.');
@@ -772,6 +775,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       clearError('projectBio'); clearError('projectPhotoName');
     } else if (quizStep === 3) {
       setRespName("Emily Bryan");
+      setRespRole("Vocalista");
       setRespCpf("123.456.789-09"); // 100% mathematically valid CPF
       setRespBirth("12/10/1998");
       setRespPhone("(21) 98765-4321");
@@ -781,12 +785,15 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       setNewMemberName("John Bryan");
       setNewMemberCpf("123.456.789-09");
       setNewMemberBirth("24/05/2000");
+      setNewMemberRole("Guitarrista");
       openMemberForm();
     } else if (quizStep === 5) {
       setAcceptRules(true);
       clearError('acceptRules');
     }
   };
+
+  const leaderRoleEffective = respRole === 'Outro' ? respRoleOther.trim() : respRole;
 
   const fieldError = (key: string) => errors[key] ? (
     <p className="text-[11px] text-red-400 font-mono mt-1 flex items-start gap-1"><span>⚠</span><span>{errors[key]}</span></p>
@@ -979,6 +986,28 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                 <input type="tel" value={respPhone} onChange={(e) => { setRespPhone(applyPhoneMask(e.target.value)); clearError('respPhone'); }} className={inputClass('respPhone', "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors")} maxLength={15} required />
                                 {fieldError('respPhone')}
                               </div>
+                              <div className="space-y-1">
+                                <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Sua função na banda *</label>
+                                <select
+                                  value={respRole}
+                                  onChange={(e) => { setRespRole(e.target.value); if (e.target.value !== 'Outro') setRespRoleOther(''); }}
+                                  className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] transition-colors"
+                                >
+                                  <option value="">Selecione...</option>
+                                  {['Vocalista', 'MC', 'Beatmaker', 'Guitarrista', 'Baixista', 'Baterista', 'Tecladista', 'DJ', 'Outro'].map(r => (
+                                    <option key={r} value={r}>{r}</option>
+                                  ))}
+                                </select>
+                                {respRole === 'Outro' && (
+                                  <input
+                                    type="text"
+                                    value={respRoleOther}
+                                    onChange={(e) => setRespRoleOther(e.target.value)}
+                                    placeholder="Descreva a função (ex: Percussionista)"
+                                    className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600 mt-2"
+                                  />
+                                )}
+                              </div>
                               <div className="space-y-1 md:col-span-2">
                                 <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">E-mail *</label>
                                 <input type="email" inputMode="email" value={respEmail} onChange={(e) => { setRespEmail(e.target.value); clearError('respEmail'); }} placeholder="Ex: contato@suabanda.com" className={inputClass('respEmail', "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors")} required />
@@ -1025,10 +1054,33 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                       <input type="text" value={newMemberCpf} onChange={(newE) => { setNewMemberCpf(applyCpfMask(newE.target.value)); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberCpf; return c; }); }} className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberCpf ? 'border-red-500/60' : 'border-white/10'}`} maxLength={14} />
                                       {memberErrors.newMemberCpf && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberCpf}</p>}
                                     </div>
-                                    <div className="space-y-1 sm:col-span-2">
+                                    <div className="space-y-1">
                                       <label className="block font-mono text-[10px] text-gray-400 uppercase">Nascimento (DD/MM/AAAA)</label>
                                       <input type="text" value={newMemberBirth} onChange={(newE) => { setNewMemberBirth(applyDateMask(newE.target.value)); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberBirth; return c; }); }} className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberBirth ? 'border-red-500/60' : 'border-white/10'}`} maxLength={10} />
                                       {memberErrors.newMemberBirth && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberBirth}</p>}
+                                    </div>
+                                    <div className="space-y-1 sm:col-span-2">
+                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">Função na banda *</label>
+                                      <select
+                                        value={newMemberRole}
+                                        onChange={(newE) => { setNewMemberRole(newE.target.value); if (newE.target.value !== 'Outro') setNewMemberRoleOther(''); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberRole; return c; }); }}
+                                        className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberRole ? 'border-red-500/60' : 'border-white/10'}`}
+                                      >
+                                        <option value="">Selecione...</option>
+                                        {['Vocalista', 'MC', 'Beatmaker', 'Guitarrista', 'Baixista', 'Baterista', 'Tecladista', 'DJ', 'Outro'].map(r => (
+                                          <option key={r} value={r}>{r}</option>
+                                        ))}
+                                      </select>
+                                      {newMemberRole === 'Outro' && (
+                                        <input
+                                          type="text"
+                                          value={newMemberRoleOther}
+                                          onChange={(e) => setNewMemberRoleOther(e.target.value)}
+                                          placeholder="Descreva a função (ex: Percussionista)"
+                                          className="w-full bg-[#05070B] border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] placeholder-gray-600 mt-1.5"
+                                        />
+                                      )}
+                                      {memberErrors.newMemberRole && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberRole}</p>}
                                     </div>
                                   </div>
 
@@ -1058,7 +1110,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                     <span className="w-8 h-8 rounded-full bg-[#E3B552]/10 text-[#F0C265] flex items-center justify-center font-mono text-xs font-bold border border-[#E3B552]/20">{index + 2}</span>
                                     <div>
                                       <span className="text-xs sm:text-sm font-bold text-white block">{m.name || `Integrante ${index + 2}`}</span>
-                                      <span className="font-mono text-[10px] text-gray-400 uppercase block mt-0.5">Integrante {index + 2} • CPF: {m.cpf || '---'} • Nascimento: {m.birth || '---'}</span>
+                                      <span className="font-mono text-[10px] text-gray-400 uppercase block mt-0.5">Integrante {index + 2} • {m.role || '—'} • CPF: {m.cpf || '---'} • Nascimento: {m.birth || '---'}</span>
                                     </div>
                                   </div>
                                   <button type="button" onClick={() => removeQuizMember(index)} className="text-xs text-red-500 hover:text-red-400 font-bold uppercase font-mono tracking-wider flex items-center gap-1">
@@ -1084,7 +1136,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                 </div>
                                 <div>
                                   <span className="text-gray-400 block text-xs font-bold uppercase">RESPONSÁVEL LÍDER:</span>
-                                  <span className="font-bold text-white text-sm block mt-1">{respName || '-'}</span>
+                                  <span className="font-bold text-white text-sm block mt-1">{respName || '-'}{(respRole === 'Outro' ? respRoleOther : respRole) ? ` • ${(respRole === 'Outro' ? respRoleOther : respRole)}` : ''}</span>
                                 </div>
                                 <div>
                                   <span className="text-gray-400 block text-xs font-bold uppercase">LOTE VIGENTE:</span>

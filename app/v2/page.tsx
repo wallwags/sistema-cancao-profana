@@ -61,6 +61,7 @@ export default function Page() {
   const [liveLaunch, setLiveLaunch] = useState<string | null>(null);
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
   const [dia0Price, setDia0Price] = useState<number>(25);
+  const [slotMode, setSlotMode] = useState<'band' | 'integrante'>('band');
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [loteDates, setLoteDates] = useState<Record<string, string | null>>({});
 
@@ -110,6 +111,8 @@ export default function Page() {
           if (map.live_launch) setLiveLaunch(map.live_launch);
           if (map.live_url) setLiveUrl(map.live_url);
           const dp = Number(map.dia0_price);
+          const sm = map.slot_mode;
+          if (sm === 'integrante') setSlotMode('integrante');
           if (!isNaN(dp) && dp > 0) setDia0Price(dp);
         }
 
@@ -657,7 +660,13 @@ export default function Page() {
             })}
           </div>
 
-          <div className="pt-6 text-center">
+          <p className="text-center font-mono text-xs text-gray-500 tracking-wider">
+            {slotMode === 'integrante'
+              ? 'Vagas individuais: cada integrante paga a própria parte pelo preço do lote vigente.'
+              : 'Vagas por banda/projeto: preço travado para todos os integrantes no valor do lote de origem.'}
+          </p>
+
+          <div className="pt-4 text-center">
             <button
               onClick={handleOpenQuiz}
               onMouseEnter={preloadQuiz}

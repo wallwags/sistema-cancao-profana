@@ -21,6 +21,7 @@ export default function TermosPage() {
             <p>1.1. O concurso é aberto exclusivamente a projetos musicais compostos por grupos contendo no mínimo 2 (dois) e no máximo 7 (sete) integrantes.</p>
             <p>1.2. É obrigatória a inclusão de pelo menos uma música original (autoral) escrita majoritariamente em língua portuguesa ou em formato instrumental no repertório do projeto.</p>
             <p>1.3. O repertório a ser apresentado no concurso é limitado ao máximo de 3 (três) músicas por banda.</p>
+                  <p>1.4. O concurso recebe até 30 (trinta) bandas/projetos, totalizando até 210 (duzentas e dez) vagas individuais, respeitando o limite de 7 (sete) integrantes por banda.</p>
           </div>
 
           <div className="space-y-2">

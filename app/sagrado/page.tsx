@@ -217,6 +217,7 @@ export default function SagradoPage() {
   const [jurySearch, setJurySearch] = useState('');
   const [photoView, setPhotoView] = useState<string | null>(null);
   const [funnel, setFunnel] = useState<Record<string, unknown> | null>(null);
+  const [slotMode, setSlotMode] = useState<'band' | 'integrante'>('band');
 
   // account
   const [newName, setNewName] = useState('');
@@ -297,6 +298,11 @@ export default function SagradoPage() {
     setSettingDrafts(map);
   }, []);
 
+  const loadSlotMode = useCallback(async () => {
+    const { data } = await supabase.rpc('get_slot_mode');
+    if (data === 'integrante') setSlotMode('integrante'); else setSlotMode('band');
+  }, []);
+
   const loadFaqs = useCallback(async () => {
     const { data } = await supabase.from('faq_items').select('*').order('sort_order', { ascending: true });
     if (data) setFaqs(data as FaqRow[]);
@@ -350,7 +356,7 @@ export default function SagradoPage() {
     (async () => {
       const ok = await loadStaff();
       if (ok) {
-        await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores()]);
+        await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores(), loadSlotMode()]);
       }
       setBooting(false);
     })();
@@ -414,7 +420,7 @@ export default function SagradoPage() {
       setLoggingIn(false);
       return;
     }
-    await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores()]);
+    await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores(), loadSlotMode()]);
     setLoggingIn(false);
     setPassword('');
   };
@@ -643,6 +649,36 @@ export default function SagradoPage() {
     return 'ok';
   });
 
+  const changeSlotMode = (mode: 'band' | 'integrante') => guarded('slotmode', async () => {
+    const { data: res, error } = await supabase.rpc('set_slot_mode', { p_mode: mode });
+    if (error) return 'Erro: ' + error.message;
+    if (res !== 'ok') return String(res);
+    setSlotMode(mode);
+    await loadBatches();
+    setMsg('slotmode', 'ok', mode === 'band'
+      ? 'Vagas por banda/projeto: preço travado para todos os integrantes da banda.'
+      : 'Vagas por integrante: cada pagamento usa o preço do lote vigente na hora.');
+    return 'ok';
+  });
+
+  const grantSlot = (p: ProjectRow) => guarded(`grant-${p.id}`, async () => {
+    const { data: res, error } = await supabase.rpc('admin_grant_slot', { p_project_id: p.id });
+    if (error) return 'Erro: ' + error.message;
+    if (res !== 'ok') return String(res);
+    await loadProjects();
+    setMsg(`grant-${p.id}`, 'ok', 'Vaga concedida e banda ativada.');
+    return 'ok';
+  });
+
+  const returnSlot = (p: ProjectRow) => guarded(`ret-${p.id}`, async () => {
+    const { data: res, error } = await supabase.rpc('admin_return_slot', { p_project_id: p.id });
+    if (error) return 'Erro: ' + error.message;
+    if (res !== 'ok') return String(res);
+    await loadProjects();
+    setMsg(`ret-${p.id}`, 'ok', 'Vaga devolvida ao pool do lote.');
+    return 'ok';
+  });
+
   const openAuditTab = () => { loadAudit(); };
 
   // ---------- conta ----------
@@ -774,6 +810,28 @@ export default function SagradoPage() {
           {/* LOTES */}
           {tab === 'lotes' && (
             <div className="space-y-5 fade-up-800">
+              <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-3">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                  <div>
+                    <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Modo de contagem de vagas</span>
+                    <span className="text-xs text-gray-400 leading-snug block mt-1">
+                      {slotMode === 'band'
+                        ? 'Por banda/projeto: cada banda consome 1 vaga do lote e o preço fica travado para todos os integrantes — mesmo após a virada do lote.'
+                        : 'Por integrante: cada pagamento consome uma vaga individual e usa o preço do lote vigente na hora do pagamento.'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button type="button" onClick={() => changeSlotMode('band')} disabled={busy === 'slotmode' || slotMode === 'band'} className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-xl border transition-colors ${slotMode === 'band' ? 'bg-[#F0C265] text-black border-black' : 'text-gray-400 border-white/10 bg-white/5 hover:text-white'}`}>
+                      Por banda
+                    </button>
+                    <button type="button" onClick={() => changeSlotMode('integrante')} disabled={busy === 'slotmode' || slotMode === 'integrante'} className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-xl border transition-colors ${slotMode === 'integrante' ? 'bg-[#F0C265] text-black border-black' : 'text-gray-400 border-white/10 bg-white/5 hover:text-white'}`}>
+                      Por integrante
+                    </button>
+                  </div>
+                </div>
+                {notice['slotmode'] && <Notice kind={notice['slotmode'].kind}>{notice['slotmode'].msg}</Notice>}
+              </div>
+
               <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 border-[#E3B552]/40 rounded-2xl p-5 space-y-4">
                 <div className="flex justify-between items-center border-b border-white/5 pb-3">
                   <div className="flex items-center gap-2.5">
@@ -942,6 +1000,20 @@ export default function SagradoPage() {
                         </div>
                         <span className={`text-[11px] font-bold px-2.5 py-1 rounded font-mono uppercase border shrink-0 ${st.cls}`}>{st.label}</span>
                       </div>
+
+                      {canSubs && p.status === 'awaiting_members' && (
+                        <div className="flex items-center gap-2.5 flex-wrap bg-black/30 border border-white/5 rounded-xl p-3">
+                          <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold">Vaga do lote:</span>
+                          <button type="button" onClick={() => returnSlot(p)} disabled={busy === `ret-${p.id}`} className="font-mono text-xs font-bold text-white border border-white/20 px-3 py-1.5 rounded-lg uppercase hover:bg-white/5 disabled:opacity-50">
+                            {busy === `ret-${p.id}` ? '...' : 'Devolver ao pool'}
+                          </button>
+                          <button type="button" onClick={() => grantSlot(p)} disabled={busy === `grant-${p.id}`} className="bg-[#10B981] text-black font-mono text-xs font-bold px-3 py-1.5 rounded-lg uppercase disabled:opacity-50">
+                            {busy === `grant-${p.id}` ? '...' : 'Conceder vaga (ativar)'}
+                          </button>
+                          {notice[`ret-${p.id}`] && <span className="font-mono text-[11px] text-gray-400">{notice[`ret-${p.id}`].msg}</span>}
+                          {notice[`grant-${p.id}`] && <span className="font-mono text-[11px] text-gray-400">{notice[`grant-${p.id}`].msg}</span>}
+                        </div>
+                      )}
 
                       {canSubs && (
                         <div className="flex items-center gap-2.5 flex-wrap">
