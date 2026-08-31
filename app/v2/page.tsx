@@ -62,7 +62,8 @@ export default function Page() {
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
   const [dia0Price, setDia0Price] = useState<number>(25);
   const [slotMode, setSlotMode] = useState<'band' | 'integrante'>('band');
-  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [sheetCode, setSheetCode] = useState<string | null>(null);
+  const [sheetStart, setSheetStart] = useState<'confirm' | 'pick'>('confirm');
   const [loteDates, setLoteDates] = useState<Record<string, string | null>>({});
 
   // Quiz modal: mounted on demand, kept mounted afterwards so state/draft persists
@@ -79,7 +80,7 @@ export default function Page() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const b = (params.get('b') || '').replace(/[^a-z0-9]/g, '').slice(0, 12);
-    if (b) setInviteCode(b);
+    if (b) { setSheetCode(b); setSheetStart('confirm'); }
   }, []);
 
   // Sync pricing configurations from Supabase on mount
@@ -743,6 +744,7 @@ export default function Page() {
         <QuizFlow
           isOpen={isQuizOpen}
           onClose={() => setIsQuizOpen(false)}
+          onJoinBand={(code) => { setSheetCode(code); setSheetStart('pick'); }}
           activePrice={activePrice}
           activeLoteName={activeLoteName}
           onPaymentSuccess={handlePaymentSuccess}
@@ -750,7 +752,9 @@ export default function Page() {
       )}
 
       {/* CONVITE DE INTEGRANTE — bottom sheet sobre a landing */}
-      {inviteCode && <InviteSheet inviteCode={inviteCode} onClose={() => setInviteCode(null)} />}
+      {sheetCode && (
+        <InviteSheet inviteCode={sheetCode} startPhase={sheetStart} onClose={() => setSheetCode(null)} />
+      )}
 
       {/* Legal popups (footer) — CSS-animated, zero JS cost when closed */}
       <TermsModal open={isTermsOpen} onClose={() => setIsTermsOpen(false)} />

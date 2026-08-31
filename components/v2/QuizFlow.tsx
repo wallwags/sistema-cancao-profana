@@ -17,9 +17,20 @@ interface QuizFlowProps {
   activePrice: number;
   activeLoteName: string;
   onPaymentSuccess: () => void;
+  onJoinBand?: (inviteCode: string) => void;
 }
 
-export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess }: QuizFlowProps) {
+interface BandMatch {
+  project_id: string;
+  invite_code: string;
+  name: string;
+  style: string;
+  photo_url: string | null;
+  leader_first: string;
+  free_slots: number;
+}
+
+export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand }: QuizFlowProps) {
   const [quizStep, setQuizStep] = useState(1);
 
   // Quiz form states
@@ -82,6 +93,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [bandResult, setBandResult] = useState<{ pago: number; minimo: number; total: number; ativa: boolean } | null>(null);
   const [similarBands, setSimilarBands] = useState<string[]>([]);
   const [similarChoice, setSimilarChoice] = useState<'none' | 'mine' | 'other'>('none');
+  const [bandMatches, setBandMatches] = useState<BandMatch[]>([]);
+  const [joinState, setJoinState] = useState<'idle' | 'asking' | 'picking' | 'declined'>('idle');
   const sessionRef = useRef<string>('');
   const inviteCodeRef = useRef<string>('');
 
@@ -102,6 +115,26 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const quizClosingRef = useRef(false);
   const checkoutClosingRef = useRef(false);
   const quizOpenedAt = useRef<number>(0);
+
+  // Fluxo "sou integrante": busca bandas parecidas enquanto digita o nome
+  useEffect(() => {
+    if (quizStep !== 1 || joinState === 'picking') return;
+    if (!projectName || projectName.trim().length < 4) {
+      setBandMatches([]);
+      setJoinState(st => (st === 'asking' || st === 'picking') ? 'idle' : st);
+      return;
+    }
+    const t = setTimeout(async () => {
+      try {
+        const { data } = await supabase.rpc('find_band_by_name', { p_name: projectName.trim() });
+        const found = (data || []) as unknown as BandMatch[];
+        setBandMatches(found);
+        if (found.length > 0 && joinState === 'idle') setJoinState('asking');
+      } catch { /* silencioso */ }
+    }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectName, quizStep, joinState]);
   const demoRef = useRef(false);
   const funnelLogged = useRef<Set<string>>(new Set());
   const tsRenderedRef = useRef(false);
@@ -567,7 +600,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       setErrors({ acceptRules: 'Revise com calma as informações antes de gerar o Pix.' });
       return;
     }
-    if (similarBands.length > 0 && similarChoice === 'none') {
+    if (similarBands.length > 0 && similarChoice === 'none' && joinState !== 'declined') {
       errs.acceptRules = 'Confirme se sua banda é uma das bandas com nome parecido listadas acima.';
     }
     if (!tsToken && !demoRef.current) {
@@ -869,12 +902,73 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                 <input
                                   type="text"
                                   value={projectName}
-                                  onChange={(e) => { setProjectName(e.target.value); clearError('projectName'); }}
+                                  onChange={(e) => { setProjectName(e.target.value); clearError('projectName'); if (joinState !== 'idle') setJoinState('idle'); }}
                                   placeholder="Ex: The Jackson Five"
                                   className={inputClass('projectName', "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors")}
                                   required
                                 />
                                 {fieldError('projectName')}
+                                {bandMatches.length > 0 && joinState !== 'declined' && (
+                                  <div className="mt-2 bg-[#10B981]/10 border border-[#10B981]/40 rounded-2xl p-4 space-y-3">
+                                    <span className="font-mono text-xs text-[#10B981] uppercase tracking-widest font-black block">
+                                      Banda com nome parecido já inscrita
+                                    </span>
+                                    <p className="text-sm text-gray-200 leading-relaxed">
+                                      Você é integrante dela e veio confirmar sua parte?
+                                    </p>
+
+                                    {joinState !== 'picking' ? (
+                                      <div className="grid grid-cols-2 gap-2.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            if (bandMatches.length === 1 && onJoinBand) {
+                                              onJoinBand(bandMatches[0].invite_code);
+                                              requestCloseQuiz();
+                                              return;
+                                            }
+                                            setJoinState('picking');
+                                          }}
+                                          className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-[#10B981]/25 active:scale-[0.98] transition-transform"
+                                        >
+                                          Sim
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setJoinState('declined')}
+                                          className="font-mono text-sm font-black text-white bg-gradient-to-b from-red-500 to-red-700 px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-red-900/30 active:scale-[0.98] transition-transform"
+                                        >
+                                          Não
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2.5">
+                                        {bandMatches.map(b => (
+                                          <button
+                                            key={b.project_id}
+                                            type="button"
+                                            onClick={() => { if (onJoinBand) { onJoinBand(b.invite_code); requestCloseQuiz(); } }}
+                                            className="w-full text-left flex items-center gap-3 bg-black/40 border border-white/10 hover:border-[#F0C265]/50 rounded-xl p-3 transition-colors"
+                                          >
+                                            {b.photo_url && String(b.photo_url).startsWith('http') ? (
+                                              <img src={String(b.photo_url)} alt="" className="w-11 h-11 rounded-lg object-cover border border-white/10 shrink-0" />
+                                            ) : (
+                                              <span className="w-11 h-11 rounded-lg bg-[#F0C265]/15 border border-[#F0C265]/30 flex items-center justify-center text-[#F0C265] font-display font-black shrink-0">{b.name.charAt(0)}</span>
+                                            )}
+                                            <span className="flex-1 min-w-0">
+                                              <span className="block text-sm font-bold text-white truncate">{b.name}</span>
+                                              <span className="block font-mono text-[11px] text-gray-400 uppercase">{b.style || '—'} • líder {b.leader_first} • {b.free_slots} vaga{b.free_slots === 1 ? '' : 's'} livre{b.free_slots === 1 ? '' : 's'}</span>
+                                            </span>
+                                            <span className="font-mono text-[11px] text-[#F0C265] uppercase font-bold shrink-0">Sou eu →</span>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {joinState === 'declined' && bandMatches.length > 0 && (
+                                  <p className="text-[11px] text-amber-300/80 font-mono mt-2">Ok — sua banda será registrada como uma nova. Nomes parecidos ficam sinalizados para a organização.</p>
+                                )}
                               </div>
                               <div className="space-y-1">
                                 <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Estilo / Gênero *</label>
@@ -1128,23 +1222,23 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Revisar Matrícula</h3>
                             <p className="text-sm text-gray-300">Confirme os dados consolidados do sinal.</p>
 
-                            <div className="bg-black/50 p-4 md:p-5 rounded-2xl border border-white/5 space-y-3 md:space-y-4 text-xs font-mono">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                            <div className="bg-black/50 p-4 md:p-6 rounded-2xl border border-white/5 space-y-4 md:space-y-5 text-sm font-mono">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
                                 <div>
-                                  <span className="text-gray-400 block text-xs font-bold uppercase">PROJETO BANDA:</span>
-                                  <span className="font-bold text-white text-sm block mt-1">{projectName || '-'}</span>
+                                  <span className="text-gray-400 block text-[13px] font-bold uppercase">PROJETO BANDA:</span>
+                                  <span className="font-bold text-white text-base block mt-1">{projectName || '-'}</span>
                                 </div>
                                 <div>
-                                  <span className="text-gray-400 block text-xs font-bold uppercase">RESPONSÁVEL LÍDER:</span>
-                                  <span className="font-bold text-white text-sm block mt-1">{respName || '-'}{(respRole === 'Outro' ? respRoleOther : respRole) ? ` • ${(respRole === 'Outro' ? respRoleOther : respRole)}` : ''}</span>
+                                  <span className="text-gray-400 block text-[13px] font-bold uppercase">RESPONSÁVEL LÍDER:</span>
+                                  <span className="font-bold text-white text-base block mt-1">{respName || '-'}{(respRole === 'Outro' ? respRoleOther : respRole) ? ` • ${(respRole === 'Outro' ? respRoleOther : respRole)}` : ''}</span>
                                 </div>
                                 <div>
-                                  <span className="text-gray-400 block text-xs font-bold uppercase">LOTE VIGENTE:</span>
-                                  <span className="font-bold text-[#F0C265] text-sm block mt-1 uppercase">{activeLoteName} (R$ {activePrice} / integrante)</span>
+                                  <span className="text-gray-400 block text-[13px] font-bold uppercase">LOTE VIGENTE:</span>
+                                  <span className="font-bold text-[#F0C265] text-base block mt-1 uppercase">{activeLoteName} (R$ {activePrice} / integrante)</span>
                                 </div>
                                 <div>
-                                  <span className="text-gray-400 block text-xs font-bold uppercase">INTEGRANTES CONECTADOS:</span>
-                                  <span className="font-bold text-white text-sm block mt-1">{selectedMembers}</span>
+                                  <span className="text-gray-400 block text-[13px] font-bold uppercase">INTEGRANTES CONECTADOS:</span>
+                                  <span className="font-bold text-white text-base block mt-1">{selectedMembers}</span>
                                 </div>
                               </div>
 
@@ -1170,17 +1264,17 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                 </div>
 
                                 <div className="bg-[#F0C265]/10 border border-[#F0C265]/30 rounded-2xl p-4 text-center">
-                                  <span className="font-mono text-xs text-gray-300 uppercase tracking-widest font-bold block">Sua parte agora (líder)</span>
+                                  <span className="font-mono text-[13px] text-gray-200 uppercase tracking-widest font-bold block">Sua parte agora (líder)</span>
                                   <span className="font-display font-black text-4xl text-[#F0C265] block leading-tight mt-0.5">R$ {activePrice},00</span>
-                                  <span className="text-xs text-gray-400 block mt-1 leading-relaxed">
+                                  <span className="text-sm text-gray-300 block mt-1.5 leading-relaxed">
                                     Cada integrante paga a própria parte pelo link exclusivo.<br />
-                                    Total da banda: <strong className="text-gray-200">R$ {totalCost},00</strong> + {selectedMembers}kg de alimento
+                                    Total da banda: <strong className="text-white">R$ {totalCost},00</strong> + {selectedMembers}kg de alimento
                                   </span>
                                 </div>
                               </div>
                             </div>
 
-                            {similarBands.length > 0 && similarChoice === 'none' && (
+                            {similarBands.length > 0 && similarChoice === 'none' && joinState !== 'declined' && (
                               <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl p-4 space-y-3">
                                 <span className="font-mono text-xs text-amber-400 uppercase tracking-widest font-black block">⚠ Atenção — nome parecido</span>
                                 <p className="text-sm text-amber-100/90 leading-relaxed">

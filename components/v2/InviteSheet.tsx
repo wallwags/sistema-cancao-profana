@@ -20,6 +20,8 @@ interface InviteData {
   style: string;
   bio: string;
   photo_url: string | null;
+  instagram: string | null;
+  video_link: string | null;
   leader_first: string;
   entry_price: number;
   min_payable: number;
@@ -30,7 +32,7 @@ interface InviteData {
 
 const inputCls = "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600 transition-colors";
 
-export default function InviteSheet({ inviteCode, onClose }: { inviteCode: string; onClose: () => void }) {
+export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClose }: { inviteCode: string; startPhase?: 'confirm' | 'pick'; onClose: () => void }) {
   const [phase, setPhase] = useState<'loading' | 'confirm' | 'pick' | 'form' | 'summary' | 'checkout' | 'done'>('loading');
   const [data, setData] = useState<InviteData | null>(null);
   const [slotId, setSlotId] = useState<string | null>(null);
@@ -82,7 +84,7 @@ export default function InviteSheet({ inviteCode, onClose }: { inviteCode: strin
       const { data: inv, error } = await supabase.rpc('get_invite', { p_code: inviteCode });
       if (error || !inv) { setError('Convite não encontrado ou inválido.'); setPhase('loading'); setData(null); return; }
       setData(inv as unknown as InviteData);
-      setPhase('confirm');
+      setPhase(startPhase === 'pick' ? 'pick' : 'confirm');
       fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ref: inviteCode, event: 'invite_opened' }) }).catch(() => {});
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -124,6 +126,7 @@ export default function InviteSheet({ inviteCode, onClose }: { inviteCode: strin
       const m = err.message || '';
       setError(
         m.includes('VAGA_JA_RECLAMADA') ? 'Essa vaga acabou de ser confirmada por outra pessoa. Escolha outra ou fale com o líder.' :
+        m.includes('CPF_NAO_CORRESPONDE') ? 'Este CPF não corresponde ao integrante escalado pelo líder. Confira com ele.' :
         m.includes('CPF_INVALIDO') ? 'CPF inválido.' :
         m.includes('NASCIMENTO_INVALIDO') ? 'Data de nascimento inválida.' :
         'Não foi possível confirmar agora. Tente novamente.'
@@ -158,7 +161,7 @@ export default function InviteSheet({ inviteCode, onClose }: { inviteCode: strin
   const price = data?.entry_price ?? 0;
 
   return (
-    <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm" onClick={slideDownClose}>
+    <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm" onClick={phase === 'done' ? slideDownClose : undefined}>
       <div
         ref={sheetRef}
         onClick={(e) => e.stopPropagation()}
@@ -248,6 +251,7 @@ export default function InviteSheet({ inviteCode, onClose }: { inviteCode: strin
               </div>
               <div className="space-y-1.5">
                 <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase">CPF *</label>
+                <span className="text-[11px] text-gray-500 font-mono block">Use o mesmo CPF que o líder informou na sua escalação.</span>
                 {cpfPrefilled ? (
                   <div className="flex items-center gap-2">
                     <input className={`${inputCls} font-mono tracking-widest`} value="•••.•••.•••-••" readOnly />
@@ -289,27 +293,36 @@ export default function InviteSheet({ inviteCode, onClose }: { inviteCode: strin
 
           {data && phase === 'summary' && (
             <div className="space-y-4">
-              <h3 className="font-display font-black text-lg text-white uppercase">Revise e pague sua parte</h3>
+              <h3 className="font-display font-black text-xl text-white uppercase">Revise e pague sua parte</h3>
 
-              <div className="bg-black/40 border border-white/5 rounded-xl p-4 space-y-1.5 text-xs">
-                <span className="font-mono text-[11px] text-[#F0C265] uppercase font-black block mb-1">Seus dados</span>
-                <p className="text-gray-200"><strong>{name}</strong></p>
-                <p className="font-mono text-gray-400">{cpf} • {birth}</p>
-                <p className="font-mono text-gray-400">{phone} • {email}</p>
-                <button type="button" onClick={() => setPhase('form')} className="text-[11px] text-[#F0C265] underline uppercase font-bold mt-1">Editar meus dados</button>
+              <div className="bg-black/40 border border-white/5 rounded-xl p-4 space-y-2">
+                <span className="font-mono text-xs text-[#F0C265] uppercase font-black block mb-1.5">Seus dados</span>
+                <p className="text-base text-gray-100"><strong>{name}</strong></p>
+                <p className="font-mono text-sm text-gray-300">{cpf} • {birth}</p>
+                <p className="font-mono text-sm text-gray-300">{phone}{email ? ` • ${email}` : ''}</p>
+                <p className="font-mono text-sm text-[#F0C265]">{(slotId && data.slots.find(s => s.id === slotId)?.name) || ''}</p>
+                <button type="button" onClick={() => setPhase('form')} className="text-xs text-[#F0C265] underline uppercase font-bold mt-1.5">Editar meus dados</button>
               </div>
 
               <div className="bg-black/40 border border-white/5 rounded-xl p-4 space-y-2">
-                <span className="font-mono text-[11px] text-[#F0C265] uppercase font-black block">Banda</span>
-                <p className="text-sm font-bold text-white">{data.band}</p>
-                <p className="text-xs text-gray-400">{data.style} • liderada por {data.leader_first}</p>
-                {data.bio && <p className="text-xs text-gray-400 leading-relaxed">{data.bio}</p>}
-                <p className="text-xs text-gray-300 pt-1"><strong className="text-white">Integrantes:</strong> {data.slots.map(s => s.name).join(', ')}</p>
+                <span className="font-mono text-xs text-[#F0C265] uppercase font-black block">Sua banda</span>
+                <p className="text-base font-bold text-white">{data.band}</p>
+                <p className="text-sm text-gray-400">{data.style} • liderada por {data.leader_first}</p>
+                {data.bio && <p className="text-sm text-gray-300 leading-relaxed pt-1">{data.bio}</p>}
+                <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
+                  {data.instagram && (
+                    <a href={`https://instagram.com/${String(data.instagram).replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-sm text-[#F0C265] hover:underline">{String(data.instagram)}</a>
+                  )}
+                  {data.video_link && (
+                    <a href={String(data.video_link)} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-400 hover:underline break-all">ouvir/ver música ↗</a>
+                  )}
+                </div>
+                <p className="text-sm text-gray-300 pt-1"><strong className="text-white">Integrantes:</strong> {data.slots.map(s => s.name).join(', ')}</p>
               </div>
 
               <div className="bg-[#F0C265]/10 border border-[#F0C265]/25 rounded-xl p-4 flex justify-between items-center">
-                <span className="font-mono text-xs text-gray-200 uppercase font-bold">Sua parte</span>
-                <span className="font-display font-black text-2xl text-[#F0C265]">R$ {price},00</span>
+                <span className="font-mono text-sm text-gray-200 uppercase font-bold">Sua parte</span>
+                <span className="font-display font-black text-3xl text-[#F0C265]">R$ {price},00</span>
               </div>
 
               {error && (
@@ -403,7 +416,7 @@ export default function InviteSheet({ inviteCode, onClose }: { inviteCode: strin
 
               <ShieldCheck className="w-5 h-5 text-gray-500 mx-auto" />
               <p className="text-xs text-gray-500">Guarde o comprovante. O status da banda aparece no portal do candidato.</p>
-              <Link href="/minha-inscricao" className="btn-gold-shimmer inline-block px-6 py-3 rounded-full text-xs uppercase tracking-widest font-black text-black">
+              <Link href={`/minha-inscricao?k=${inviteCode}`} className="btn-gold-shimmer inline-block px-6 py-3 rounded-full text-xs uppercase tracking-widest font-black text-black">
                 Acompanhar minha banda
               </Link>
             </div>
