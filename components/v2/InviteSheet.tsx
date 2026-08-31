@@ -161,11 +161,11 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
   const price = data?.entry_price ?? 0;
 
   return (
-    <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm" onClick={phase === 'done' ? slideDownClose : undefined}>
+    <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-6" onClick={phase === 'done' ? slideDownClose : undefined}>
       <div
         ref={sheetRef}
         onClick={(e) => e.stopPropagation()}
-        className="absolute bottom-0 left-0 right-0 max-h-[92vh] bg-[#05070B] border-t-2 border-[#E3B552] rounded-t-[28px] shadow-[0_-10px_60px_rgba(0,0,0,0.8)] flex flex-col pt-2 sm:left-auto sm:right-0 sm:max-w-md sm:w-full sm:border-l sm:rounded-l-[28px] sm:rounded-tr-none"
+        className="relative w-full sm:max-w-md max-h-[92vh] bg-[#05070B] border-t-2 sm:border-2 border-[#E3B552] rounded-t-[28px] sm:rounded-[28px] shadow-[0_-10px_60px_rgba(0,0,0,0.8)] flex flex-col pt-2"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -284,6 +284,20 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
                   <button type="button" onClick={() => setError('')} className="text-red-300/70 hover:text-white text-lg leading-none">×</button>
                 </div>
               )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setName(name || (selectedSlot?.name ?? 'Integrante Demo'));
+                  setCpf(cpf || '123.456.789-09');
+                  setBirth(birth || '01/01/1995');
+                  setPhone(phone || '(21) 98765-4321');
+                  setEmail(email || 'demo@pedraprofana.com');
+                }}
+                className="font-mono text-[11px] font-bold text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/20 px-3 py-2 rounded-lg uppercase hover:bg-[#F0C265] hover:text-black transition-colors w-full"
+              >
+                🧪 Testar Demo (preencher dados)
+              </button>
 
               <button onClick={submitClaim} disabled={busy} className="btn-gold-shimmer w-full py-3.5 rounded-full text-sm uppercase tracking-widest font-black text-black disabled:opacity-50">
                 {busy ? 'Confirmando...' : 'Revisar meus dados'}

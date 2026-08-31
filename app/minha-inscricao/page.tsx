@@ -39,6 +39,7 @@ interface RegistrationData {
   status: 'pending' | 'paid' | 'failed' | 'blocked' | 'suspended' | 'refunded' | 'awaiting_members';
   lote_ends?: string | null;
   vagas_lote?: number;
+  slot_mode?: 'band' | 'integrante';
   pending_edits?: number;
   members: Member[];
   amount_paid?: number;
@@ -107,7 +108,8 @@ export default function MinhaInscricaoPage() {
       status: project.status,
       members: typedMembers,
       lote_ends: reg.lote_ends,
-      vagas_lote: reg.vagas_restantes_lote
+      vagas_lote: reg.vagas_restantes_lote,
+      slot_mode: reg.slot_mode || 'band'
     });
   };
 
@@ -228,6 +230,10 @@ export default function MinhaInscricaoPage() {
                   <span className="font-display font-black text-xl text-amber-400 block">{Math.max(0, (data.total_members ?? 0) - paidCount)}</span>
                 </div>
               </div>
+
+              <p className="text-xs text-gray-300 leading-snug relative">
+                <strong className="text-amber-400">Atenção:</strong> bandas com menos de 2 partes pagas podem perder a vaga na virada do lote{data.slot_mode === 'integrante' ? ', e as partes seguintes passam a valer o preço do novo lote.' : '.'}
+              </p>
 
               {/* tags informativas (não clicáveis) — visual passivo */}
               <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-thin pb-1 relative">

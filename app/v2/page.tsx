@@ -183,7 +183,6 @@ export default function Page() {
     const revealEls = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
     const groups = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal-group]'));
     const line = document.querySelector<HTMLElement>('[data-fx="timeline-line"]');
-    const bars = Array.from(document.querySelectorAll<HTMLElement>('[data-vagas-fill]'));
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (reduce || !('IntersectionObserver' in window)) {
@@ -191,7 +190,6 @@ export default function Page() {
       revealEls.forEach(() => undefined);
       groups.forEach((g) => gsap.set(g.querySelectorAll('.reveal-hidden'), { opacity: 1, y: 0 }));
       if (line) gsap.set(line, { scaleX: 1 });
-      bars.forEach((b) => gsap.set(b, { width: (b.dataset.pct || '0') + '%' }));
       return;
     }
 
@@ -208,15 +206,13 @@ export default function Page() {
           });
         } else if (el.dataset.fx === 'timeline-line') {
           gsap.fromTo(el, { scaleX: 0 }, { scaleX: 1, duration: 0.9, ease: 'power2.inOut', transformOrigin: 'left center' });
-        } else if (el.dataset.vagasFill !== undefined) {
-          gsap.fromTo(el, { width: '0%' }, { width: (el.dataset.pct || '0') + '%', duration: 0.9, ease: 'power2.out' });
         }
 
         io.unobserve(el);
       });
     }, { rootMargin: '0px 0px -80px 0px', threshold: 0 });
 
-    [...revealEls, ...groups, ...(line ? [line] : []), ...bars].forEach((el) => io.observe(el));
+    [...revealEls, ...groups, ...(line ? [line] : [])].forEach((el) => io.observe(el));
     return () => io.disconnect();
   }, []);
 
@@ -634,11 +630,17 @@ export default function Page() {
                       <p className="text-sm text-gray-300 leading-normal">{l.desc}</p>
                     )}
 
-                    {isActive && l.vagas !== undefined && (
+                    {l.vagas !== undefined && (
                       <div className="space-y-1 bg-black/40 p-2.5 rounded-xl border border-white/5">
-                        <span className="font-mono text-sm text-gray-300 block font-bold">VAGAS RESTANTES: {l.vagas}</span>
+                        <div className="flex justify-between items-center">
+                          <span className={`font-mono text-[11px] block font-bold uppercase tracking-wider ${isActive ? 'text-gray-200' : 'text-gray-400'}`}>Vagas restantes</span>
+                          <span className={`font-display font-black text-base ${isActive ? 'text-[#10B981]' : 'text-gray-300'}`}>{l.vagas}</span>
+                        </div>
                         <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden flex items-center">
-                          <div data-vagas-fill data-pct={String((l.vagas / 30) * 100)} className="h-full w-0 bg-gradient-to-r from-[#10B981] to-[#34D399]"></div>
+                          <div
+                            className={`h-full rounded-full bg-gradient-to-r ${isActive ? 'from-[#10B981] to-[#34D399]' : 'from-[#F0C265]/70 to-[#B88A28]/70'}`}
+                            style={{ width: `${Math.min(100, Math.max(3, (l.vagas / 10) * 100))}%` }}
+                          ></div>
                         </div>
                       </div>
                     )}

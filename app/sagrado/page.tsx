@@ -73,6 +73,7 @@ interface ProjectRow {
   video_link?: string | null;
   photo_url?: string | null;
   status: string;
+  batch_id?: string | null;
   stage?: number;
   min_payable?: number;
   total_members?: number;
@@ -326,7 +327,7 @@ export default function SagradoPage() {
     }
     let query = supabase
       .from('projects')
-      .select('id, name, style, bio, instagram, video_link, photo_url, status, created_at, members(count), subscriptions(status, amount_paid, batches(name))', { count: 'exact' });
+      .select('id, name, style, bio, instagram, video_link, photo_url, status, batch_id, created_at, members(count), subscriptions(status, amount_paid, batches(name))', { count: 'exact' });
     if (searchQ.trim()) query = query.ilike('name', `%${searchQ.trim()}%`);
     if (statusFilter) query = query.eq('status', statusFilter);
     if (loteFilter) query = query.eq('subscriptions.batch_id', loteFilter);
@@ -1004,9 +1005,11 @@ export default function SagradoPage() {
                       {canSubs && p.status === 'awaiting_members' && (
                         <div className="flex items-center gap-2.5 flex-wrap bg-black/30 border border-white/5 rounded-xl p-3">
                           <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold">Vaga do lote:</span>
-                          <button type="button" onClick={() => returnSlot(p)} disabled={busy === `ret-${p.id}`} className="font-mono text-xs font-bold text-white border border-white/20 px-3 py-1.5 rounded-lg uppercase hover:bg-white/5 disabled:opacity-50">
-                            {busy === `ret-${p.id}` ? '...' : 'Devolver ao pool'}
-                          </button>
+                          {p.batch_id && (
+                            <button type="button" onClick={() => returnSlot(p)} disabled={busy === `ret-${p.id}`} className="font-mono text-xs font-bold text-white border border-white/20 px-3 py-1.5 rounded-lg uppercase hover:bg-white/5 disabled:opacity-50">
+                              {busy === `ret-${p.id}` ? '...' : 'Devolver ao pool'}
+                            </button>
+                          )}
                           <button type="button" onClick={() => grantSlot(p)} disabled={busy === `grant-${p.id}`} className="bg-[#10B981] text-black font-mono text-xs font-bold px-3 py-1.5 rounded-lg uppercase disabled:opacity-50">
                             {busy === `grant-${p.id}` ? '...' : 'Conceder vaga (ativar)'}
                           </button>
@@ -1223,6 +1226,9 @@ export default function SagradoPage() {
                             </span>
                           </div>
                           <div className="flex items-center gap-2.5 shrink-0">
+                            {p.status === 'awaiting_members' && !p.batch_id && (
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded font-mono uppercase border bg-red-500/10 text-red-300 border-red-500/30">sem reserva</span>
+                            )}
                             <span className={`text-[11px] font-bold px-2 py-0.5 rounded font-mono uppercase border ${st.cls}`}>{st.label}</span>
                             <span className="flex items-center gap-1 font-mono text-[11px] font-bold text-[#F0C265] uppercase"><Eye className="w-3 h-3" /> Ficha</span>
                           </div>
