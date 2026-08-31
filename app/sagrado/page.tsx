@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import {
   Shield, LayoutDashboard, Tags, FileText, ClipboardList, Users, UserCog,
-  LogOut, Check, X, Plus, ArrowUp, ArrowDown, Trash2, KeyRound, Loader2, Star, Eye, History, UserPlus, BarChart3
+  LogOut, Check, X, Plus, ArrowUp, ArrowDown, Trash2, KeyRound, Loader2, Star, Eye, History, UserPlus, BarChart3, UsersRound
 } from 'lucide-react';
 
 interface StaffRow {
@@ -219,6 +219,8 @@ export default function SagradoPage() {
   const [photoView, setPhotoView] = useState<string | null>(null);
   const [funnel, setFunnel] = useState<Record<string, unknown> | null>(null);
   const [slotMode, setSlotMode] = useState<'band' | 'integrante'>('band');
+  const [vip, setVip] = useState<Record<string, string>>({});
+  const [vipLeads, setVipLeads] = useState<Array<Record<string, unknown>>>([]);
 
   // account
   const [newName, setNewName] = useState('');
@@ -304,6 +306,21 @@ export default function SagradoPage() {
     if (data === 'integrante') setSlotMode('integrante'); else setSlotMode('band');
   }, []);
 
+  const loadVip = useCallback(async () => {
+    const keys = ['vip_badge','vip_title_start','vip_title_highlight','vip_subtitle','vip_benefit1_title','vip_benefit1_desc','vip_benefit2_title','vip_benefit2_desc','vip_benefit3_title','vip_benefit3_desc','vip_whatsapp_url','vip_active'];
+    const { data } = await supabase.from('site_settings').select('key,value').in('key', keys);
+    const map: Record<string, string> = {};
+    (data || []).forEach((r: { key: string; value: unknown }) => {
+      map[r.key] = typeof r.value === 'string' ? r.value : String(r.value ?? '');
+    });
+    setVip(map);
+  }, []);
+
+  const loadVipLeads = useCallback(async () => {
+    const { data } = await supabase.rpc('list_vip_leads', { p_limit: 300 });
+    setVipLeads((data || []) as Array<Record<string, unknown>>);
+  }, []);
+
   const loadFaqs = useCallback(async () => {
     const { data } = await supabase.from('faq_items').select('*').order('sort_order', { ascending: true });
     if (data) setFaqs(data as FaqRow[]);
@@ -357,7 +374,7 @@ export default function SagradoPage() {
     (async () => {
       const ok = await loadStaff();
       if (ok) {
-        await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores(), loadSlotMode()]);
+        await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores(), loadSlotMode(), loadVip(), loadVipLeads()]);
       }
       setBooting(false);
     })();
@@ -377,6 +394,7 @@ export default function SagradoPage() {
   useEffect(() => {
     if (authed && tab === 'auditoria') loadAudit();
     if (authed && tab === 'funil') loadFunnel();
+    if (authed && tab === 'vip') loadVipLeads();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authed, tab]);
 
@@ -394,6 +412,7 @@ export default function SagradoPage() {
     if (me?.role !== 'jurado') available.push('visao');
     if (canLotes) available.push('lotes');
     if (canContent) available.push('conteudo');
+    if (canContent) available.push('vip');
     if (canSubs) available.push('inscritos');
     if (canSubs) available.push('funil');
     if (isJudge) available.push('avaliacao');
@@ -421,7 +440,7 @@ export default function SagradoPage() {
       setLoggingIn(false);
       return;
     }
-    await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores(), loadSlotMode()]);
+    await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores(), loadSlotMode(), loadVip(), loadVipLeads()]);
     setLoggingIn(false);
     setPassword('');
   };
@@ -680,6 +699,22 @@ export default function SagradoPage() {
     return 'ok';
   });
 
+  const saveVip = (key: string, label: string, kind: 'text' | 'url' | 'bool' = 'text') => guarded(`vip-${key}`, async () => {
+    let value: string;
+    if (kind === 'bool') {
+      value = (vip[key] === 'true') ? 'true' : 'false';
+    } else {
+      value = (vip[key] ?? '').trim();
+      if (kind === 'url' && value && !/^https:\/\//i.test(value)) return 'Informe um link começando com https://';
+      if (kind !== 'url' && !value) return `Preencha: ${label}`;
+    }
+    const { error } = await supabase.rpc('staff_save_setting', { p_key: key, p_value: value });
+    if (error) return 'Erro ao salvar: ' + error.message;
+    await loadVip();
+    setMsg(`vip-${key}`, 'ok', 'Grupo VIP atualizado. A página já reflete no ar.');
+    return 'ok';
+  });
+
   const openAuditTab = () => { loadAudit(); };
 
   // ---------- conta ----------
@@ -766,6 +801,7 @@ export default function SagradoPage() {
               { id: 'equipe', label: 'Equipe', icon: Users, show: canTeam },
               { id: 'auditoria', label: 'Auditoria', icon: History, show: canAudit },
               { id: 'funil', label: 'Funil', icon: BarChart3, show: canSubs },
+              { id: 'vip', label: 'Grupo VIP', icon: Users, show: canContent },
               { id: 'conta', label: 'Minha conta', icon: UserCog, show: true },
             ].filter(t => t.show).map(t => (
               <button
@@ -1425,6 +1461,107 @@ export default function SagradoPage() {
                         </div>
                       ))}
                     </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* GRUPO VIP */}
+          {tab === 'vip' && canContent && (() => {
+            const fields: Array<{ key: string; label: string; kind?: 'text' | 'url' }> = [
+              { key: 'vip_badge', label: 'Selo (acima do título)' },
+              { key: 'vip_title_start', label: 'Título, parte fixa' },
+              { key: 'vip_title_highlight', label: 'Título, palavra destacada em dourado' },
+              { key: 'vip_subtitle', label: 'Subtítulo' },
+              { key: 'vip_benefit1_title', label: 'Benefício 1, título' },
+              { key: 'vip_benefit1_desc', label: 'Benefício 1, descrição' },
+              { key: 'vip_benefit2_title', label: 'Benefício 2, título' },
+              { key: 'vip_benefit2_desc', label: 'Benefício 2, descrição' },
+              { key: 'vip_benefit3_title', label: 'Benefício 3, título' },
+              { key: 'vip_benefit3_desc', label: 'Benefício 3, descrição' },
+              { key: 'vip_whatsapp_url', label: 'Link do grupo no WhatsApp', kind: 'url' },
+            ];
+            const active = vip['vip_active'] === 'true';
+            return (
+              <div className="space-y-4 fade-up-800">
+                <Notice kind="info">Tudo aqui atualiza a página /grupovip no ar imediatamente após salvar.</Notice>
+
+                <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
+                  <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                    <h3 className="font-display font-bold text-white uppercase">Link do grupo</h3>
+                    <span className={`font-mono text-[11px] font-bold px-2.5 py-1 rounded-full uppercase border ${active ? 'text-[#10B981] border-[#10B981]/30 bg-[#10B981]/10' : 'text-gray-500 border-white/10 bg-white/5'}`}>
+                      {active ? 'página ativa' : 'página oculta'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3 items-end">
+                    <Field label="Link de convite do WhatsApp">
+                      <input className={inputCls} value={vip['vip_whatsapp_url'] ?? ''} onChange={(e) => setVip(p => ({ ...p, vip_whatsapp_url: e.target.value }))} placeholder="https://chat.whatsapp.com/..." />
+                    </Field>
+                    <button type="button" onClick={() => saveVip('vip_whatsapp_url', 'Link do grupo', 'url')} disabled={busy === 'vip-vip_whatsapp_url'} className={btnGold}>
+                      {busy === 'vip-vip_whatsapp_url' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Salvar'}
+                    </button>
+                    <button type="button" onClick={() => { const nv = active ? 'false' : 'true'; setVip(x => ({ ...x, vip_active: nv })); saveVip('vip_active', 'Página', 'bool'); }} className={btnGhost}>
+                      {active ? 'Ocultar página' : 'Ativar página'}
+                    </button>
+                  </div>
+                  {notice['vip-vip_whatsapp_url'] && <Notice kind={notice['vip-vip_whatsapp_url'].kind}>{notice['vip-vip_whatsapp_url'].msg}</Notice>}
+                  {notice['vip-vip_active'] && <Notice kind={notice['vip-vip_active'].kind}>{notice['vip-vip_active'].msg}</Notice>}
+                </div>
+
+                <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
+                  <h3 className="font-display font-bold text-white uppercase border-b border-white/5 pb-3">Textos da página</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {fields.filter(x => x.key !== 'vip_whatsapp_url').map(x => (
+                      <div key={x.key} className="space-y-1.5">
+                        <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">{x.label}</label>
+                        {x.key === 'vip_subtitle' ? (
+                          <textarea className={`${inputCls} resize-none`} rows={3} value={vip[x.key] ?? ''} onChange={(e) => setVip(y => ({ ...y, [x.key]: e.target.value }))} />
+                        ) : (
+                          <input className={inputCls} value={vip[x.key] ?? ''} onChange={(e) => setVip(y => ({ ...y, [x.key]: e.target.value }))} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-end">
+                    <button type="button" onClick={() => {
+                      setBusy('vip-save-all');
+                      (async () => {
+                        let firstError = '';
+                        for (const x of fields) {
+                          if (x.kind === 'url') continue;
+                          const value = (vip[x.key] ?? '').trim();
+                          const { error } = await supabase.rpc('staff_save_setting', { p_key: x.key, p_value: value });
+                          if (error && !firstError) firstError = error.message;
+                        }
+                        setBusy(null);
+                        if (firstError) { setMsg('vip-all', 'err', 'Erro ao salvar: ' + firstError); return; }
+                        await loadVip();
+                        setMsg('vip-all', 'ok', 'Textos salvos. A página já está no ar com o novo conteúdo.');
+                      })();
+                    }} disabled={busy === 'vip-save-all'} className={btnGold}>
+                      {busy === 'vip-save-all' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Salvar todos os textos'}
+                    </button>
+                  </div>
+                  {notice['vip-all'] && <Notice kind={notice['vip-all'].kind}>{notice['vip-all'].msg}</Notice>}
+                </div>
+
+                <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-display font-bold text-white uppercase">Interessados ({vipLeads.length})</h3>
+                    <button type="button" onClick={loadVipLeads} className={btnGhost}>Atualizar</button>
+                  </div>
+                  {vipLeads.length === 0 && <p className="text-xs text-gray-500 font-mono">Nenhum interessado registrado ainda.</p>}
+                  <div className="space-y-2">
+                    {vipLeads.map(l => (
+                      <div key={String(l.id)} className="bg-black/40 border border-white/5 rounded-xl px-4 py-2.5 flex flex-col sm:flex-row justify-between sm:items-center gap-1.5">
+                        <span className="text-sm font-bold text-white">{String(l.name)}</span>
+                        <span className="flex items-center gap-3 font-mono text-xs text-gray-400">
+                          <a href={`mailto:${String(l.email)}`} className="hover:text-[#F0C265]">{String(l.email)}</a>
+                          <span>{fmtDate(String(l.created_at))}</span>
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

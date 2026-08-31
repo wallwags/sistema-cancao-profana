@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useEffect } from 'react';
 import { X, Users, Music, Sparkles, Mic2, Loader2, Check } from 'lucide-react';
 
 const WHATSAPP_LINK = 'https://chat.whatsapp.com/SEU-CODIGO-DO-GRUPO';
@@ -15,6 +16,36 @@ export default function GrupoVipPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  const [content, setContent] = useState<Record<string, string>>({
+    vip_badge: 'Grupo VIP · Vagas antecipadas',
+    vip_title_start: 'Entre antes de',
+    vip_title_highlight: 'todo mundo',
+    vip_subtitle: 'O Grupo VIP do Concurso Canção Profana recebe as inscrições antes da abertura oficial, os avisos de cada lote e as notícias da live. Gratuito, direto no seu WhatsApp.',
+    vip_benefit1_title: 'Acesso antecipado',
+    vip_benefit1_desc: 'Inscreva sua banda antes dos lotes abrirem',
+    vip_benefit2_title: 'Notícias da live',
+    vip_benefit2_desc: 'Lineups, datas e bastidores em primeira mão',
+    vip_benefit3_title: 'Sem custo nenhum',
+    vip_benefit3_desc: 'Saia quando quiser, sem burocracia',
+    vip_whatsapp_url: ''
+  });
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const keys = ['vip_badge','vip_title_start','vip_title_highlight','vip_subtitle','vip_benefit1_title','vip_benefit1_desc','vip_benefit2_title','vip_benefit2_desc','vip_benefit3_title','vip_benefit3_desc','vip_whatsapp_url','vip_active'];
+      const { data } = await supabase.from('site_settings').select('key,value').in('key', keys);
+      if (!data) return;
+      setContent(prev => {
+        const next = { ...prev };
+        (data as Array<{ key: string; value: unknown }>).forEach(r => {
+          next[r.key] = typeof r.value === 'string' ? r.value : String(r.value ?? '');
+        });
+        return next;
+      });
+      setHidden(false);
+    })();
+  }, []);
 
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const canSubmit = name.trim().length >= 2 && validEmail && !busy;
@@ -35,8 +66,19 @@ export default function GrupoVipPage() {
       return;
     }
     setDone(true);
-    setTimeout(() => { window.open(WHATSAPP_LINK, '_blank'); }, 600);
+    setTimeout(() => { window.open(content.vip_whatsapp_url || WHATSAPP_LINK, '_blank'); }, 600);
   };
+
+  if (hidden) {
+    return (
+      <div className="min-h-screen bg-[#05070B] flex flex-col items-center justify-center px-6 text-center space-y-3">
+        <Music className="w-10 h-10 text-[#F0C265]" />
+        <p className="font-display font-black text-xl text-white uppercase">Página em preparo</p>
+        <p className="text-sm text-gray-400">Volte em breve para entrar no grupo VIP.</p>
+        <a href="/v2" className="font-mono text-[11px] text-gray-500 hover:text-white uppercase tracking-widest pt-2">Voltar ao site</a>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#05070B] text-[#F0EAE0] relative overflow-hidden font-sans antialiased">
@@ -49,14 +91,14 @@ export default function GrupoVipPage() {
         {/* Selo */}
         <span className="inline-flex items-center gap-2 font-mono text-[11px] font-black uppercase tracking-widest text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/30 px-4 py-1.5 rounded-full fade-up-800">
           <Sparkles className="w-3.5 h-3.5" />
-          Grupo VIP · Vagas antecipadas
+          {content.vip_badge}
         </span>
 
         {/* Headline */}
         <h1 className="fade-up-800 [animation-delay:100ms] font-display font-black text-4xl sm:text-5xl lg:text-6xl text-white uppercase leading-[1.05] tracking-tight max-w-3xl mt-6">
-          Entre antes de{' '}
+          {content.vip_title_start}{' '}
           <span className="bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(240,194,101,0.45)]">
-            todo mundo
+            {content.vip_title_highlight}
           </span>
         </h1>
 
@@ -70,9 +112,9 @@ export default function GrupoVipPage() {
         {/* Benefícios */}
         <div className="fade-up-800 [animation-delay:260ms] grid grid-cols-1 sm:grid-cols-3 gap-3 mt-10 w-full max-w-2xl">
           {[
-            { icon: Users, t: 'Acesso antecipado', d: 'Inscreva sua banda antes dos lotes abrirem' },
-            { icon: Mic2, t: 'Notícias da live', d: 'Lineups, datas e bastidores em primeira mão' },
-            { icon: Music, t: 'Sem custo nenhum', d: 'Saia quando quiser, sem burocracia' },
+            { icon: Users, t: content.vip_benefit1_title, d: content.vip_benefit1_desc },
+            { icon: Mic2, t: content.vip_benefit2_title, d: content.vip_benefit2_desc },
+            { icon: Music, t: content.vip_benefit3_title, d: content.vip_benefit3_desc },
           ].map(b => (
             <div key={b.t} className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 space-y-1.5 text-center">
               <b.icon className="w-5 h-5 text-[#F0C265] mx-auto" />
@@ -160,7 +202,7 @@ export default function GrupoVipPage() {
                   Bem-vindo(a) ao VIP, <strong className="text-[#F0C265]">{name.split(' ')[0]}</strong>. Abrindo o WhatsApp para você finalizar a entrada...
                 </p>
                 <a
-                  href={WHATSAPP_LINK}
+                  href={content.vip_whatsapp_url || WHATSAPP_LINK}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-gold-shimmer inline-block px-8 py-3.5 rounded-full text-sm uppercase tracking-widest font-black text-black"
