@@ -139,7 +139,8 @@ export default function Page() {
           if (map.vip_whatsapp_url) setVipWaUrl(map.vip_whatsapp_url);
           const sm = map.slot_mode;
           if (sm === 'integrante') setSlotMode('integrante');
-          if (map.vip_active === 'true' || map.home_mode === 'vip') setWaitlistMode(true);
+          if (map.home_cta_mode === 'waitlist') setWaitlistMode(true);
+          if (map.home_cta_mode === 'quiz') setWaitlistMode(false);
           if (!isNaN(dp) && dp > 0) setDia0Price(dp);
         }
 
