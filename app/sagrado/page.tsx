@@ -219,6 +219,7 @@ export default function SagradoPage() {
   const [photoView, setPhotoView] = useState<string | null>(null);
   const [funnel, setFunnel] = useState<Record<string, unknown> | null>(null);
   const [slotMode, setSlotMode] = useState<'band' | 'integrante'>('band');
+  const [cartDays, setCartDays] = useState({ lote1: '10', lote2: '10', lote3: '12' });
   const [homeMode, setHomeMode] = useState<'classic' | 'vip'>('classic');
   const [vip, setVip] = useState<Record<string, string>>({});
   const [vipLeads, setVipLeads] = useState<Array<Record<string, unknown>>>([]);
@@ -687,6 +688,22 @@ export default function SagradoPage() {
     return 'ok';
   });
 
+  const applyCartOpen = (openAt: string) => guarded('cartopen', async () => {
+    const iso = fromInputValue(openAt);
+    if (!iso) return 'Informe a data de abertura.';
+    const d1 = Math.max(1, parseInt(cartDays.lote1, 10) || 10);
+    const d2 = Math.max(1, parseInt(cartDays.lote2, 10) || 10);
+    const d3 = Math.max(1, parseInt(cartDays.lote3, 10) || 12);
+    const { data: res, error } = await supabase.rpc('admin_set_cart_open', {
+      p_open_at: iso, p_days_lote1: d1, p_days_lote2: d2, p_days_lote3: d3
+    });
+    if (error) return 'Erro: ' + error.message;
+    if (res !== 'ok') return String(res);
+    await Promise.all([loadBatches(), loadSettings()]);
+    setMsg('cartopen', 'ok', 'Datas reorganizadas. Lote 1 ativa quando a data chegar (o countdown do site já aponta para o fim dele).');
+    return 'ok';
+  });
+
   const grantSlot = (p: ProjectRow) => guarded(`grant-${p.id}`, async () => {
     const { data: res, error } = await supabase.rpc('admin_grant_slot', { p_project_id: p.id });
     if (error) return 'Erro: ' + error.message;
@@ -864,6 +881,34 @@ export default function SagradoPage() {
           {/* LOTES */}
           {tab === 'lotes' && (
             <div className="space-y-5 fade-up-800">
+              <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 border-[#F0C265]/40 rounded-2xl p-5 space-y-4">
+                <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                  <h3 className="font-display font-bold text-white uppercase">📅 Abertura do carrinho (inscrições)</h3>
+                  <span className="font-mono text-[11px] text-gray-400 uppercase">
+                    Atual: {fmtDate(settings['cart_open_at'])}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-300 leading-relaxed">
+                  Define a data/hora em que o Lote 1 ativa e as inscrições abrem. Os três lotes são reorganizados
+                  automaticamente em sequência, e o countdown do site aponta para o fim do Lote 1. Se a data já passou,
+                  o Lote 1 ativa imediatamente.
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
+                  <Field label="Abertura em (BRT)">
+                    <input type="datetime-local" className={inputCls} value={settingDrafts['cart_open_at'] ?? ''} onChange={(e) => setSettingDrafts(p => ({ ...p, cart_open_at: e.target.value }))} />
+                  </Field>
+                  <Field label="Lote 1 (dias)"><input type="number" min={1} className={inputCls} value={cartDays.lote1} onChange={(e) => setCartDays(p => ({ ...p, lote1: e.target.value }))} /></Field>
+                  <Field label="Lote 2 (dias)"><input type="number" min={1} className={inputCls} value={cartDays.lote2} onChange={(e) => setCartDays(p => ({ ...p, lote2: e.target.value }))} /></Field>
+                  <Field label="Lote 3 (dias)"><input type="number" min={1} className={inputCls} value={cartDays.lote3} onChange={(e) => setCartDays(p => ({ ...p, lote3: e.target.value }))} /></Field>
+                </div>
+                <div className="flex justify-end items-center gap-3 flex-wrap">
+                  {notice['cartopen'] && <Notice kind={notice['cartopen'].kind}>{notice['cartopen'].msg}</Notice>}
+                  <button type="button" onClick={() => applyCartOpen(settingDrafts['cart_open_at'] ?? '')} disabled={busy === 'cartopen'} className={btnGold}>
+                    {busy === 'cartopen' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Reorganizar lotes'}
+                  </button>
+                </div>
+              </div>
+
               <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-3">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                   <div>
