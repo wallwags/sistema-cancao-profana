@@ -18,6 +18,7 @@ interface QuizFlowProps {
   activeLoteName: string;
   onPaymentSuccess: () => void;
   onJoinBand?: (inviteCode: string) => void;
+  waitlistMode?: boolean;
 }
 
 interface BandMatch {
@@ -30,7 +31,7 @@ interface BandMatch {
   free_slots: number;
 }
 
-export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand }: QuizFlowProps) {
+export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false }: QuizFlowProps) {
   const [quizStep, setQuizStep] = useState(1);
 
   // Quiz form states
@@ -94,6 +95,28 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [similarBands, setSimilarBands] = useState<string[]>([]);
   const [similarChoice, setSimilarChoice] = useState<'none' | 'mine' | 'other'>('none');
   const [bandMatches, setBandMatches] = useState<BandMatch[]>([]);
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const [waitlistEmail, setWaitlistEmail] = useState('');
+  const [waitlistBusy, setWaitlistBusy] = useState(false);
+  const [waitlistDone, setWaitlistDone] = useState(false);
+  const [waitlistError, setWaitlistError] = useState('');
+
+  const submitWaitlist = async () => {
+    setWaitlistError('');
+    const email = waitlistEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setWaitlistError('Informe um e-mail válido.');
+      return;
+    }
+    setWaitlistBusy(true);
+    const { error } = await supabase.from('vip_leads').insert({ name: 'Interessado (pré-inscrição)', email, source: 'pre_inscricao_home' });
+    setWaitlistBusy(false);
+    if (error) {
+      setWaitlistError('Não foi possível registrar agora. Tente novamente.');
+      return;
+    }
+    setWaitlistDone(true);
+  };
   const [joinState, setJoinState] = useState<'idle' | 'asking' | 'picking' | 'declined'>('idle');
   const sessionRef = useRef<string>('');
   const inviteCodeRef = useRef<string>('');
