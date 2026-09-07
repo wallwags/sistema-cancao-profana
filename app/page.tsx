@@ -271,7 +271,7 @@ export default function Page() {
       {/* UNIFIED FIXED CONTAINER FOR COUNTDOWN AND NAVBAR — retrátil ao rolar */}
       <div ref={headerRef} className="fixed top-0 left-0 right-0 z-50 w-full bg-[#05070B]/95 backdrop-blur-md">
         <CountdownBar targetDate={countdownTarget} />
-        <Navbar onOpenQuiz={handleOpenQuiz} />
+        <Navbar onOpenQuiz={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())} />
       </div>
 
       {/* MAIN CONTAINER WITH FIXED NAVBAR ADJUSTMENT PT */}
