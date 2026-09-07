@@ -229,13 +229,13 @@ export default function Page() {
 
   const formatLaunch = (iso?: string | null): string => {
     const d = iso ? new Date(String(iso).replace(' ', 'T')) : null;
-    if (!d || isNaN(d.getTime())) return '07 de setembro às 20:00';
+    if (!d || isNaN(d.getTime())) return 'a definir';
     try {
       const dia = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', timeZone: 'America/Sao_Paulo' }).format(d);
       const hora = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }).format(d);
       return `${dia} às ${hora}`;
     } catch {
-      return '07 de setembro às 20:00';
+      return 'a definir';
     }
   };
 
