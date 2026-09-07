@@ -113,6 +113,19 @@ export default function MinhaInscricaoPage() {
     });
   };
 
+  // ---------- acesso por link: ?k=codigo-da-banda ----------
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const k = (params.get('k') || '').replace(/[^a-z0-9]/g, '').slice(0, 12);
+    if (!k) {
+      router.replace('/v2');
+      return;
+    }
+    setAccessCode(k);
+    setLoading(false); // libera a tela do gate de CPF
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ---------- identificação por CPF ----------
   const identifyByCpf = async (code: string, cpf: string) => {
     setGateBusy(true);
@@ -139,6 +152,55 @@ export default function MinhaInscricaoPage() {
     applyRegistration(reg);
     setGateBusy(false);
   };
+
+  // ---------- GATE: confirmação de CPF ----------
+  if (!me) {
+    return (
+      <div className="pt-10 pb-16 px-6 bg-[#05070B] min-h-screen text-[#F0EAE0] flex items-center justify-center relative overflow-hidden">
+        <div className="absolute -right-32 -top-32 w-80 h-80 bg-[#E3B552]/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="glass-card-2 fade-up-800 max-w-sm w-full p-6 md:p-8 rounded-[32px] relative space-y-6 shadow-2xl text-center">
+          <div className="space-y-2">
+            <div className="w-12 h-12 mx-auto rounded bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] flex items-center justify-center font-display font-black text-black text-2xl border border-black shadow-md">P</div>
+            <span className="font-display font-black text-white text-lg tracking-tight uppercase block leading-none">PORTAL DO CANDIDATO</span>
+            <p className="text-sm text-gray-400 leading-relaxed pt-1">
+              Confirme seu CPF para acessar os dados da sua banda. Os dados dos demais integrantes permanecem privados.
+            </p>
+          </div>
+          <form
+            onSubmit={(e) => { e.preventDefault(); identifyByCpf(accessCode, cpfGate); }}
+            className="space-y-4 text-left"
+          >
+            <div className="space-y-1.5">
+              <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">Seu CPF (cadastrado pelo líder)</label>
+              <input
+                type="text"
+                value={cpfGate}
+                onChange={(e) => setCpfGate(applyCpfMask(e.target.value))}
+                placeholder="000.000.000-00"
+                className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3.5 text-white text-base outline-none focus:border-[#E3B552] placeholder-gray-600 font-mono tracking-wider"
+                inputMode="numeric"
+                required
+              />
+            </div>
+            {gateError && (
+              <div className="bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3 flex items-start gap-2.5">
+                <span className="text-red-400 text-base leading-none mt-0.5">⚠</span>
+                <div className="text-left flex-1">
+                  <span className="text-xs text-red-300 font-bold uppercase tracking-wide block">Atenção</span>
+                  <span className="text-xs text-red-200/90 leading-snug">{gateError}</span>
+                </div>
+                <button type="button" onClick={() => setGateError('')} className="text-red-300/70 hover:text-white text-lg leading-none">×</button>
+              </div>
+            )}
+            <button type="submit" disabled={gateBusy || cpfGate.length < 14} className="btn-gold-shimmer w-full py-4 rounded-xl text-sm uppercase tracking-widest font-black text-black disabled:opacity-50">
+              {gateBusy ? 'Confirmando...' : 'Acessar minha banda'}
+            </button>
+          </form>
+          <Link href="/v2" className="inline-block text-[11px] font-mono text-gray-500 hover:text-white uppercase tracking-widest">← Voltar ao site</Link>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
