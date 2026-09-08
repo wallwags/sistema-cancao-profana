@@ -14,7 +14,7 @@ interface StaffRow {
   username?: string;
   display_name: string;
   role: 'dev' | 'admin' | 'jurado';
-  permissions: { manage_lotes?: boolean; manage_content?: boolean; manage_subscriptions?: boolean; view_sensitive_data?: boolean; manage_team?: boolean; view_audit?: boolean };
+  permissions: { manage_lotes?: boolean; manage_content?: boolean; manage_subscriptions?: boolean; view_sensitive_data?: boolean; manage_team?: boolean; view_audit?: boolean; manage_vip?: boolean };
 }
 
 interface MemberFull {
@@ -98,6 +98,7 @@ const PERM_KEYS = [
   { key: 'manage_subscriptions', label: 'Gerenciar inscrições, pagamentos e notas' },
   { key: 'view_sensitive_data', label: 'Visualizar dados pessoais dos inscritos (CPF, contato)' },
   { key: 'manage_team', label: 'Gerenciar acessos da equipe' },
+  { key: 'manage_vip', label: 'Gerenciar Grupo VIP e interessados' },
   { key: 'view_audit', label: 'Visualizar o histórico de auditoria' },
 ] as const;
 
@@ -247,6 +248,7 @@ export default function SagradoPage() {
   const canSubs = isDev || !!perms.manage_subscriptions;
   const canSensitive = isDev || !!perms.view_sensitive_data;
   const canTeam = isDev || (isAdminRole && !!perms.manage_team);
+  const canVip = isDev || (isAdminRole && !!perms.manage_vip);
   const canAudit = isDev || (isAdminRole && !!perms.view_audit);
 
   const loadLive = useCallback(async () => {
@@ -425,7 +427,7 @@ export default function SagradoPage() {
     if (me?.role !== 'jurado') available.push('visao');
     if (canLotes) available.push('lotes');
     if (canContent) available.push('conteudo');
-    if (canContent) available.push('vip');
+    if (canVip) available.push('vip');
     if (canSubs) available.push('inscritos');
     if (canSubs) available.push('funil');
     if (isJudge) available.push('avaliacao');
@@ -434,7 +436,7 @@ export default function SagradoPage() {
     available.push('conta');
     setTab(t => (available.includes(t) ? t : available[0]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authed, me?.role, canLotes, canContent, canSubs, canTeam, canAudit, isJudge]);
+  }, [authed, me?.role, canLotes, canContent, canSubs, canTeam, canAudit, canVip, isJudge]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -852,7 +854,7 @@ export default function SagradoPage() {
               { id: 'equipe', label: 'Equipe', icon: Users, show: canTeam },
               { id: 'auditoria', label: 'Auditoria', icon: History, show: canAudit },
               { id: 'funil', label: 'Funil', icon: BarChart3, show: canSubs },
-              { id: 'vip', label: 'Grupo VIP', icon: Users, show: isDev },
+              { id: 'vip', label: 'Grupo VIP', icon: Users, show: canVip },
               { id: 'conta', label: 'Minha conta', icon: UserCog, show: true },
             ].filter(t => t.show).map(t => (
               <button
@@ -1547,7 +1549,7 @@ export default function SagradoPage() {
           })()}
 
           {/* GRUPO VIP */}
-          {tab === 'vip' && canContent && (() => {
+          {tab === 'vip' && canVip && (() => {
             const fields: Array<{ key: string; label: string; kind?: 'text' | 'url' }> = [
               { key: 'vip_badge', label: 'Selo (acima do título)' },
               { key: 'vip_title_start', label: 'Título, parte fixa' },
@@ -1598,6 +1600,9 @@ export default function SagradoPage() {
                           : 'O domínio principal abre a landing clássica (hoje em /v2). O Grupo VIP fica em /grupovip.'}
                         {' '}Alteração exclusiva do nível máximo.
                       </span>
+                      {!isDev && (
+                        <span className="text-[11px] text-gray-500 font-mono block">A alternância de página principal é definida pelo nível máximo.</span>
+                      )}
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <button type="button" onClick={() => changeHomeMode('classic')} disabled={busy === 'homemode' || homeMode === 'classic' || !isDev} className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-xl border transition-colors ${homeMode === 'classic' ? 'bg-[#F0C265] text-black border-black' : 'text-gray-400 border-white/10 bg-white/5 hover:text-white'} disabled:opacity-50`}>
