@@ -852,7 +852,7 @@ export default function SagradoPage() {
               { id: 'equipe', label: 'Equipe', icon: Users, show: canTeam },
               { id: 'auditoria', label: 'Auditoria', icon: History, show: canAudit },
               { id: 'funil', label: 'Funil', icon: BarChart3, show: canSubs },
-              { id: 'vip', label: 'Grupo VIP', icon: Users, show: canContent },
+              { id: 'vip', label: 'Grupo VIP', icon: Users, show: isDev },
               { id: 'conta', label: 'Minha conta', icon: UserCog, show: true },
             ].filter(t => t.show).map(t => (
               <button
@@ -1596,13 +1596,14 @@ export default function SagradoPage() {
                         {homeMode === 'vip'
                           ? 'O domínio principal abre o Grupo VIP. A landing clássica continua acessível em /v2.'
                           : 'O domínio principal abre a landing clássica (hoje em /v2). O Grupo VIP fica em /grupovip.'}
+                        {' '}Alteração exclusiva do nível máximo.
                       </span>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <button type="button" onClick={() => changeHomeMode('classic')} disabled={busy === 'homemode' || homeMode === 'classic'} className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-xl border transition-colors ${homeMode === 'classic' ? 'bg-[#F0C265] text-black border-black' : 'text-gray-400 border-white/10 bg-white/5 hover:text-white'}`}>
+                      <button type="button" onClick={() => changeHomeMode('classic')} disabled={busy === 'homemode' || homeMode === 'classic' || !isDev} className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-xl border transition-colors ${homeMode === 'classic' ? 'bg-[#F0C265] text-black border-black' : 'text-gray-400 border-white/10 bg-white/5 hover:text-white'} disabled:opacity-50`}>
                         Landing clássica
                       </button>
-                      <button type="button" onClick={() => changeHomeMode('vip')} disabled={busy === 'homemode' || homeMode === 'vip'} className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-xl border transition-colors ${homeMode === 'vip' ? 'bg-[#F0C265] text-black border-black' : 'text-gray-400 border-white/10 bg-white/5 hover:text-white'}`}>
+                      <button type="button" onClick={() => changeHomeMode('vip')} disabled={busy === 'homemode' || homeMode === 'vip' || !isDev} className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-xl border transition-colors ${homeMode === 'vip' ? 'bg-[#F0C265] text-black border-black' : 'text-gray-400 border-white/10 bg-white/5 hover:text-white'} disabled:opacity-50`}>
                         Grupo VIP
                       </button>
                     </div>

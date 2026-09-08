@@ -729,9 +729,6 @@ export default function Page() {
             <button type="button" onClick={() => setIsPrivacyOpen(true)} className="hover:text-white transition-colors font-semibold">Privacidade</button>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <Link href="/sagrado" className="text-[#8B6F47] hover:text-[#F0C265] transition-colors" title="Painel Admin">
-              <Settings className="w-4 h-4" />
-            </Link>
             <span>Sistema criado por <a href="https://instagram.com/ww.wagner" target="_blank" rel="noopener noreferrer" className="text-[#D4A843] hover:text-[#E8C06B] transition-colors font-bold">@ww.wagner</a></span>
           </div>
         </div>
