@@ -650,7 +650,7 @@ export default function SagradoPage() {
     const { error } = await supabase.rpc('set_live_phase', { phase });
     if (error) return 'Não foi possível: ' + error.message;
     await Promise.all([loadLive(), loadBatches()]);
-    setMsg('live-phase', 'ok', phase === 'ao_vivo' ? 'Live no ar. Lotes ativos foram pausados automaticamente.' : 'Fase da live atualizada.');
+    setMsg('live-phase', 'ok', phase === 'ao_vivo' ? 'Live no ar. Lotes ativos foram pausados automaticamente.' : 'Fase da live atualizada. O lote que estava ativo antes da transmissão foi restaurado.');
     return 'ok';
   });
 
@@ -991,7 +991,7 @@ export default function SagradoPage() {
                   <span className="font-mono text-[11px] text-gray-400 uppercase">Lançamento: {fmtDate(settings.live_launch)}</span>
                 </div>
                 <p className="text-sm text-gray-300 leading-relaxed">
-                  Colocar a live no ar pausa automaticamente qualquer lote ativo (o Dia 0 passa a valer). Ativar um lote depois encerra a transmissão.
+                  Colocar a live no ar pausa automaticamente qualquer lote ativo (o preço da Live passa a valer). Voltar para em breve ou encerrar restaura o lote que estava ativo antes. Ativar um lote também encerra a transmissão.
                 </p>
                 <div className="flex flex-wrap gap-2.5">
                   <button type="button" onClick={() => setLivePhase('ao_vivo')} disabled={busy === 'live-phase' || liveStatus === 'ao_vivo'} className={btnGold}>

@@ -299,3 +299,5 @@
 @media (prefers-reduced-motion: reduce) {
   .faq-collapse { transition: none; }
 }
+/* Affordance de clique: todo botão habilitado mostra cursor de mãozinha */
+button:not(:disabled), [role='button']:not(:disabled) { cursor: pointer; }

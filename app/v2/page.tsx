@@ -170,12 +170,22 @@ export default function Page() {
     };
 
     fetchSupabaseConfig();
+    // Re-sincroniza a cada 60s: mudancas do painel refletem sem recarregar
+    const syncId = setInterval(fetchSupabaseConfig, 60000);
+    return () => clearInterval(syncId);
   }, []);
 
   // Durante a transmissao ao vivo vale o preco exclusivo da Live (definido no servidor via RPC)
   const isLiveNow = lotesConfig.live.status === 'ao_vivo';
-  const activePrice = isLiveNow ? dia0Price : (lotesConfig.lote1.status === 'ativo' ? lotesConfig.lote1.valor : (lotesConfig.lote2.status === 'ativo' ? lotesConfig.lote2.valor : lotesConfig.lote3.valor));
-  const activeLoteName = isLiveNow ? 'LIVE' : (lotesConfig.lote1.status === 'ativo' ? 'LOTE 1' : (lotesConfig.lote2.status === 'ativo' ? 'LOTE 2' : 'LOTE 3'));
+  // Lote em foco: o ativo; se nenhum estiver ativo (pre-lancamento ou live no ar), o primeiro ainda em aberto
+  const loteFoco = (lotesConfig.lote1.status === 'ativo' ? 'lote1'
+    : lotesConfig.lote2.status === 'ativo' ? 'lote2'
+    : lotesConfig.lote3.status === 'ativo' ? 'lote3'
+    : lotesConfig.lote1.status !== 'encerrado' ? 'lote1'
+    : lotesConfig.lote2.status !== 'encerrado' ? 'lote2' : 'lote3') as 'lote1' | 'lote2' | 'lote3';
+  const loteFocoNome = { lote1: 'LOTE 1', lote2: 'LOTE 2', lote3: 'LOTE 3' }[loteFoco];
+  const activePrice = isLiveNow ? dia0Price : lotesConfig[loteFoco].valor;
+  const activeLoteName = isLiveNow ? 'LIVE' : loteFocoNome;
 
 
   // Scroll FX engine — reveals de seção, grupos em stagger, linha da timeline
@@ -542,9 +552,7 @@ export default function Page() {
             {lotesConfig.live.status === 'ao_vivo' && (
               <div className="py-4 px-6 rounded-2xl border-2 border-red-500 bg-red-950/20 text-red-500 flex flex-col sm:flex-row justify-between items-center gap-4 animate-pulse">
                 <span className="font-mono text-sm md:text-base font-black tracking-widest uppercase">🔴 TRANSMISSÃO AO VIVO AGORA</span>
-                {liveUrl
-                  ? <a href={liveUrl} target="_blank" rel="noopener noreferrer" className="bg-red-600 hover:bg-red-500 text-white font-mono text-sm font-bold uppercase px-5 py-2 rounded-xl border border-black shadow">ASSISTIR LIVE</a>
-                  : <span className="bg-red-600/40 text-white/70 font-mono text-sm font-bold uppercase px-5 py-2 rounded-xl border border-black/40">ASSISTIR LIVE</span>}
+                {liveUrl && <a href={liveUrl} target="_blank" rel="noopener noreferrer" className="bg-red-600 hover:bg-red-500 text-white font-mono text-sm font-bold uppercase px-5 py-2 rounded-xl border border-black shadow">ASSISTIR LIVE</a>}
               </div>
             )}
             {lotesConfig.live.status === 'em_breve' && (
