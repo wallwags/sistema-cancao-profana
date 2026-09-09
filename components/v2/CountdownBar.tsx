@@ -88,14 +88,14 @@ export default function CountdownBar({ targetDate, liveStatus = 'em_breve', dia0
         {phaseLabel}
       </span>
 
-      {(isLive || isPreLive) && (
+      {isPreLive && (
         <span className="font-mono text-[#F0C265] font-bold uppercase tracking-wider text-[10px] sm:text-[11px] whitespace-nowrap">
           {phaseValue}
         </span>
       )}
 
-      {/* countdown do lote ativo */}
-      {!isPreLive && targetDate && (
+      {/* countdown */}
+      {(targetDate && (isPreLive || (!isLive && !isPreLive))) && (
         <div className="bg-[#05070B] px-3 py-1 rounded-full font-mono font-black text-[#F0C265] tracking-wider flex items-center gap-1.5 shadow-inner border border-white/5 text-[10px] sm:text-xs">
           <span className="text-[#F0C265] font-extrabold">{timeLeft.days}</span>
           <span className="text-gray-500 text-[9px] font-bold">D</span>

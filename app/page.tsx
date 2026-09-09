@@ -83,9 +83,15 @@ export default function Page() {
       setWaitlistError('Não foi possível registrar agora. Tente novamente.');
       return;
     }
+    // Redireciona imediatamente para o WhatsApp
+    const waUrl = vipWaUrl;
+    if (waUrl) {
+      window.open(waUrl, '_blank');
+    }
     setWaitlistDone(true);
+    setTimeout(() => { setWaitlistOpen(false); setWaitlistDone(false); setWaitlistEmail(''); }, 2000);
   };
-  const [waitlistMode, setWaitlistMode] = useState(false);
+  const [waitlistMode, setWaitlistMode] = useState(true); // pré-inscrição é o estado padrão
   const [slotMode, setSlotMode] = useState<'band' | 'integrante'>('band');
   const [sheetCode, setSheetCode] = useState<string | null>(null);
   const [sheetStart, setSheetStart] = useState<'confirm' | 'pick'>('confirm');
@@ -275,7 +281,7 @@ export default function Page() {
       {/* UNIFIED FIXED CONTAINER FOR COUNTDOWN AND NAVBAR — retrátil ao rolar */}
       <div ref={headerRef} className="fixed top-0 left-0 right-0 z-50 w-full bg-[#05070B]/95 backdrop-blur-md">
         <CountdownBar
-          targetDate={countdownTarget}
+          targetDate={liveStatusBar === 'em_breve' ? liveLaunch : countdownTarget}
           liveStatus={liveStatusBar}
           dia0Price={dia0Price}
         />
@@ -765,65 +771,45 @@ export default function Page() {
           <div className="legal-pop w-full max-w-md bg-[#05070B] border-2 border-[#E3B552] rounded-[28px] p-6 sm:p-8 space-y-5 shadow-[0_10px_60px_rgba(0,0,0,0.9)] relative" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setWaitlistOpen(false)} className="absolute right-4 top-4 text-gray-400 hover:text-white text-2xl leading-none">×</button>
 
-            {!waitlistDone ? (
-              <>
-                <div className="text-center space-y-2 pt-2">
-                  <span className="inline-flex items-center gap-2 font-mono text-[11px] font-black uppercase tracking-widest text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/30 px-3 py-1 rounded-full">
-                    Pré-inscrição · Grupo VIP
-                  </span>
-                  <h2 className="font-display font-black text-xl text-white uppercase tracking-tight">Deixe seu e-mail e entre no grupo</h2>
-                  <p className="text-sm text-gray-400 leading-snug">
-                    As inscrições oficiais abrem em breve. Deixe seu e-mail para ser avisado e entre no grupo VIP do WhatsApp para acompanhar tudo em primeira mão.
-                  </p>
-                </div>
+            <div className="text-center space-y-2 pt-2">
+              <span className="inline-flex items-center gap-2 font-mono text-[11px] font-black uppercase tracking-widest text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/30 px-3 py-1 rounded-full">
+                Grupo VIP · Vagas antecipadas
+              </span>
+              <h2 className="font-display font-black text-xl text-white uppercase tracking-tight">Entre no grupo VIP</h2>
+            </div>
 
-                <div className="space-y-1.5">
-                  <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">Seu e-mail</label>
-                  <input
-                    type="email"
-                    value={waitlistEmail}
-                    onChange={(e) => setWaitlistEmail(e.target.value)}
-                    placeholder="voce@email.com"
-                    className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3.5 text-white text-base outline-none focus:border-[#E3B552] placeholder-gray-600 transition-colors"
-                    autoComplete="email"
-                  />
-                </div>
+            <div className="space-y-1.5">
+              <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">Seu e-mail</label>
+              <input
+                type="email"
+                value={waitlistEmail}
+                onChange={(e) => { setWaitlistEmail(e.target.value); if (waitlistError) setWaitlistError(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !waitlistBusy && waitlistEmail.trim()) submitWaitlist(); }}
+                placeholder="voce@email.com"
+                className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3.5 text-white text-base outline-none focus:border-[#E3B552] placeholder-gray-600 transition-colors"
+                autoComplete="email"
+                autoFocus
+              />
+            </div>
 
-                {waitlistError && (
-                  <div className="bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3 flex items-start gap-2.5">
-                    <span className="text-red-400 text-base leading-none mt-0.5">⚠</span>
-                    <span className="text-xs text-red-200/90 leading-snug flex-1">{waitlistError}</span>
-                    <button onClick={() => setWaitlistError('')} className="text-red-300/70 hover:text-white text-lg leading-none">×</button>
-                  </div>
-                )}
-
-                <button
-                  onClick={submitWaitlist}
-                  disabled={waitlistBusy}
-                  className="w-full flex items-center justify-center gap-2 font-display font-black text-base uppercase tracking-widest text-black bg-gradient-to-b from-[#34D399] to-[#059669] py-4 rounded-full shadow-lg shadow-[#10B981]/25 disabled:opacity-50 active:scale-[0.98] transition-transform"
-                >
-                  {waitlistBusy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Users className="w-5 h-5" />}
-                  {waitlistBusy ? 'Registrando...' : 'Entrar no grupo do WhatsApp'}
-                </button>
-
-                <p className="text-[11px] text-gray-500 text-center leading-snug">Usamos seu e-mail apenas para avisos oficiais do concurso. Nada de spam.</p>
-              </>
-            ) : (
-              <div className="text-center space-y-4 py-2">
-                <div className="w-14 h-14 mx-auto rounded-full bg-[#10B981]/10 text-[#10B981] border-2 border-[#10B981] flex items-center justify-center"><Check className="w-7 h-7" /></div>
-                <h2 className="font-display font-black text-xl text-white uppercase">E-mail registrado!</h2>
-                <p className="text-sm text-gray-300 leading-relaxed">Você será avisado assim que as inscrições oficiais abrirem. Agora entre no grupo VIP para não perder nada.</p>
-                <a
-                  href={vipWaUrl || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 font-display font-black text-base uppercase tracking-widest text-black bg-gradient-to-b from-[#34D399] to-[#059669] py-4 rounded-full shadow-lg shadow-[#10B981]/25 active:scale-[0.98] transition-transform"
-                >
-                  <Users className="w-5 h-5" /> Entrar no grupo do WhatsApp
-                </a>
-                <button onClick={() => setWaitlistOpen(false)} className="block w-full font-mono text-[11px] text-gray-500 hover:text-white uppercase tracking-widest pt-1">Fechar</button>
+            {waitlistError && (
+              <div className="bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3 flex items-start gap-2.5">
+                <span className="text-red-400 text-base leading-none mt-0.5">⚠</span>
+                <span className="text-xs text-red-200/90 leading-snug flex-1">{waitlistError}</span>
+                <button onClick={() => setWaitlistError('')} className="text-red-300/70 hover:text-white text-lg leading-none">×</button>
               </div>
             )}
+
+            <button
+              onClick={submitWaitlist}
+              disabled={waitlistBusy || !waitlistEmail.trim()}
+              className="w-full flex items-center justify-center gap-2 font-display font-black text-base uppercase tracking-widest text-black bg-gradient-to-b from-[#34D399] to-[#059669] py-4 rounded-full shadow-lg shadow-[#10B981]/25 disabled:opacity-50 active:scale-[0.98] transition-transform"
+            >
+              {waitlistBusy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Users className="w-5 h-5" />}
+              {waitlistBusy ? 'Abrindo WhatsApp...' : 'Entrar no grupo do WhatsApp'}
+            </button>
+
+            <p className="text-[11px] text-gray-500 text-center leading-snug">Informe seu e-mail para receber os avisos oficiais e acesse o grupo VIP. Nada de spam.</p>
           </div>
         </div>
       )}
