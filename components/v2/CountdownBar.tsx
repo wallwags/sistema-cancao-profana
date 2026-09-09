@@ -32,11 +32,13 @@ export default function CountdownBar({ targetDate, liveStatus = 'em_breve', dia0
     minutes: '00',
     seconds: '00'
   });
+  const [targetOver, setTargetOver] = useState(false);
 
   useEffect(() => {
     const parsed = targetDate ? new Date(String(targetDate).replace(' ', 'T')).getTime() : NaN;
     if (isNaN(parsed)) {
       setTimeLeft({ days: '00', hours: '00', minutes: '00', seconds: '00' });
+      setTargetOver(false);
       return;
     }
     const target = parsed;
@@ -44,6 +46,7 @@ export default function CountdownBar({ targetDate, liveStatus = 'em_breve', dia0
     const tick = () => {
       const left = computeLeft(target);
       setTimeLeft({ days: left.days, hours: left.hours, minutes: left.minutes, seconds: left.seconds });
+      setTargetOver(left.over);
       return left.over;
     };
 
@@ -68,10 +71,15 @@ export default function CountdownBar({ targetDate, liveStatus = 'em_breve', dia0
     phaseLabel = 'AO VIVO AGORA';
     phaseValue = `$${dia0Price ?? 25} até o fim da Live`;
     barCls = 'bg-gradient-to-r from-red-800 via-red-600 to-red-800';
-  } else if (isPreLive) {
+  } else if (isPreLive && !targetOver) {
     phaseLabel = 'Live de Abertura · 14/09';
     phaseValue = '';
     barCls = 'bg-gradient-to-r from-[#3b1a4a] via-[#8B1E1E] to-[#3b1a4a]';
+  } else if (targetDate && !targetOver) {
+    // Lote vigente com live fora do ar: inscricoes abertas com contagem do lote
+    phaseLabel = 'Inscrições abertas';
+    phaseValue = '';
+    barCls = 'bg-[#121215]';
   } else {
     phaseLabel = 'Inscrições encerradas';
     phaseValue = '';
@@ -96,7 +104,7 @@ export default function CountdownBar({ targetDate, liveStatus = 'em_breve', dia0
       )}
 
       {/* countdown */}
-      {(targetDate && (isPreLive || (!isLive && !isPreLive))) && (
+      {(targetDate && !isLive && !targetOver) && (
         <div className="bg-[#05070B] px-3 py-1 rounded-full font-mono font-black text-[#F0C265] tracking-wider flex items-center gap-1.5 shadow-inner border border-white/5 text-[10px] sm:text-xs">
           <span className="text-[#F0C265] font-extrabold">{timeLeft.days}</span>
           <span className="text-gray-500 text-[9px] font-bold">D</span>

@@ -309,7 +309,7 @@ export default function Page() {
       {/* UNIFIED FIXED CONTAINER FOR COUNTDOWN AND NAVBAR — retrátil ao rolar */}
       <div ref={headerRef} className="fixed top-0 left-0 right-0 z-50 w-full bg-[#05070B]/95 backdrop-blur-md">
         <CountdownBar
-          targetDate={liveStatusBar === 'em_breve' ? liveLaunch : countdownTarget}
+          targetDate={liveStatusBar === 'em_breve' && liveLaunch && new Date(String(liveLaunch).replace(' ', 'T')).getTime() > Date.now() ? liveLaunch : countdownTarget}
           liveStatus={liveStatusBar}
           dia0Price={dia0Price}
           liveUrl={liveUrl}
