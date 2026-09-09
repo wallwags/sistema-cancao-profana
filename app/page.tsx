@@ -54,7 +54,8 @@ export default function Page() {
     { q: 'Como recebo a confirmação da minha inscrição?', a: 'Assim que o Pix é validado, o status da sua matrícula aparece automaticamente no portal "Minha Inscrição", vinculado ao e-mail informado no cadastro. Leve o código do seu passe no dia da gravação.' },
     { q: 'O que acontece se eu me inscrever e não puder participar?', a: 'Caso ocorram imprevistos justificáveis, o grupo deve notificar a equipe de estúdio com no mínimo 5 dias de antecedência para realocação em novas datas sob disponibilidade. Em casos extremos, a inscrição pode ser transferida para outro projeto parceiro sob análise técnica.' },
     { q: 'Posso inscrever uma música em parceria ou coautoria?', a: 'Sim! Com certeza. Desde que a banda detranque os direitos autorais para as transmissões oficiais da gravação e pelo menos uma das faixas do repertório de 3 músicas seja de autoria e em língua portuguesa.' },
-    { q: 'Como funciona cada fase do concurso?', a: 'O concurso possui 3 fases ativas: Etapa 1 (Transmissão ao Vivo): as bandas gravam ao vivo no estúdio e transmitem com arrecadação direta na tela. Etapa 2 (Podcast especial): as bandas selecionadas participam de um podcast de divulgação. Etapa 3 (Grande Final): Apresentação presencial ao vivo para o público e revelação dos vencedores pela média final de notas.' },
+    { q: 'Onde acontecem as gravações?', a: 'Todas as gravações acontecem presencialmente no Estúdio Pedra Profana em Teresópolis — RJ. Somente inscritos que possam comparecer ao estúdio nas datas estipuladas serão aceitos no concurso.' },
+        { q: 'Como funciona cada fase do concurso?', a: 'O concurso possui 3 fases ativas: Etapa 1 (Transmissão ao Vivo): as bandas gravam ao vivo no estúdio e transmitem com arrecadação direta na tela. Etapa 2 (Podcast especial): as bandas selecionadas participam de um podcast de divulgação. Etapa 3 (Grande Final): Apresentação presencial ao vivo para o público e revelação dos vencedores pela média final de notas.' },
     { q: 'Quais são os prêmios e benefícios para os vencedores?', a: '1º lugar: EP de 5 faixas + clipe + fotos + distribuição; 2º lugar: 3 faixas + fotos; 3º lugar: 1 single.' }
   ]);
   const [countdownTarget, setCountdownTarget] = useState<string | null>(null);
@@ -405,6 +406,19 @@ export default function Page() {
             <h2 className="font-display font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white uppercase tracking-tight">COMO DEVE SER SUA FORMAÇÃO?</h2>
           </div>
 
+          {/* LOCAL DE GRAVAÇÃO */}
+          <div data-reveal className="reveal-hidden bg-gradient-to-r from-[#10B981]/10 via-[#0B0F19]/80 to-[#10B981]/10 border border-[#10B981]/25 rounded-2xl py-5 px-6 text-center space-y-2">
+            <div className="flex items-center justify-center gap-2">
+              <Shield className="w-4 h-4 text-[#10B981]" />
+              <span className="font-mono text-[11px] text-[#10B981] uppercase tracking-widest font-black">Local das gravações</span>
+            </div>
+            <p className="text-sm text-gray-200 leading-relaxed">
+              Todas as gravações acontecem presencialmente no{' '}
+              <strong className="text-white">Estúdio Pedra Profana</strong> em{' '}
+              <strong className="text-[#10B981]">Teresópolis — RJ</strong>. Somente inscritos que possam comparecer nas datas estipuladas.
+            </p>
+          </div>
+
           {/* Premium Infographic Banner Box */}
           <div data-reveal className="reveal-hidden bg-gradient-to-r from-[#8B1E1E]/20 via-[#0B0F19]/80 to-[#8B1E1E]/20 border border-white/10 py-6 px-8 rounded-3xl text-center space-y-3 shadow-lg">
             <h3 className="font-mono text-xs text-[#F0C265] font-black uppercase tracking-widest">DIRETRIZ DE INTEGRANTES DO PALCO</h3>
@@ -562,45 +576,6 @@ export default function Page() {
             )}
           </div>
 
-          {/* DIA 0 — faixa discreta de decisao */}
-          {lotesConfig.live.status !== 'encerrada' && (
-            <div data-reveal className={`reveal-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 rounded-2xl px-5 py-4 border transition-all duration-500 ${
-              lotesConfig.live.status === 'ao_vivo'
-                ? 'border-[#F0C265]/60 bg-[#0B0F19]/90 shadow-[0_0_25px_rgba(240,194,101,0.2)]'
-                : 'border-white/10 bg-[#0B0F19]/60'
-            }`}>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <span className={`font-mono text-[11px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${
-                  lotesConfig.live.status === 'ao_vivo'
-                    ? 'bg-red-600 text-white border-black animate-pulse'
-                    : 'bg-[#F0C265]/10 text-[#F0C265] border-[#F0C265]/30'
-                }`}>
-                  {lotesConfig.live.status === 'ao_vivo' ? '🔴 AO VIVO' : '🔴 DIA 0'}
-                </span>
-                <span className="font-mono text-xs text-gray-300">{formatLaunch(liveLaunch)}</span>
-                <span className="font-display font-black text-lg text-[#F0C265]">R$ {dia0Price},00</span>
-                <span className="font-mono text-[11px] text-gray-400 uppercase tracking-wider">Inscrição apenas durante a transmissão</span>
-              </div>
-              {lotesConfig.live.status === 'ao_vivo' && (
-                <div className="flex gap-2.5">
-                  {liveUrl && (
-                    <a href={liveUrl} target="_blank" rel="noopener noreferrer" className="bg-red-600 hover:bg-red-500 text-white font-mono text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-xl border border-black transition-colors">
-                      Assistir
-                    </a>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleOpenQuiz}
-                    onMouseEnter={preloadQuiz}
-                    className="btn-gold-shimmer px-4 py-2 rounded-xl text-xs uppercase tracking-widest font-black"
-                  >
-                    Inscrever no Dia 0
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
           <div data-reveal-group className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
 
@@ -670,7 +645,7 @@ export default function Page() {
                       <p className="text-sm text-gray-300 leading-normal">{l.desc}</p>
                     )}
 
-                    {l.vagas !== undefined && (
+                    {isActive && l.vagas !== undefined && (
                       <div className="space-y-1 bg-black/40 p-2.5 rounded-xl border border-white/5">
                         <div className="flex justify-between items-center">
                           <span className={`font-mono text-[11px] block font-bold uppercase tracking-wider ${isActive ? 'text-gray-200' : 'text-gray-400'}`}>Vagas restantes</span>
@@ -682,6 +657,13 @@ export default function Page() {
                             style={{ width: `${Math.min(100, Math.max(3, (l.vagas / 10) * 100))}%` }}
                           ></div>
                         </div>
+                      </div>
+                    )}
+
+                    {isActive && (
+                      <div className="flex items-center gap-1.5 text-[11px] text-[#10B981] font-bold uppercase tracking-wider">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] shrink-0"></span>
+                        Gravação ao vivo já inclusa
                       </div>
                     )}
                   </div>
