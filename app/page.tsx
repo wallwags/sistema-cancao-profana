@@ -808,10 +808,10 @@ export default function Page() {
             <button
               onClick={submitWaitlist}
               disabled={waitlistBusy || !waitlistEmail.trim()}
-              className="w-full flex items-center justify-center gap-2 font-display font-black text-base uppercase tracking-widest text-black bg-gradient-to-b from-[#34D399] to-[#059669] py-4 rounded-full shadow-lg shadow-[#10B981]/25 disabled:opacity-50 active:scale-[0.98] transition-transform"
+              className="w-full flex items-center justify-center gap-2 font-display font-bold text-sm uppercase tracking-wider text-black bg-gradient-to-b from-[#34D399] to-[#059669] py-3.5 rounded-full shadow-lg shadow-[#10B981]/25 disabled:opacity-50 active:scale-[0.98] transition-transform"
             >
-              {waitlistBusy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Users className="w-5 h-5" />}
-              {waitlistBusy ? 'Abrindo WhatsApp...' : 'Entrar no grupo do WhatsApp'}
+              {waitlistBusy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Users className="w-4 h-4" />}
+              {waitlistBusy ? 'Abrindo WhatsApp...' : 'Entrar no grupo VIP'}
             </button>
 
             <p className="text-[11px] text-gray-500 text-center leading-snug">Informe seu e-mail para receber os avisos oficiais e acesse o grupo VIP. Nada de spam.</p>
