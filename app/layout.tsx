@@ -19,7 +19,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: 'Canção Profana — Concurso Musical Oficial 2026',
+  title: 'Canção Profana · Concurso Musical Oficial 2026',
   description: 'Grave seu som de graça e concorra à produção da sua carreira com o Estúdio Pedra Profana.',
 };
 
