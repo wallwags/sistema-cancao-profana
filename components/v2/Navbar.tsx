@@ -112,8 +112,8 @@ export default function Navbar({ onOpenQuiz, waitlistMode = false, activeLoteNam
           <button
             onClick={onOpenQuiz}
             className={`relative overflow-hidden font-display font-black text-xs uppercase tracking-widest px-6 py-3 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] ${waitlistMode
-              ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-black shadow-[0_0_20px_rgba(52,211,153,0.35)] border border-[#10B981]'
-              : 'bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black border border-black shadow-[0_0_20px_rgba(240,194,101,0.35)]'}`}
+              ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-black shadow-[0_0_20px_rgba(52,211,153,0.35)] border-2 border-[#34D399]'
+              : 'bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black border-2 border-black shadow-[0_0_20px_rgba(240,194,101,0.35)]'}`}
           >
             {waitlistMode ? 'GRUPO VIP' : `INSCREVER-SE · ${activeLoteName}`}
           </button>
