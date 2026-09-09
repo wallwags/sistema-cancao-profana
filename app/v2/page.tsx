@@ -127,7 +127,7 @@ export default function Page() {
           const b1 = batches[0];
           const b2 = batches[1];
           const b3 = batches[2];
-          setLoteDates({ lote1: b1.ends_at ?? null, lote2: b2.ends_at ?? null, lote3: b3.ends_at ?? null });
+          setLoteDates({ lote1: b1.ends_at ?? null, lote1_end: b1.ends_at ?? null, lote2: b2.ends_at ?? null, lote2_end: b2.ends_at ?? null, lote3: b3.ends_at ?? null, lote3_end: b3.ends_at ?? null });
 
           setLotesConfig({
             lote1: { status: b1.status, vagasRestantes: b1.vagas_restantes, valor: Number(b1.price_per_member), desc: 'Primeiras inscrições. Menor preço histórico.' },
@@ -218,6 +218,11 @@ export default function Page() {
     const activeBatch = lotesConfig.lote1.status === 'ativo' ? lotesConfig.lote1 : (lotesConfig.lote2.status === 'ativo' ? lotesConfig.lote2 : lotesConfig.lote3);
     return text
       .replaceAll('[data-lote1]', fmt(loteDates.lote1))
+      .replaceAll('[data-lote1-fim]', fmt(loteDates.lote1_end))
+      .replaceAll('[data-lote2]', fmt(loteDates.lote2))
+      .replaceAll('[data-lote2-fim]', fmt(loteDates.lote2_end))
+      .replaceAll('[data-lote3]', fmt(loteDates.lote3))
+      .replaceAll('[data-lote3-fim]', fmt(loteDates.lote3_end))
       .replaceAll('[data-lote2]', fmt(loteDates.lote2))
       .replaceAll('[data-lote3]', fmt(loteDates.lote3))
       .replaceAll('[data-live]', formatLaunch(liveLaunch))

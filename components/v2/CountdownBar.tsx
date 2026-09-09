@@ -64,16 +64,16 @@ export default function CountdownBar({ targetDate, liveStatus = 'em_breve', dia0
   let barCls = 'bg-[#8B1E1E]';
 
   if (isLive) {
-    phaseLabel = 'AO VIVO AGORA';
-    phaseValue = `Dia 0 por R$ ${dia0Price ?? 25},00 por tempo limitado`;
+    phaseLabel = 'Live de Abertura';
+    phaseValue = `$${dia0Price ?? 25} até o fim da Live`;
     barCls = 'bg-gradient-to-r from-red-800 via-red-600 to-red-800';
   } else if (isPreLive) {
-    phaseLabel = 'Inscrições via Grupo VIP';
-    phaseValue = 'Live em breve';
+    phaseLabel = 'Live de Abertura · 14/09';
+    phaseValue = '';
     barCls = 'bg-gradient-to-r from-[#3b1a4a] via-[#8B1E1E] to-[#3b1a4a]';
   } else {
     phaseLabel = 'Inscrições encerradas';
-    phaseValue = 'Acompanhe o concurso';
+    phaseValue = '';
     barCls = 'bg-[#121215]';
   }
 
