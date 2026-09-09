@@ -69,6 +69,7 @@ export default function Page() {
   const [waitlistBusy, setWaitlistBusy] = useState(false);
   const [waitlistDone, setWaitlistDone] = useState(false);
   const [waitlistError, setWaitlistError] = useState('');
+  const [waFallback, setWaFallback] = useState(false);
 
   const submitWaitlist = async () => {
     setWaitlistError('');
@@ -78,19 +79,25 @@ export default function Page() {
       return;
     }
     setWaitlistBusy(true);
+    setWaFallback(false);
+    const waUrl = vipWaUrl;
+    // Abre dentro do gesto do clique: navegadores (Safari/iOS) bloqueiam popups apos espera de rede
+    const win = waUrl ? window.open(waUrl, '_blank') : null;
     const { error } = await supabase.from('vip_leads').insert({ name: 'Interessado (pré-inscrição)', email, source: 'pre_inscricao_home' });
     setWaitlistBusy(false);
-    if (error) {
-      setWaitlistError('Não foi possível registrar agora. Tente novamente.');
+    // E-mail ja cadastrado nao e erro: a pessoa ja e lead, o objetivo e leva-la ao grupo
+    const duplicado = !!error && (error.code === '23505' || /duplicate|vip_leads_email/i.test(error.message));
+    if (error && !duplicado) {
+      setWaitlistError(waUrl ? 'Não conseguimos registrar seu e-mail agora, mas você pode entrar no grupo pelo botão abaixo.' : 'Não foi possível registrar agora. Tente novamente em instantes.');
       return;
     }
-    // Redireciona imediatamente para o WhatsApp
-    const waUrl = vipWaUrl;
-    if (waUrl) {
-      window.open(waUrl, '_blank');
+    if (win || !waUrl) {
+      setWaitlistDone(true);
+      setTimeout(() => { setWaitlistOpen(false); setWaitlistDone(false); setWaitlistEmail(''); }, 2000);
+    } else {
+      // Popup bloqueado pelo navegador: oferece link direto clicavel
+      setWaFallback(true);
     }
-    setWaitlistDone(true);
-    setTimeout(() => { setWaitlistOpen(false); setWaitlistDone(false); setWaitlistEmail(''); }, 2000);
   };
   const [waitlistMode, setWaitlistMode] = useState(true); // pré-inscrição é o estado padrão
   const [slotMode, setSlotMode] = useState<'band' | 'integrante'>('band');
@@ -852,7 +859,7 @@ export default function Page() {
               <input
                 type="email"
                 value={waitlistEmail}
-                onChange={(e) => { setWaitlistEmail(e.target.value); if (waitlistError) setWaitlistError(''); }}
+                onChange={(e) => { setWaitlistEmail(e.target.value); if (waitlistError) setWaitlistError(''); setWaFallback(false); }}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !waitlistBusy && waitlistEmail.trim()) submitWaitlist(); }}
                 placeholder="voce@email.com"
                 className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3.5 text-white text-base outline-none focus:border-[#E3B552] placeholder-gray-600 transition-colors"
@@ -866,6 +873,17 @@ export default function Page() {
                 <span className="text-red-400 text-base leading-none mt-0.5">⚠</span>
                 <span className="text-xs text-red-200/90 leading-snug flex-1">{waitlistError}</span>
                 <button onClick={() => setWaitlistError('')} className="text-red-300/70 hover:text-white text-lg leading-none">×</button>
+              </div>
+            )}
+{vipWaUrl && (waitlistError || waFallback) && (
+              <div className="space-y-2">
+                {waFallback && !waitlistError && (
+                  <p className="text-[11px] text-gray-400 text-center leading-snug">Se o WhatsApp não abriu automaticamente, toque no botão abaixo.</p>
+                )}
+                <a href={vipWaUrl} target="_blank" rel="noopener noreferrer" className="w-full flex items-center justify-center gap-2 font-display font-bold text-sm uppercase tracking-wider text-black bg-gradient-to-b from-[#34D399] to-[#059669] py-3.5 rounded-full shadow-lg shadow-[#10B981]/25 active:scale-[0.98] transition-transform">
+                  <Users className="w-4 h-4" />
+                  Entrar no grupo agora »
+                </a>
               </div>
             )}
 

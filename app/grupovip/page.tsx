@@ -57,16 +57,20 @@ export default function GrupoVipPage() {
       return;
     }
     setBusy(true);
+    const waLink = content.vip_whatsapp_url || WHATSAPP_LINK;
+    // Abre dentro do gesto do clique: navegadores (Safari/iOS) bloqueiam popups apos espera de rede
+    window.open(waLink, '_blank');
     const { error: err } = await supabase
       .from('vip_leads')
       .insert({ name: name.trim(), email: email.trim().toLowerCase(), source: 'grupovip' });
     setBusy(false);
-    if (err) {
-      setError('Não foi possível registrar agora. Tente novamente.');
+    // E-mail ja cadastrado nao e erro: a pessoa ja esta na lista, segue para o grupo
+    const duplicado = !!err && (err.code === '23505' || /duplicate|vip_leads_email/i.test(err.message));
+    if (err && !duplicado) {
+      setError('Não conseguimos registrar seu e-mail agora. Se o WhatsApp não abriu, toque em "Ir para o WhatsApp" de novo.');
       return;
     }
     setDone(true);
-    setTimeout(() => { window.open(content.vip_whatsapp_url || WHATSAPP_LINK, '_blank'); }, 600);
   };
 
   if (hidden) {
