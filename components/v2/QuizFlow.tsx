@@ -95,28 +95,6 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [similarBands, setSimilarBands] = useState<string[]>([]);
   const [similarChoice, setSimilarChoice] = useState<'none' | 'mine' | 'other'>('none');
   const [bandMatches, setBandMatches] = useState<BandMatch[]>([]);
-  const [waitlistOpen, setWaitlistOpen] = useState(false);
-  const [waitlistEmail, setWaitlistEmail] = useState('');
-  const [waitlistBusy, setWaitlistBusy] = useState(false);
-  const [waitlistDone, setWaitlistDone] = useState(false);
-  const [waitlistError, setWaitlistError] = useState('');
-
-  const submitWaitlist = async () => {
-    setWaitlistError('');
-    const email = waitlistEmail.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setWaitlistError('Informe um e-mail válido.');
-      return;
-    }
-    setWaitlistBusy(true);
-    const { error } = await supabase.from('vip_leads').insert({ name: 'Interessado (pré-inscrição)', email, source: 'pre_inscricao_home' });
-    setWaitlistBusy(false);
-    if (error) {
-      setWaitlistError('Não foi possível registrar agora. Tente novamente.');
-      return;
-    }
-    setWaitlistDone(true);
-  };
   const [joinState, setJoinState] = useState<'idle' | 'asking' | 'picking' | 'declined'>('idle');
   const sessionRef = useRef<string>('');
   const inviteCodeRef = useRef<string>('');
@@ -604,7 +582,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       return data.project_id;
     } catch (err: any) {
       console.warn('Falha no registro da banda:', err);
-      setCheckoutError('Não foi possível concluir o registro agora. Verifique sua conexão e tente de novo. Seus dados continuam aqui.');
+      const em = String(err?.message || '');
+      setCheckoutError(em.includes('SEM_VAGAS')
+        ? 'As inscrições ainda não estão abertas ou as vagas se esgotaram. Entre no Grupo VIP para ser avisado na abertura.'
+        : 'Não foi possível concluir o registro agora. Verifique sua conexão e tente de novo. Seus dados continuam aqui.');
       setShowManualConfirm(true);
       webhookDoneRef.current = false;
       setIsCheckoutLoading(false);

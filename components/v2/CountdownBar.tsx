@@ -1,5 +1,7 @@
 'use client';
 
+import { parseDbDate } from '../../lib/dates';
+
 import React, { useState, useEffect } from 'react';
 
 interface CountdownBarProps {
@@ -7,6 +9,7 @@ interface CountdownBarProps {
   liveStatus?: 'em_breve' | 'ao_vivo' | 'encerrada';
   dia0Price?: number;
   liveUrl?: string | null;
+  launchLabel?: string;
 }
 
 function computeLeft(targetMs: number) {
@@ -25,7 +28,7 @@ function computeLeft(targetMs: number) {
   };
 }
 
-export default function CountdownBar({ targetDate, liveStatus = 'em_breve', dia0Price }: CountdownBarProps) {
+export default function CountdownBar({ targetDate, liveStatus = 'em_breve', dia0Price, liveUrl, launchLabel }: CountdownBarProps) {
   const [timeLeft, setTimeLeft] = useState({
     days: '00',
     hours: '00',
@@ -35,7 +38,7 @@ export default function CountdownBar({ targetDate, liveStatus = 'em_breve', dia0
   const [targetOver, setTargetOver] = useState(false);
 
   useEffect(() => {
-    const parsed = targetDate ? new Date(String(targetDate).replace(' ', 'T')).getTime() : NaN;
+    const parsed = parseDbDate(targetDate)?.getTime() ?? NaN;
     if (isNaN(parsed)) {
       setTimeLeft({ days: '00', hours: '00', minutes: '00', seconds: '00' });
       setTargetOver(false);
@@ -69,10 +72,10 @@ export default function CountdownBar({ targetDate, liveStatus = 'em_breve', dia0
 
   if (isLive) {
     phaseLabel = 'AO VIVO AGORA';
-    phaseValue = `$${dia0Price ?? 25} até o fim da Live`;
-    barCls = 'bg-gradient-to-r from-red-800 via-red-600 to-red-800';
+    phaseValue = `R$ ${dia0Price ?? 25} até o fim da Live`;
+    barCls = 'bg-gradient-to-r from-[#6B2430] via-[#9C4256] to-[#6B2430]';
   } else if (isPreLive && !targetOver) {
-    phaseLabel = 'Live de Abertura · 14/09';
+    phaseLabel = launchLabel ? `Live de Abertura · ${launchLabel}` : 'Live de Abertura';
     phaseValue = '';
     barCls = 'bg-gradient-to-r from-[#3b1a4a] via-[#8B1E1E] to-[#3b1a4a]';
   } else if (targetDate && !targetOver) {
@@ -93,9 +96,26 @@ export default function CountdownBar({ targetDate, liveStatus = 'em_breve', dia0
         <span className="relative inline-flex rounded-full h-2 w-2 bg-[#F0C265]"></span>
       </span>
 
-      <span className="font-mono text-[#F0EAE0] font-bold uppercase tracking-widest text-[10px] sm:text-[11px] whitespace-nowrap">
-        {phaseLabel}
-      </span>
+      {isLive ? (
+        <span className="live-wifi bg-red-600 text-white font-mono font-black uppercase tracking-widest text-[10px] sm:text-[11px] px-3 py-1 rounded-full whitespace-nowrap border border-red-400/60">
+          {phaseLabel}
+        </span>
+      ) : (
+        <span className="font-mono text-[#F0EAE0] font-bold uppercase tracking-widest text-[10px] sm:text-[11px] whitespace-nowrap">
+          {phaseLabel}
+        </span>
+      )}
+
+      {isLive && liveUrl && (
+        <a
+          href={liveUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-gold-shimmer px-3.5 py-1 rounded-full text-[10px] sm:text-[11px] uppercase tracking-widest font-black whitespace-nowrap"
+        >
+          Assistir »
+        </a>
+      )}
 
       {isPreLive && (
         <span className="font-mono text-[#F0C265] font-bold uppercase tracking-wider text-[10px] sm:text-[11px] whitespace-nowrap">

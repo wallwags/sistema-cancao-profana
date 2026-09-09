@@ -18,9 +18,36 @@ const spaceGrotesk = Space_Grotesk({
   variable: '--font-space-grotesk',
 });
 
+const SITE_URL = 'https://cancaoprofana.vercel.app';
+const TITLE = 'Canção Profana · Concurso Musical Oficial 2026';
+const DESCRIPTION = 'Grave seu som de graça e concorra à produção da sua carreira com o Estúdio Pedra Profana.';
+
 export const metadata: Metadata = {
-  title: 'Canção Profana · Concurso Musical Oficial 2026',
-  description: 'Grave seu som de graça e concorra à produção da sua carreira com o Estúdio Pedra Profana.',
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    siteName: 'Canção Profana',
+    locale: 'pt_BR',
+    type: 'website',
+    images: [
+      {
+        url: '/og-cover.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Canção Profana · Concurso de Bandas · Estúdio Pedra Profana',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ['/og-cover.jpg'],
+  },
 };
 
 export default function RootLayout({

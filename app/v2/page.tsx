@@ -10,6 +10,7 @@ import Navbar from '../../components/v2/Navbar';
 import HeroCard from '../../components/v2/HeroCard';
 import FeatureGrid from '../../components/v2/FeatureGrid';
 import CountdownBar from '../../components/v2/CountdownBar';
+import { parseDbDate } from '../../lib/dates';
 import { TermsModal, PrivacyModal } from '../../components/v2/LegalModals';
 import { supabase } from '../../lib/supabase';
 
@@ -20,6 +21,7 @@ const InviteSheet = dynamic(() => import('../../components/v2/InviteSheet'), { s
 interface LoteState {
   status: 'ativo' | 'encerrado' | 'em_breve';
   vagasRestantes: number;
+  total: number;
   valor: number;
   desc: string;
 }
@@ -30,16 +32,15 @@ interface LotesConfig {
   lote3: LoteState;
   live: {
     status: 'em_breve' | 'ao_vivo' | 'encerrada';
-    horario: string;
   };
 }
 
 export default function Page() {
   const [lotesConfig, setLotesConfig] = useState<LotesConfig>({
-    lote1: { status: 'ativo', vagasRestantes: 25, valor: 35, desc: 'Primeiras inscrições. Menor preço histórico.' },
-    lote2: { status: 'em_breve', vagasRestantes: 30, valor: 40, desc: 'Disponível na fase intermediária.' },
-    lote3: { status: 'em_breve', vagasRestantes: 30, valor: 45, desc: 'Reta final de inscrições regulamentares.' },
-    live: { status: 'em_breve', horario: '2026-09-07T20:00:00' }
+    lote1: { status: 'em_breve', vagasRestantes: 10, total: 10, valor: 35, desc: 'Primeiras inscrições. Menor preço histórico.' },
+    lote2: { status: 'em_breve', vagasRestantes: 10, total: 10, valor: 40, desc: 'Disponível na fase intermediária.' },
+    lote3: { status: 'em_breve', vagasRestantes: 10, total: 10, valor: 45, desc: 'Reta final de inscrições regulamentares.' },
+    live: { status: 'em_breve' }
   });
 
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -168,10 +169,10 @@ export default function Page() {
           setLoteDates({ lote1: b1.ends_at ?? null, lote1_end: b1.ends_at ?? null, lote2: b2.ends_at ?? null, lote2_end: b2.ends_at ?? null, lote3: b3.ends_at ?? null, lote3_end: b3.ends_at ?? null });
 
           setLotesConfig({
-            lote1: { status: b1.status, vagasRestantes: b1.vagas_restantes, valor: Number(b1.price_per_member), desc: 'Primeiras inscrições. Menor preço histórico.' },
-            lote2: { status: b2.status, vagasRestantes: b2.vagas_restantes, valor: Number(b2.price_per_member), desc: 'Disponível na fase intermediária.' },
-            lote3: { status: b3.status, vagasRestantes: b3.vagas_restantes, valor: Number(b3.price_per_member), desc: 'Reta final de inscrições regulamentares.' },
-            live: { status: liveData ? liveData.status : 'em_breve', horario: '2026-09-07T20:00:00' }
+            lote1: { status: b1.status, vagasRestantes: b1.vagas_restantes, total: Number(b1.vagas_total ?? 10), valor: Number(b1.price_per_member), desc: 'Primeiras inscrições. Menor preço histórico.' },
+            lote2: { status: b2.status, vagasRestantes: b2.vagas_restantes, total: Number(b2.vagas_total ?? 10), valor: Number(b2.price_per_member), desc: 'Disponível na fase intermediária.' },
+            lote3: { status: b3.status, vagasRestantes: b3.vagas_restantes, total: Number(b3.vagas_total ?? 10), valor: Number(b3.price_per_member), desc: 'Reta final de inscrições regulamentares.' },
+            live: { status: liveData ? liveData.status : 'em_breve' }
           });
         }
       } catch (err) {
@@ -194,6 +195,11 @@ export default function Page() {
     : lotesConfig.lote1.status !== 'encerrado' ? 'lote1'
     : lotesConfig.lote2.status !== 'encerrado' ? 'lote2' : 'lote3') as 'lote1' | 'lote2' | 'lote3';
   const loteFocoNome = { lote1: 'LOTE 1', lote2: 'LOTE 2', lote3: 'LOTE 3' }[loteFoco];
+  const liveLaunchFuture = (parseDbDate(liveLaunch)?.getTime() ?? 0) > Date.now();
+  const launchLabel = (() => {
+    const d = parseDbDate(liveLaunch);
+    return d ? new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' }).format(d) : '';
+  })();
   const activePrice = isLiveNow ? dia0Price : lotesConfig[loteFoco].valor;
   const activeLoteName = isLiveNow ? 'LIVE' : loteFocoNome;
 
@@ -258,20 +264,20 @@ export default function Page() {
   const handlePaymentSuccess = () => {
     setLotesConfig(prev => ({
       ...prev,
-      lote1: {
-        ...prev.lote1,
-        vagasRestantes: Math.max(0, prev.lote1.vagasRestantes - 1)
+      [loteFoco]: {
+        ...prev[loteFoco],
+        vagasRestantes: Math.max(0, prev[loteFoco].vagasRestantes - 1)
       }
     }));
   };
 
   const resolveTags = (text: string): string => {
     const fmt = (iso?: string | null) => {
-      const d = iso ? new Date(String(iso).replace(' ', 'T')) : null;
-      if (!d || isNaN(d.getTime())) return 'a definir';
+      const d = parseDbDate(iso);
+      if (!d) return 'a definir';
       return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }).format(d);
     };
-    const activeBatch = lotesConfig.lote1.status === 'ativo' ? lotesConfig.lote1 : (lotesConfig.lote2.status === 'ativo' ? lotesConfig.lote2 : lotesConfig.lote3);
+    const activeBatch = lotesConfig[loteFoco];
     return text
       .replaceAll('[data-lote1]', fmt(loteDates.lote1))
       .replaceAll('[data-lote1-fim]', fmt(loteDates.lote1_end))
@@ -291,8 +297,8 @@ export default function Page() {
   };
 
   const formatLaunch = (iso?: string | null): string => {
-    const d = iso ? new Date(String(iso).replace(' ', 'T')) : null;
-    if (!d || isNaN(d.getTime())) return 'a definir';
+    const d = parseDbDate(iso);
+    if (!d) return 'a definir';
     try {
       const dia = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', timeZone: 'America/Sao_Paulo' }).format(d);
       const hora = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }).format(d);
@@ -308,10 +314,11 @@ export default function Page() {
       {/* UNIFIED FIXED CONTAINER FOR COUNTDOWN AND NAVBAR — retrátil ao rolar */}
       <div ref={headerRef} className="fixed top-0 left-0 right-0 z-50 w-full bg-[#05070B]/95 backdrop-blur-md">
         <CountdownBar
-          targetDate={liveStatusBar === 'em_breve' && liveLaunch && new Date(String(liveLaunch).replace(' ', 'T')).getTime() > Date.now() ? liveLaunch : countdownTarget}
+          targetDate={liveStatusBar === 'em_breve' && liveLaunchFuture ? liveLaunch : countdownTarget}
           liveStatus={liveStatusBar}
           dia0Price={dia0Price}
           liveUrl={liveUrl}
+          launchLabel={launchLabel}
         />
         <Navbar onOpenQuiz={ctaAction} waitlistMode={waitlistMode} />
       </div>
@@ -590,9 +597,9 @@ export default function Page() {
           <div data-reveal-group className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
               { key: 'dia0', title: 'LIVE', status: lotesConfig.live.status === 'ao_vivo' ? 'ativo' : lotesConfig.live.status === 'encerrada' ? 'encerrado' : 'em_breve', desc: 'Apenas durante a transmissão ao vivo.', valor: dia0Price },
-              { key: 'lote1', title: 'Lote 1', status: lotesConfig.lote1.status, desc: 'Primeiras inscrições. Menor preço histórico.', valor: lotesConfig.lote1.valor, vagas: lotesConfig.lote1.vagasRestantes },
-              { key: 'lote2', title: 'Lote 2', status: lotesConfig.lote2.status, desc: 'Disponível na fase intermediária.', valor: lotesConfig.lote2.valor, vagas: lotesConfig.lote2.vagasRestantes },
-              { key: 'lote3', title: 'Lote 3', status: lotesConfig.lote3.status, desc: 'Reta final de inscrições regulamentares.', valor: lotesConfig.lote3.valor, vagas: lotesConfig.lote3.vagasRestantes }
+              { key: 'lote1', title: 'Lote 1', status: lotesConfig.lote1.status, desc: 'Primeiras inscrições. Menor preço histórico.', valor: lotesConfig.lote1.valor, vagas: lotesConfig.lote1.vagasRestantes, total: lotesConfig.lote1.total },
+              { key: 'lote2', title: 'Lote 2', status: lotesConfig.lote2.status, desc: 'Disponível na fase intermediária.', valor: lotesConfig.lote2.valor, vagas: lotesConfig.lote2.vagasRestantes, total: lotesConfig.lote2.total },
+              { key: 'lote3', title: 'Lote 3', status: lotesConfig.lote3.status, desc: 'Reta final de inscrições regulamentares.', valor: lotesConfig.lote3.valor, vagas: lotesConfig.lote3.vagasRestantes, total: lotesConfig.lote3.total }
             ].map((l, i) => {
               const isActive = l.status === 'ativo';
               const isClosed = l.status === 'encerrado';
@@ -675,7 +682,7 @@ export default function Page() {
                         <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden flex items-center">
                           <div
                             className={`h-full rounded-full bg-gradient-to-r ${isActive ? 'from-[#F0C265] to-[#B88A28]' : 'from-[#F0C265]/70 to-[#B88A28]/70'}`}
-                            style={{ width: `${Math.min(100, Math.max(3, (l.vagas / 10) * 100))}%` }}
+                            style={{ width: `${Math.min(100, Math.max(3, (l.vagas / (l.total || 10)) * 100))}%` }}
                           ></div>
                         </div>
                       </div>

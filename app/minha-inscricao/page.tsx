@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
+import { parseDbDate } from '../../lib/dates';
 import { 
   Shield, Music, Users, CheckCircle, Clock, 
   AlertTriangle, ArrowLeft, Phone,
@@ -263,7 +264,7 @@ export default function MinhaInscricaoPage() {
           const minReq = data.min_payable ?? 2;
           const faltam = Math.max(0, minReq - paidCount);
           const pendentes = data.members.filter(m => m.payment_status !== 'paid' && (m.is_responsible || m.cpf)).length;
-          const endsIn = data.lote_ends ? Math.max(0, Math.floor((new Date(String(data.lote_ends).replace(' ', 'T')).getTime() - Date.now()) / 86400000)) : null;
+          const endsIn = data.lote_ends ? Math.max(0, Math.floor(((parseDbDate(data.lote_ends)?.getTime() ?? NaN) - Date.now()) / 86400000)) : null;
           return (
             <div className="relative overflow-hidden rounded-2xl border-2 border-[#F0C265] bg-gradient-to-br from-[#8B1E1E]/40 via-[#0B0F19]/95 to-[#8B1E1E]/25 p-5 space-y-4 shadow-[0_0_35px_rgba(240,194,101,0.25)]">
               <div className="absolute -right-16 -top-16 w-40 h-40 bg-[#F0C265]/15 rounded-full blur-3xl pointer-events-none animate-pulse" />
@@ -567,6 +568,7 @@ export default function MinhaInscricaoPage() {
                                   msg.includes('SOMENTE_LIDER') ? 'Somente o líder pode remover integrantes.' :
                                   msg.includes('PAGO_NAO_REMOVIVEL') ? 'Integrante com parte paga não pode ser removido.' :
                                   msg.includes('MINIMO_REGULAMENTO') ? 'O regulamento exige no mínimo 2 integrantes na banda.' :
+                                  msg.includes('MUITAS_TENTATIVAS') ? 'Muitas tentativas. Aguarde alguns minutos e tente de novo.' :
                                   'Erro ao remover. Tente novamente.'
                                 );
                               } else {

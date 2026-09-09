@@ -129,6 +129,7 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
         m.includes('CPF_NAO_CORRESPONDE') ? 'Este CPF não corresponde ao integrante escalado pelo líder. Confira com ele.' :
         m.includes('CPF_INVALIDO') ? 'CPF inválido.' :
         m.includes('NASCIMENTO_INVALIDO') ? 'Data de nascimento inválida.' :
+        m.includes('MUITAS_TENTATIVAS') ? 'Muitas tentativas. Aguarde alguns minutos e tente de novo.' :
         'Não foi possível confirmar agora. Tente novamente.'
       );
       return;
