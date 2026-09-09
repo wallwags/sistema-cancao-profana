@@ -288,7 +288,7 @@ export default function Page() {
           liveStatus={liveStatusBar}
           dia0Price={dia0Price}
         />
-        <Navbar onOpenQuiz={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())} />
+        <Navbar onOpenQuiz={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())} waitlistMode={waitlistMode} />
       </div>
 
       {/* MAIN CONTAINER WITH FIXED NAVBAR ADJUSTMENT PT */}
