@@ -6,12 +6,13 @@ import gsap from 'gsap';
 interface NavbarProps {
   onOpenQuiz: () => void;
   waitlistMode?: boolean;
+  activeLoteName?: string;
 }
 
 // SSR-safe layout effect (avoids React's useLayoutEffect SSR warning)
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
-export default function Navbar({ onOpenQuiz, waitlistMode = false }: NavbarProps) {
+export default function Navbar({ onOpenQuiz, waitlistMode = false, activeLoteName = 'LOTE 1' }: NavbarProps) {
   const [activeTab, setActiveTab] = useState('PRINCÍPIOS');
   const menuItems = ['PRINCÍPIOS', 'FASES', 'LOTES', 'DÚVIDAS'];
 
@@ -114,7 +115,7 @@ export default function Navbar({ onOpenQuiz, waitlistMode = false }: NavbarProps
               ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-black shadow-[0_0_20px_rgba(52,211,153,0.35)] border border-[#10B981]'
               : 'bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black border border-black shadow-[0_0_20px_rgba(240,194,101,0.35)]'}`}
           >
-            {waitlistMode ? 'GRUPO VIP' : 'INSCREVER-SE'}
+            {waitlistMode ? 'GRUPO VIP' : `INSCREVER-SE · ${activeLoteName}`}
           </button>
         </div>
 

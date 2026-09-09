@@ -16,11 +16,11 @@ export default function HeroCard() {
 
       <div className="space-y-4 relative z-10 w-full">
         <span className="font-mono text-[10px] sm:text-xs text-[#F0C265] font-black tracking-wide uppercase bg-[#F0C265]/10 border border-[#F0C265]/20 px-3 py-1.5 rounded-full mx-auto inline-block max-w-full text-center leading-snug">
-          VALOR TOTAL ESTIMADO DE CARREIRA (1º LUGAR)
+          VALOR ESTIMADO DE CARREIRA (1º LUGAR)
         </span>
 
         {/* Massive 3D Drop Shadow Price Title - Fully Responsive single line */}
-        <h1 className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-display bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(240,194,101,0.45)] select-none whitespace-nowrap tracking-tight leading-none">
+        <h1 className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-display bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(240,194,101,0.45)] select-none tracking-tight leading-none">
           R$ 20.000,00
         </h1>
 

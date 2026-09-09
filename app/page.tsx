@@ -288,7 +288,7 @@ export default function Page() {
           liveStatus={liveStatusBar}
           dia0Price={dia0Price}
         />
-        <Navbar onOpenQuiz={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())} waitlistMode={waitlistMode} />
+        <Navbar onOpenQuiz={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())} waitlistMode={waitlistMode} activeLoteName={activeLoteName} />
       </div>
 
       {/* MAIN CONTAINER WITH FIXED NAVBAR ADJUSTMENT PT */}
@@ -318,7 +318,7 @@ export default function Page() {
                   ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-black shadow-[0_0_30px_rgba(52,211,153,0.35)] border border-[#10B981] px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all'
                   : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black shadow-[0_0_30px_rgba(227,181,82,0.35)] w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed'}
               >
-                {waitlistMode ? 'GRUPO VIP' : (lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas: Live no ar' : 'INSCREVER-SE')}
+                {waitlistMode ? 'GRUPO VIP' : (lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas: Live no ar' : `INSCREVER-SE · ${activeLoteName}`)}
               </button>
               <a
                 href="#premios"
@@ -358,19 +358,6 @@ export default function Page() {
             </div>
           </div>
         </section>
-
-        {/* CTA após regras */}
-        <div className="text-center pt-2">
-          <button
-            onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
-            onMouseEnter={preloadQuiz}
-            className={waitlistMode
-              ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-white shadow-[0_0_30px_rgba(52,211,153,0.25)] border border-[#10B981] px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'
-              : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'}
-          >
-            {waitlistMode ? 'Entrar no Grupo VIP' : 'INSCREVER-SE'}
-          </button>
-        </div>
 
         {/* B. AS 3 REGRAS DE MATRÍCULA */}
         <section id="principios" className="space-y-12">
@@ -462,6 +449,19 @@ export default function Page() {
           </div>
         </section>
 
+        {/* CTA antes de fases */}
+        <div className="text-center pt-2">
+          <button
+            onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
+            onMouseEnter={preloadQuiz}
+            className={waitlistMode
+              ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-white shadow-[0_0_25px_rgba(52,211,153,0.25)] border border-[#10B981] px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'
+              : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'}
+          >
+            {waitlistMode ? 'Entrar no Grupo VIP' : 'INSCREVER-SE'}
+          </button>
+        </div>
+
         {/* C. FASES DO CONCURSO (Timeline) */}
         <section id="cronograma" className="space-y-12">
           <div data-reveal className="reveal-hidden space-y-2 border-b border-white/5 pb-4">
@@ -492,19 +492,6 @@ export default function Page() {
           </div>
         </section>
 
-        {/* CTA após fases */}
-        <div className="text-center pt-2">
-          <button
-            onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
-            onMouseEnter={preloadQuiz}
-            className={waitlistMode
-              ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-white shadow-[0_0_30px_rgba(52,211,153,0.25)] border border-[#10B981] px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'
-              : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'}
-          >
-            {waitlistMode ? 'Entrar no Grupo VIP' : 'INSCREVER-SE'}
-          </button>
-        </div>
-
         {/* E. DELIVERABLES GRAPH FEATURE GRID - PLACED ABOVE PRICING */}
         <section id="premios" className="space-y-12">
           <div data-reveal className="reveal-hidden space-y-2 border-b border-white/5 pb-4">
@@ -522,6 +509,19 @@ export default function Page() {
           {/* Hero Premium Card - Rendered below items as requested */}
           <HeroCard />
         </section>
+
+        {/* CTA antes de lotes */}
+        <div className="text-center pt-2">
+          <button
+            onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
+            onMouseEnter={preloadQuiz}
+            className={waitlistMode
+              ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-white shadow-[0_0_25px_rgba(52,211,153,0.25)] border border-[#10B981] px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'
+              : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'}
+          >
+            {waitlistMode ? 'Entrar no Grupo VIP' : 'INSCREVER-SE'}
+          </button>
+        </div>
 
         {/* D. LOTES TABLE WITH CONFIG STATES */}
         <section id="lotes" className="space-y-12">
@@ -603,7 +603,7 @@ export default function Page() {
 
           <div data-reveal-group className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
-              { key: 'dia0', title: 'Dia 0 (Live)', status: lotesConfig.live.status === 'ao_vivo' ? 'ativo' : lotesConfig.live.status === 'encerrada' ? 'encerrado' : 'em_breve', desc: 'Apenas durante a transmissão ao vivo.', valor: dia0Price },
+
               { key: 'lote1', title: 'Lote 1', status: lotesConfig.lote1.status, desc: 'Primeiras inscrições. Menor preço histórico.', valor: lotesConfig.lote1.valor, vagas: lotesConfig.lote1.vagasRestantes },
               { key: 'lote2', title: 'Lote 2', status: lotesConfig.lote2.status, desc: 'Disponível na fase intermediária.', valor: lotesConfig.lote2.valor, vagas: lotesConfig.lote2.vagasRestantes },
               { key: 'lote3', title: 'Lote 3', status: lotesConfig.lote3.status, desc: 'Reta final de inscrições regulamentares.', valor: lotesConfig.lote3.valor, vagas: lotesConfig.lote3.vagasRestantes }
@@ -716,7 +716,7 @@ export default function Page() {
               disabled={lotesConfig.live.status === 'ao_vivo'}
               className="btn-gold-shimmer px-10 py-4 rounded-2xl text-md shadow-[0_0_30px_rgba(240,194,101,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas: Live no ar' : 'Garantir Inscrição Lote 1'}
+              {waitlistMode ? 'Entrar no Grupo VIP' : (lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas: Live no ar' : `Garantir Inscrição ${activeLoteName}`)}
             </button>
           </div>
         </section>
