@@ -15,7 +15,7 @@ export default function HeroCard() {
       <div className="absolute inset-0 bg-[linear-gradient(rgba(240,194,101,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(240,194,101,0.02)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
 
       <div className="space-y-4 relative z-10 w-full">
-        <span className="font-mono text-[10px] sm:text-xs text-[#F0C265] font-black tracking-widest uppercase block bg-[#F0C265]/10 border border-[#F0C265]/20 px-4 py-1.5 rounded-full w-max mx-auto">
+        <span className="font-mono text-[10px] sm:text-xs text-[#F0C265] font-black tracking-wide uppercase bg-[#F0C265]/10 border border-[#F0C265]/20 px-3 py-1.5 rounded-full mx-auto inline-block max-w-full text-center leading-snug">
           VALOR TOTAL ESTIMADO DE CARREIRA (1º LUGAR)
         </span>
 

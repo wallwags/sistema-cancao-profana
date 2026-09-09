@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import gsap from 'gsap';
-import { Music, Users, Shield } from 'lucide-react';
+import { Loader2, Music, Users, Shield } from 'lucide-react';
 import Link from 'next/link';
 import Navbar from '../../components/v2/Navbar';
 import HeroCard from '../../components/v2/HeroCard';
@@ -63,6 +63,31 @@ export default function Page() {
   const [dia0Price, setDia0Price] = useState<number>(25);
   const [liveStatusBar, setLiveStatusBar] = useState<'em_breve' | 'ao_vivo' | 'encerrada'>('em_breve');
   const [slotMode, setSlotMode] = useState<'band' | 'integrante'>('band');
+  const [waitlistMode, setWaitlistMode] = useState(true);
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const [waitlistEmail, setWaitlistEmail] = useState('');
+  const [waitlistBusy, setWaitlistBusy] = useState(false);
+  const [waitlistError, setWaitlistError] = useState('');
+  const [vipWaUrl, setVipWaUrl] = useState('');
+
+  const submitWaitlist = async () => {
+    setWaitlistError('');
+    const email = waitlistEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setWaitlistError('Informe um e-mail válido.');
+      return;
+    }
+    setWaitlistBusy(true);
+    const { error } = await supabase.from('vip_leads').insert({ name: 'Interessado (pré-inscrição)', email, source: 'pre_inscricao_home' });
+    setWaitlistBusy(false);
+    if (error) {
+      setWaitlistError('Não foi possível registrar agora. Tente novamente.');
+      return;
+    }
+    if (vipWaUrl) window.open(vipWaUrl, '_blank');
+    setWaitlistOpen(false);
+    setWaitlistEmail('');
+  };
   const [sheetCode, setSheetCode] = useState<string | null>(null);
   const [sheetStart, setSheetStart] = useState<'confirm' | 'pick'>('confirm');
   const [loteDates, setLoteDates] = useState<Record<string, string | null>>({});
@@ -112,6 +137,9 @@ export default function Page() {
           });
           if (map.countdown_target) setCountdownTarget(map.countdown_target);
           if (map.live_launch) setLiveLaunch(map.live_launch);
+          if (map.home_cta_mode === 'quiz') setWaitlistMode(false);
+          if (map.home_cta_mode === 'waitlist') setWaitlistMode(true);
+          if (map.vip_whatsapp_url) setVipWaUrl(map.vip_whatsapp_url);
           if (map.live_url) setLiveUrl(map.live_url);
           const dp = Number(map.dia0_price);
           const sm = map.slot_mode;
@@ -256,7 +284,7 @@ export default function Page() {
           liveStatus={liveStatusBar}
           dia0Price={dia0Price}
         />
-        <Navbar onOpenQuiz={handleOpenQuiz} />
+        <Navbar onOpenQuiz={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())} waitlistMode={waitlistMode} />
       </div>
 
       {/* MAIN CONTAINER WITH FIXED NAVBAR ADJUSTMENT PT */}
@@ -279,7 +307,7 @@ export default function Page() {
             <div className="fade-up-800 [animation-delay:260ms] flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3">
               <button
                 type="button"
-                onClick={handleOpenQuiz}
+                onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
                 onMouseEnter={preloadQuiz}
                 disabled={lotesConfig.live.status === 'ao_vivo'}
                 className="btn-gold-shimmer px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black shadow-[0_0_30px_rgba(227,181,82,0.35)] w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -530,7 +558,7 @@ export default function Page() {
                   )}
                   <button
                     type="button"
-                    onClick={handleOpenQuiz}
+                    onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
                     onMouseEnter={preloadQuiz}
                     className="btn-gold-shimmer px-4 py-2 rounded-xl text-xs uppercase tracking-widest font-black"
                   >
@@ -733,6 +761,35 @@ export default function Page() {
       {/* CONVITE DE INTEGRANTE — bottom sheet sobre a landing */}
       {sheetCode && (
         <InviteSheet inviteCode={sheetCode} startPhase={sheetStart} onClose={() => setSheetCode(null)} />
+      )}
+
+      {/* WAITLIST popup */}
+      {waitlistOpen && (
+        <div className="fixed inset-0 z-[70] bg-black/75 backdrop-blur-sm flex items-center justify-center p-3" onClick={() => setWaitlistOpen(false)}>
+          <div className="legal-pop w-full max-w-md bg-[#05070B] border-2 border-[#E3B552] rounded-[28px] p-5 sm:p-8 space-y-5 shadow-[0_10px_60px_rgba(0,0,0,0.9)] relative mx-3" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setWaitlistOpen(false)} className="absolute right-4 top-4 text-gray-400 hover:text-white text-2xl leading-none">×</button>
+            <div className="text-center space-y-2 pt-2">
+              <span className="inline-flex items-center gap-2 font-mono text-[11px] font-black uppercase tracking-widest text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/30 px-3 py-1 rounded-full">Grupo VIP · Vagas antecipadas</span>
+              <h2 className="font-display font-black text-xl text-white uppercase tracking-tight">Entre no grupo VIP</h2>
+            </div>
+            <div className="space-y-1.5">
+              <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">Seu e-mail</label>
+              <input type="email" value={waitlistEmail} onChange={(e) => { setWaitlistEmail(e.target.value); if (waitlistError) setWaitlistError(''); }} onKeyDown={(e) => { if (e.key === 'Enter' && !waitlistBusy && waitlistEmail.trim()) submitWaitlist(); }} placeholder="voce@email.com" className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3.5 text-white text-base outline-none focus:border-[#E3B552] placeholder-gray-600" autoComplete="email" autoFocus />
+            </div>
+            {waitlistError && (
+              <div className="bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3 flex items-start gap-2.5">
+                <span className="text-red-400 text-base leading-none mt-0.5">⚠</span>
+                <span className="text-xs text-red-200/90 leading-snug flex-1">{waitlistError}</span>
+                <button onClick={() => setWaitlistError('')} className="text-red-300/70 hover:text-white text-lg leading-none">×</button>
+              </div>
+            )}
+            <button onClick={submitWaitlist} disabled={waitlistBusy || !waitlistEmail.trim()} className="w-full flex items-center justify-center gap-1.5 font-display font-bold text-sm uppercase tracking-wider text-black bg-gradient-to-b from-[#34D399] to-[#059669] py-3.5 rounded-full shadow-lg shadow-[#10B981]/25 disabled:opacity-50 active:scale-[0.98] transition-transform">
+              {waitlistBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
+              {waitlistBusy ? 'Abrindo...' : 'Entrar no grupo VIP'}
+            </button>
+            <p className="text-[11px] text-gray-500 text-center leading-snug">Informe seu e-mail para receber os avisos oficiais e acesse o grupo VIP. Nada de spam.</p>
+          </div>
+        </div>
       )}
 
       {/* Legal popups (footer) — CSS-animated, zero JS cost when closed */}

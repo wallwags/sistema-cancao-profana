@@ -359,6 +359,19 @@ export default function Page() {
           </div>
         </section>
 
+        {/* CTA após regras */}
+        <div className="text-center pt-2">
+          <button
+            onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
+            onMouseEnter={preloadQuiz}
+            className={waitlistMode
+              ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-white shadow-[0_0_30px_rgba(52,211,153,0.25)] border border-[#10B981] px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'
+              : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'}
+          >
+            {waitlistMode ? 'Entrar no Grupo VIP' : 'INSCREVER-SE'}
+          </button>
+        </div>
+
         {/* B. AS 3 REGRAS DE MATRÍCULA */}
         <section id="principios" className="space-y-12">
           <div data-reveal className="reveal-hidden space-y-2 border-b border-white/5 pb-4">
@@ -478,6 +491,19 @@ export default function Page() {
             ))}
           </div>
         </section>
+
+        {/* CTA após fases */}
+        <div className="text-center pt-2">
+          <button
+            onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
+            onMouseEnter={preloadQuiz}
+            className={waitlistMode
+              ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-white shadow-[0_0_30px_rgba(52,211,153,0.25)] border border-[#10B981] px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'
+              : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'}
+          >
+            {waitlistMode ? 'Entrar no Grupo VIP' : 'INSCREVER-SE'}
+          </button>
+        </div>
 
         {/* E. DELIVERABLES GRAPH FEATURE GRID - PLACED ABOVE PRICING */}
         <section id="premios" className="space-y-12">
