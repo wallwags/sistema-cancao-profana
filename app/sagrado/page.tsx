@@ -74,6 +74,7 @@ interface ProjectRow {
   photo_url?: string | null;
   status: string;
   batch_id?: string | null;
+  pre_registrado?: boolean;
   stage?: number;
   min_payable?: number;
   total_members?: number;
@@ -369,7 +370,7 @@ export default function SagradoPage() {
     }
     let query = supabase
       .from('projects')
-      .select('id, name, style, bio, instagram, video_link, photo_url, status, batch_id, created_at, members(count), subscriptions(status, amount_paid, batches(name))', { count: 'exact' });
+      .select('id, name, style, bio, instagram, video_link, photo_url, status, batch_id, pre_registrado, created_at, members(count), subscriptions(status, amount_paid, batches(name))', { count: 'exact' });
     if (searchQ.trim()) query = query.ilike('name', `%${searchQ.trim()}%`);
     if (statusFilter) query = query.eq('status', statusFilter);
     if (loteFilter) query = query.eq('subscriptions.batch_id', loteFilter);
@@ -1141,6 +1142,9 @@ export default function SagradoPage() {
                         <div>
                           <h3 className="font-display font-black text-xl text-white uppercase leading-tight">{p.name}</h3>
                           <span className="font-mono text-xs text-gray-400 uppercase block mt-1">{p.style || '—'} • cadastrada em {fmtDate(p.created_at)}</span>
+                          {p.pre_registrado && (
+                            <span className="font-mono text-[11px] font-bold text-sky-400 bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 rounded uppercase mt-1 inline-block">Pré-inscrição</span>
+                          )}
                         </div>
                         <span className={`text-[11px] font-bold px-2.5 py-1 rounded font-mono uppercase border shrink-0 ${st.cls}`}>{st.label}</span>
                       </div>
@@ -1325,6 +1329,21 @@ export default function SagradoPage() {
               })() : (
                 <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
                   <h3 className="font-display font-bold text-white uppercase border-b border-white/5 pb-3">Inscrições ({totalCount})</h3>
+
+                  {vipLeads.length > 0 && (
+                    <div className="bg-[#0B0F19]/40 border border-sky-500/20 rounded-xl p-4 space-y-2">
+                      <span className="font-mono text-[11px] text-sky-400 uppercase tracking-widest font-bold block">📋 Lista de espera ({vipLeads.length})</span>
+                      <p className="text-[11px] text-gray-500 leading-snug">Pessoas que deixaram o e-mail antes da abertura. Quando inscreverem com o mesmo e-mail, ganham a tag Pré-inscrição.</p>
+                      <div className="space-y-1.5">
+                        {vipLeads.map((l, i) => (
+                          <div key={String(l.id)} className="flex justify-between items-center bg-black/30 rounded-lg px-3 py-1.5">
+                            <span className="text-xs text-gray-200 font-bold">{String(l.name)}</span>
+                            <span className="font-mono text-[11px] text-gray-500">{String(l.email)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-[1fr_150px_150px] gap-3">
                     <input className={inputCls} placeholder="Buscar por nome da banda..." value={searchQ} onChange={(e) => { setSearchQ(e.target.value); setPage(0); }} />
