@@ -315,10 +315,10 @@ export default function Page() {
                 onMouseEnter={preloadQuiz}
                 disabled={lotesConfig.live.status === 'ao_vivo'}
                 className={waitlistMode
-                  ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-black shadow-[0_0_30px_rgba(52,211,153,0.35)] border border-[#10B981] px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all'
+                  ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-black shadow-[0_0_30px_rgba(52,211,153,0.35)] px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all'
                   : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black shadow-[0_0_30px_rgba(227,181,82,0.35)] w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed'}
               >
-                {waitlistMode ? 'GRUPO VIP' : (lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas: Live no ar' : `INSCREVER-SE · ${activeLoteName}`)}
+                {waitlistMode ? 'ENTRAR NO GRUPO VIP' : (lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas: Live no ar' : `INSCREVER-SE · ${activeLoteName}`)}
               </button>
               <a
                 href="#premios"
@@ -422,7 +422,7 @@ export default function Page() {
               </div>
               <h4 className="font-display font-bold text-md text-white uppercase">Duplas de Rap / Hip-Hop</h4>
               <p className="text-xs text-gray-300 leading-relaxed">
-                Se você é um <strong>MC de Rap</strong>, deve se juntar obrigatoriamente a um <strong>beatmaker/DJ</strong> e vice-versa. O festival fomenta a união criativa e a produção colaborativa real.
+                Se você é um <strong>MC de Rap</strong>, deve se juntar obrigatoriamente a um <strong>beatmaker/DJ</strong> e vice-versa. Duplas de dois MCs são aceitas desde que um deles manuseie o instrumental (APC, MPC, notebook etc.). O festival fomenta a união criativa e a produção colaborativa real.
               </p>
             </div>
 
@@ -455,10 +455,10 @@ export default function Page() {
             onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
             onMouseEnter={preloadQuiz}
             className={waitlistMode
-              ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-white shadow-[0_0_25px_rgba(52,211,153,0.25)] border border-[#10B981] px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'
+              ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-black shadow-[0_0_25px_rgba(52,211,153,0.25)] px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'
               : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'}
           >
-            {waitlistMode ? 'Entrar no Grupo VIP' : 'INSCREVER-SE'}
+            {waitlistMode ? 'ENTRAR NO GRUPO VIP' : 'INSCREVER-SE'}
           </button>
         </div>
 
@@ -516,10 +516,10 @@ export default function Page() {
             onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
             onMouseEnter={preloadQuiz}
             className={waitlistMode
-              ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-white shadow-[0_0_25px_rgba(52,211,153,0.25)] border border-[#10B981] px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'
+              ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-black shadow-[0_0_25px_rgba(52,211,153,0.25)] px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'
               : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'}
           >
-            {waitlistMode ? 'Entrar no Grupo VIP' : 'INSCREVER-SE'}
+            {waitlistMode ? 'ENTRAR NO GRUPO VIP' : 'INSCREVER-SE'}
           </button>
         </div>
 
@@ -716,7 +716,7 @@ export default function Page() {
               disabled={lotesConfig.live.status === 'ao_vivo'}
               className="btn-gold-shimmer px-10 py-4 rounded-2xl text-md shadow-[0_0_30px_rgba(240,194,101,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {waitlistMode ? 'Entrar no Grupo VIP' : (lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas: Live no ar' : `Garantir Inscrição ${activeLoteName}`)}
+              {waitlistMode ? 'ENTRAR NO GRUPO VIP' : (lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas: Live no ar' : `INSCREVER-SE · ${activeLoteName}`)}
             </button>
           </div>
         </section>
@@ -837,7 +837,7 @@ export default function Page() {
               className="w-full flex items-center justify-center gap-2 font-display font-bold text-sm uppercase tracking-wider text-black bg-gradient-to-b from-[#34D399] to-[#059669] py-3.5 rounded-full shadow-lg shadow-[#10B981]/25 disabled:opacity-50 active:scale-[0.98] transition-transform"
             >
               {waitlistBusy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Users className="w-4 h-4" />}
-              {waitlistBusy ? 'Abrindo WhatsApp...' : 'Entrar no grupo VIP'}
+              {waitlistBusy ? 'Abrindo WhatsApp...' : 'ENTRAR NO GRUPO VIP'}
             </button>
 
             <p className="text-[11px] text-gray-500 text-center leading-snug">Informe seu e-mail para receber os avisos oficiais e acesse o grupo VIP. Nada de spam.</p>
