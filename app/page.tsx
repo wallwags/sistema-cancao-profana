@@ -179,10 +179,10 @@ export default function Page() {
     fetchSupabaseConfig();
   }, []);
 
-  // Durante a transmissao ao vivo vale o lote exclusivo Dia 0 (preco e flag definidos no servidor via RPC)
+  // Durante a transmissao ao vivo vale o preco exclusivo da Live (definido no servidor via RPC)
   const isLiveNow = lotesConfig.live.status === 'ao_vivo';
   const activePrice = isLiveNow ? dia0Price : (lotesConfig.lote1.status === 'ativo' ? lotesConfig.lote1.valor : (lotesConfig.lote2.status === 'ativo' ? lotesConfig.lote2.valor : lotesConfig.lote3.valor));
-  const activeLoteName = isLiveNow ? 'DIA 0 (LIVE)' : (lotesConfig.lote1.status === 'ativo' ? 'LOTE 1' : (lotesConfig.lote2.status === 'ativo' ? 'LOTE 2' : 'LOTE 3'));
+  const activeLoteName = isLiveNow ? 'LIVE' : (lotesConfig.lote1.status === 'ativo' ? 'LOTE 1' : (lotesConfig.lote2.status === 'ativo' ? 'LOTE 2' : 'LOTE 3'));
 
 
   // Scroll FX engine — reveals de seção, grupos em stagger, linha da timeline
@@ -230,7 +230,7 @@ export default function Page() {
   };
 
   const handleOpenQuiz = () => {
-    // Aberta tambem durante a live: nesse caso o servidor registra como Dia 0
+    // Aberta tambem durante a live: nesse caso o servidor registra com o preco exclusivo da Live
     setQuizMounted(true);
     setIsQuizOpen(true);
   };
@@ -285,7 +285,13 @@ export default function Page() {
     ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-black shadow-[0_0_25px_rgba(52,211,153,0.3)] border border-[#10B981]/50 px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'
     : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all';
 
-  const ctaText = waitlistMode ? 'ENTRAR NO GRUPO VIP' : (isLiveNow ? 'INSCREVER-SE · DIA 0 (LIVE)' : 'INSCREVER-SE');
+  const ctaText = waitlistMode ? 'ENTRAR NO GRUPO VIP' : (isLiveNow ? 'INSCREVER-SE · AO VIVO' : 'INSCREVER-SE');
+
+  // Durante a transmissao ao vivo a inscricao abre direto (regra do periodo de live)
+  const ctaAction = () => {
+    if (isLiveNow || !waitlistMode) handleOpenQuiz();
+    else setWaitlistOpen(true);
+  };
 
   return (
     <div className="bg-[#05070B] text-[#F0EAE0] min-h-screen relative font-sans antialiased">
@@ -296,8 +302,9 @@ export default function Page() {
           targetDate={liveStatusBar === 'em_breve' ? liveLaunch : countdownTarget}
           liveStatus={liveStatusBar}
           dia0Price={dia0Price}
+          liveUrl={liveUrl}
         />
-        <Navbar onOpenQuiz={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())} waitlistMode={waitlistMode} activeLoteName={activeLoteName} />
+        <Navbar onOpenQuiz={ctaAction} waitlistMode={waitlistMode} activeLoteName={activeLoteName} />
       </div>
 
       {/* MAIN CONTAINER WITH FIXED NAVBAR ADJUSTMENT PT */}
@@ -320,7 +327,7 @@ export default function Page() {
             <div className="fade-up-800 [animation-delay:260ms] flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3">
               <button
                 type="button"
-                onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
+                onClick={ctaAction}
                 onMouseEnter={preloadQuiz}
                 className={ctaCls}
               >
@@ -471,7 +478,7 @@ export default function Page() {
         {/* CTA antes de fases */}
         <div className="text-center pt-2">
           <button
-            onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
+            onClick={ctaAction}
             onMouseEnter={preloadQuiz}
             className={ctaCls}
           >
@@ -530,12 +537,41 @@ export default function Page() {
         {/* CTA antes de lotes */}
         <div className="text-center pt-2">
           <button
-            onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
+            onClick={ctaAction}
             onMouseEnter={preloadQuiz}
             className={ctaCls}
           >
             {ctaText}
           </button>
+        </div>
+
+        {/* JURADOS OFICIAIS: peso e credibilidade */}
+        <div data-reveal className="reveal-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#8B1E1E]/15 via-[#0B0F19]/70 to-[#05070B]/90 px-5 sm:px-10 py-10 sm:py-12 space-y-8 sm:space-y-10">
+          <div className="text-center space-y-3">
+            <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black">Avaliação técnica</span>
+            <h3 className="font-display font-black text-2xl sm:text-3xl md:text-4xl text-white uppercase tracking-tight">JURADOS OFICIAIS</h3>
+            <p className="text-sm text-gray-300 max-w-2xl mx-auto leading-relaxed">
+              Sua banda será ouvida por quem vive de música. Produção, performance e composição avaliadas por quem construiu a própria carreira no palco.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-6 max-w-3xl mx-auto">
+            {[
+              { img: '/jurados/adl-indio.jpg', nome: 'ADL Índio', desc: 'MC e beatmaker. Groove, flow e identidade na escuta de cada faixa.' },
+              { img: '/jurados/matheus-t.jpg', nome: 'Matheus T', desc: 'Voz e violão em palco. Critério de performance e entrega ao vivo.' },
+              { img: '/jurados/patricia-quintero.jpg', nome: 'Patrícia Quintero', desc: 'Cantora e instrumentista. Olhar apurado para composição e interpretação.' }
+            ].map((j) => (
+              <div key={j.nome} className="flex flex-col items-center text-center space-y-3">
+                <div className="w-28 h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36 rounded-full overflow-hidden border-2 border-[#F0C265]/60 ring-2 ring-[#8B1E1E]/50 shadow-[0_0_30px_rgba(240,194,101,0.18)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={j.img} alt={`Jurado ${j.nome}`} className="w-full h-full object-cover" loading="lazy" />
+                </div>
+                <div className="space-y-1">
+                  <p className="font-display font-black text-base sm:text-lg text-white uppercase tracking-tight">{j.nome}</p>
+                  <p className="text-xs text-gray-400 leading-relaxed max-w-[230px] mx-auto">{j.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* D. LOTES TABLE WITH CONFIG STATES */}
@@ -572,82 +608,16 @@ export default function Page() {
             {lotesConfig.live.status === 'encerrada' && (
               <div className="py-4 px-6 rounded-2xl border-2 border-white/5 bg-[#0B0F19]/60 text-gray-400 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <span className="font-mono text-sm md:text-base font-black tracking-widest uppercase">LIVE SESSIONS FINALIZADA • REPLAYS DISPONÍVEIS</span>
-                <button className="border border-white/10 text-white font-mono text-sm font-bold px-4 py-2 rounded-xl">VER REPLAY</button>
+                {liveUrl
+                  ? <a href={liveUrl} target="_blank" rel="noopener noreferrer" className="border border-white/10 hover:border-[#F0C265]/60 hover:text-[#F0C265] text-white font-mono text-sm font-bold px-4 py-2 rounded-xl transition-colors">VER REPLAY</a>
+                  : <span className="border border-white/5 text-gray-600 font-mono text-sm font-bold px-4 py-2 rounded-xl">VER REPLAY</span>}
               </div>
             )}
           </div>
 
-          {/* DIA 0: faixa do lote exclusivo da Live */}
-          {lotesConfig.live.status !== 'encerrada' && (
-            <div data-reveal className={`reveal-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 rounded-2xl px-5 py-4 border transition-all duration-500 ${
-              lotesConfig.live.status === 'ao_vivo'
-                ? 'border-[#F0C265]/60 bg-[#0B0F19]/90 shadow-[0_0_25px_rgba(240,194,101,0.2)]'
-                : 'border-white/10 bg-[#0B0F19]/60'
-            }`}>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <span className={`font-mono text-[11px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${
-                  lotesConfig.live.status === 'ao_vivo'
-                    ? 'bg-red-600 text-white border-black animate-pulse'
-                    : 'bg-[#F0C265]/10 text-[#F0C265] border-[#F0C265]/30'
-                }`}>
-                  {lotesConfig.live.status === 'ao_vivo' ? '🔴 AO VIVO' : '🔴 DIA 0'}
-                </span>
-                <span className="font-mono text-xs text-gray-300">{formatLaunch(liveLaunch)}</span>
-                <span className="font-display font-black text-lg text-[#F0C265]">R$ {dia0Price},00</span>
-                <span className="font-mono text-[11px] text-gray-400 uppercase tracking-wider">Inscrição apenas durante a transmissão</span>
-              </div>
-              {lotesConfig.live.status === 'ao_vivo' && (
-                <div className="flex gap-2.5">
-                  {liveUrl && (
-                    <a href={liveUrl} target="_blank" rel="noopener noreferrer" className="bg-red-600 hover:bg-red-500 text-white font-mono text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-xl border border-black transition-colors">
-                      Assistir
-                    </a>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
-                    onMouseEnter={preloadQuiz}
-                    className="btn-gold-shimmer px-4 py-2 rounded-xl text-xs uppercase tracking-widest font-black"
-                  >
-                    Inscrever no Dia 0
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* JURADOS OFICIAIS: peso e credibilidade */}
-          <div data-reveal className="reveal-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#8B1E1E]/15 via-[#0B0F19]/70 to-[#05070B]/90 px-5 sm:px-10 py-10 sm:py-12 space-y-8 sm:space-y-10">
-            <div className="text-center space-y-3">
-              <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black">Avaliação técnica</span>
-              <h3 className="font-display font-black text-2xl sm:text-3xl md:text-4xl text-white uppercase tracking-tight">JURADOS OFICIAIS</h3>
-              <p className="text-sm text-gray-300 max-w-2xl mx-auto leading-relaxed">
-                Sua banda será ouvida por quem vive de música. Produção, performance e composição avaliadas por quem construiu a própria carreira no palco.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-6 max-w-3xl mx-auto">
-              {[
-                { img: '/jurados/adl-indio.jpg', nome: 'ADL Índio', desc: 'MC e beatmaker. Groove, flow e identidade na escuta de cada faixa.' },
-                { img: '/jurados/matheus-t.jpg', nome: 'Matheus T', desc: 'Voz e violão em palco. Critério de performance e entrega ao vivo.' },
-                { img: '/jurados/patricia-quintero.jpg', nome: 'Patrícia Quintero', desc: 'Cantora e instrumentista. Olhar apurado para composição e interpretação.' }
-              ].map((j) => (
-                <div key={j.nome} className="flex flex-col items-center text-center space-y-3">
-                  <div className="w-28 h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36 rounded-full overflow-hidden border-2 border-[#F0C265]/60 ring-2 ring-[#8B1E1E]/50 shadow-[0_0_30px_rgba(240,194,101,0.18)]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={j.img} alt={`Jurado ${j.nome}`} className="w-full h-full object-cover" loading="lazy" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="font-display font-black text-base sm:text-lg text-white uppercase tracking-tight">{j.nome}</p>
-                    <p className="text-xs text-gray-400 leading-relaxed max-w-[230px] mx-auto">{j.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           <div data-reveal-group className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
-
+              { key: 'dia0', title: 'LIVE', status: lotesConfig.live.status === 'ao_vivo' ? 'ativo' : lotesConfig.live.status === 'encerrada' ? 'encerrado' : 'em_breve', desc: 'Apenas durante a transmissão ao vivo.', valor: dia0Price },
               { key: 'lote1', title: 'Lote 1', status: lotesConfig.lote1.status, desc: 'Primeiras inscrições. Menor preço histórico.', valor: lotesConfig.lote1.valor, vagas: lotesConfig.lote1.vagasRestantes },
               { key: 'lote2', title: 'Lote 2', status: lotesConfig.lote2.status, desc: 'Disponível na fase intermediária.', valor: lotesConfig.lote2.valor, vagas: lotesConfig.lote2.vagasRestantes },
               { key: 'lote3', title: 'Lote 3', status: lotesConfig.lote3.status, desc: 'Reta final de inscrições regulamentares.', valor: lotesConfig.lote3.valor, vagas: lotesConfig.lote3.vagasRestantes }
@@ -709,6 +679,16 @@ export default function Page() {
                           <span className="w-1.5 h-1.5 rounded-full bg-[#F0C265] shrink-0"></span>
                           <span>Vagas limitadas à transmissão;</span>
                         </div>
+                        {isLiveNow && (
+                          <button
+                            type="button"
+                            onClick={ctaAction}
+                            onMouseEnter={preloadQuiz}
+                            className="btn-gold-shimmer w-full py-2.5 rounded-xl text-[11px] uppercase tracking-widest font-black mt-2"
+                          >
+                            Aproveitar Agora! »
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <p className="text-sm text-gray-300 leading-normal">{l.desc}</p>
@@ -722,14 +702,14 @@ export default function Page() {
                         </div>
                         <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden flex items-center">
                           <div
-                            className={`h-full rounded-full bg-gradient-to-r ${isActive ? 'from-[#10B981] to-[#34D399]' : 'from-[#F0C265]/70 to-[#B88A28]/70'}`}
+                            className={`h-full rounded-full bg-gradient-to-r ${isActive ? 'from-[#F0C265] to-[#B88A28]' : 'from-[#F0C265]/70 to-[#B88A28]/70'}`}
                             style={{ width: `${Math.min(100, Math.max(3, (l.vagas / 10) * 100))}%` }}
                           ></div>
                         </div>
                       </div>
                     )}
 
-                    {isActive && (
+                    {isActive && l.key !== 'dia0' && (
                       <div className="flex items-center gap-1.5 text-[11px] text-[#10B981] font-bold uppercase tracking-wider">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] shrink-0"></span>
                         Gravação ao vivo já inclusa
@@ -762,7 +742,7 @@ export default function Page() {
 
           <div className="pt-4 text-center">
             <button
-              onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
+              onClick={ctaAction}
               onMouseEnter={preloadQuiz}
               className={ctaCls}
             >

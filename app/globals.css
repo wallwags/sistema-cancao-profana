@@ -223,6 +223,22 @@
   50%       { opacity: 0.15; }
 }
 .live-dot { animation: live-pulse 1.5s ease-in-out infinite; }
+/* Anéis pulsando nas bordas como sinal wi-fi (botão AO VIVO) */
+@keyframes wifi-ring {
+  0%   { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(1.45); opacity: 0; }
+}
+.live-wifi { position: relative; }
+.live-wifi::before, .live-wifi::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid #ef4444;
+  pointer-events: none;
+  animation: wifi-ring 1s ease-out infinite;
+}
+.live-wifi::after { animation-delay: 0.5s; }
 /* Entrada de card */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(14px); }

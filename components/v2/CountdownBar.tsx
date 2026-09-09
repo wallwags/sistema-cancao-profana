@@ -6,6 +6,7 @@ interface CountdownBarProps {
   targetDate?: string | null;
   liveStatus?: 'em_breve' | 'ao_vivo' | 'encerrada';
   dia0Price?: number;
+  liveUrl?: string | null;
 }
 
 function computeLeft(targetMs: number) {
