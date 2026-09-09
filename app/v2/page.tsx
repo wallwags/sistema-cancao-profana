@@ -172,8 +172,10 @@ export default function Page() {
     fetchSupabaseConfig();
   }, []);
 
-  const activePrice = lotesConfig.lote1.status === 'ativo' ? lotesConfig.lote1.valor : (lotesConfig.lote2.status === 'ativo' ? lotesConfig.lote2.valor : lotesConfig.lote3.valor);
-  const activeLoteName = lotesConfig.lote1.status === 'ativo' ? 'LOTE 1' : (lotesConfig.lote2.status === 'ativo' ? 'LOTE 2' : 'LOTE 3');
+  // Durante a transmissao ao vivo vale o lote exclusivo Dia 0 (preco e flag definidos no servidor via RPC)
+  const isLiveNow = lotesConfig.live.status === 'ao_vivo';
+  const activePrice = isLiveNow ? dia0Price : (lotesConfig.lote1.status === 'ativo' ? lotesConfig.lote1.valor : (lotesConfig.lote2.status === 'ativo' ? lotesConfig.lote2.valor : lotesConfig.lote3.valor));
+  const activeLoteName = isLiveNow ? 'DIA 0 (LIVE)' : (lotesConfig.lote1.status === 'ativo' ? 'LOTE 1' : (lotesConfig.lote2.status === 'ativo' ? 'LOTE 2' : 'LOTE 3'));
 
 
   // Scroll FX engine — reveals de seção, grupos em stagger, linha da timeline
@@ -221,7 +223,7 @@ export default function Page() {
   };
 
   const handleOpenQuiz = () => {
-    if (lotesConfig.live.status === 'ao_vivo') return;
+    // Aberta tambem durante a live: nesse caso o servidor registra como Dia 0
     setQuizMounted(true);
     setIsQuizOpen(true);
   };
@@ -309,10 +311,9 @@ export default function Page() {
                 type="button"
                 onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
                 onMouseEnter={preloadQuiz}
-                disabled={lotesConfig.live.status === 'ao_vivo'}
-                className="btn-gold-shimmer px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black shadow-[0_0_30px_rgba(227,181,82,0.35)] w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-gold-shimmer px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black shadow-[0_0_30px_rgba(227,181,82,0.35)] w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all"
               >
-                {lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas: Live no ar' : 'INSCREVER-SE'}
+                {isLiveNow ? 'INSCREVER-SE · DIA 0 (LIVE)' : 'INSCREVER-SE'}
               </button>
               <a
                 href="#premios"
@@ -569,6 +570,35 @@ export default function Page() {
             </div>
           )}
 
+          {/* JURADOS OFICIAIS: peso e credibilidade */}
+          <div data-reveal className="reveal-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#8B1E1E]/15 via-[#0B0F19]/70 to-[#05070B]/90 px-5 sm:px-10 py-10 sm:py-12 space-y-8 sm:space-y-10">
+            <div className="text-center space-y-3">
+              <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black">Avaliação técnica</span>
+              <h3 className="font-display font-black text-2xl sm:text-3xl md:text-4xl text-white uppercase tracking-tight">JURADOS OFICIAIS</h3>
+              <p className="text-sm text-gray-300 max-w-2xl mx-auto leading-relaxed">
+                Sua banda será ouvida por quem vive de música. Produção, performance e composição avaliadas por quem construiu a própria carreira no palco.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-6 max-w-3xl mx-auto">
+              {[
+                { img: '/jurados/adl-indio.jpg', nome: 'ADL Índio', desc: 'MC e beatmaker. Groove, flow e identidade na escuta de cada faixa.' },
+                { img: '/jurados/matheus-t.jpg', nome: 'Matheus T', desc: 'Voz e violão em palco. Critério de performance e entrega ao vivo.' },
+                { img: '/jurados/patricia-quintero.jpg', nome: 'Patrícia Quintero', desc: 'Cantora e instrumentista. Olhar apurado para composição e interpretação.' }
+              ].map((j) => (
+                <div key={j.nome} className="flex flex-col items-center text-center space-y-3">
+                  <div className="w-28 h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36 rounded-full overflow-hidden border-2 border-[#F0C265]/60 ring-2 ring-[#8B1E1E]/50 shadow-[0_0_30px_rgba(240,194,101,0.18)]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={j.img} alt={`Jurado ${j.nome}`} className="w-full h-full object-cover" loading="lazy" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-display font-black text-base sm:text-lg text-white uppercase tracking-tight">{j.nome}</p>
+                    <p className="text-xs text-gray-400 leading-relaxed max-w-[230px] mx-auto">{j.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div data-reveal-group className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
               { key: 'dia0', title: 'Dia 0 (Live)', status: lotesConfig.live.status === 'ao_vivo' ? 'ativo' : lotesConfig.live.status === 'encerrada' ? 'encerrado' : 'em_breve', desc: 'Apenas durante a transmissão ao vivo.', valor: dia0Price },
@@ -681,10 +711,9 @@ export default function Page() {
             <button
               onClick={handleOpenQuiz}
               onMouseEnter={preloadQuiz}
-              disabled={lotesConfig.live.status === 'ao_vivo'}
-              className="btn-gold-shimmer px-10 py-4 rounded-2xl text-md shadow-[0_0_30px_rgba(240,194,101,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-gold-shimmer px-10 py-4 rounded-2xl text-md shadow-[0_0_30px_rgba(240,194,101,0.3)]"
             >
-              {lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas: Live no ar' : 'Garantir Inscrição Lote 1'}
+              {isLiveNow ? 'Garantir Inscrição Dia 0 (Live)' : 'Garantir Inscrição Lote 1'}
             </button>
           </div>
         </section>
