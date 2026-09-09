@@ -278,6 +278,12 @@ export default function Page() {
     }
   };
 
+  const ctaCls = waitlistMode
+    ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-black shadow-[0_0_25px_rgba(52,211,153,0.3)] border border-[#10B981]/50 px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'
+    : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all';
+
+  const ctaText = waitlistMode ? 'ENTRAR NO GRUPO VIP' : 'INSCREVER-SE';
+
   return (
     <div className="bg-[#05070B] text-[#F0EAE0] min-h-screen relative font-sans antialiased">
 
@@ -314,11 +320,9 @@ export default function Page() {
                 onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
                 onMouseEnter={preloadQuiz}
                 disabled={lotesConfig.live.status === 'ao_vivo'}
-                className={waitlistMode
-                  ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-black shadow-[0_0_30px_rgba(52,211,153,0.35)] px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all'
-                  : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black shadow-[0_0_30px_rgba(227,181,82,0.35)] w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed'}
+                className={ctaCls}
               >
-                {waitlistMode ? 'ENTRAR NO GRUPO VIP' : (lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas: Live no ar' : `INSCREVER-SE · ${activeLoteName}`)}
+                {ctaText}
               </button>
               <a
                 href="#premios"
@@ -454,11 +458,9 @@ export default function Page() {
           <button
             onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
             onMouseEnter={preloadQuiz}
-            className={waitlistMode
-              ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-black shadow-[0_0_25px_rgba(52,211,153,0.25)] px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'
-              : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'}
+            className={ctaCls}
           >
-            {waitlistMode ? 'ENTRAR NO GRUPO VIP' : 'INSCREVER-SE'}
+            {ctaText}
           </button>
         </div>
 
@@ -515,11 +517,9 @@ export default function Page() {
           <button
             onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
             onMouseEnter={preloadQuiz}
-            className={waitlistMode
-              ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-black shadow-[0_0_25px_rgba(52,211,153,0.25)] px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'
-              : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'}
+            className={ctaCls}
           >
-            {waitlistMode ? 'ENTRAR NO GRUPO VIP' : 'INSCREVER-SE'}
+            {ctaText}
           </button>
         </div>
 
@@ -714,9 +714,9 @@ export default function Page() {
               onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
               onMouseEnter={preloadQuiz}
               disabled={lotesConfig.live.status === 'ao_vivo'}
-              className="btn-gold-shimmer px-10 py-4 rounded-2xl text-md shadow-[0_0_30px_rgba(240,194,101,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+              className={ctaCls}
             >
-              {waitlistMode ? 'ENTRAR NO GRUPO VIP' : (lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas: Live no ar' : `INSCREVER-SE · ${activeLoteName}`)}
+              {ctaText}
             </button>
           </div>
         </section>
