@@ -14,7 +14,7 @@ interface StaffRow {
   username?: string;
   display_name: string;
   role: 'dev' | 'admin' | 'jurado';
-  permissions: { manage_lotes?: boolean; manage_content?: boolean; manage_subscriptions?: boolean; view_sensitive_data?: boolean; manage_team?: boolean; view_audit?: boolean; manage_vip?: boolean };
+  permissions: { manage_lotes?: boolean; manage_content?: boolean; manage_subscriptions?: boolean; view_sensitive_data?: boolean; manage_team?: boolean; view_audit?: boolean; manage_vip?: boolean; manage_gateway?: boolean };
 }
 
 interface MemberFull {
@@ -99,6 +99,7 @@ const PERM_KEYS = [
   { key: 'view_sensitive_data', label: 'Visualizar dados pessoais dos inscritos (CPF, contato)' },
   { key: 'manage_team', label: 'Gerenciar acessos da equipe' },
   { key: 'manage_vip', label: 'Gerenciar Grupo VIP e interessados' },
+  { key: 'manage_gateway', label: 'Gerenciar integração de pagamentos' },
   { key: 'view_audit', label: 'Visualizar o histórico de auditoria' },
 ] as const;
 
@@ -223,6 +224,9 @@ export default function SagradoPage() {
   const [cartDays, setCartDays] = useState({ lote1: '10', lote2: '10', lote3: '12' });
   const [homeMode, setHomeMode] = useState<'classic' | 'vip'>('classic');
   const [homeCtaMode, setHomeCtaMode] = useState<'waitlist' | 'quiz'>('waitlist');
+  const [gwState, setGwState] = useState<{ token_set: boolean; token_mask: string; secret_set: boolean; updated_at?: string } | null>(null);
+  const [mpToken, setMpToken] = useState('');
+  const [mpSecret, setMpSecret] = useState('');
   const [vip, setVip] = useState<Record<string, string>>({});
   const [vipLeads, setVipLeads] = useState<Array<Record<string, unknown>>>([]);
 
@@ -249,6 +253,7 @@ export default function SagradoPage() {
   const canSensitive = isDev || !!perms.view_sensitive_data;
   const canTeam = isDev || (isAdminRole && !!perms.manage_team);
   const canVip = isDev || (isAdminRole && !!perms.manage_vip);
+  const canGateway = isDev || (isAdminRole && !!perms.manage_gateway);
   const canAudit = isDev || (isAdminRole && !!perms.view_audit);
 
   const loadLive = useCallback(async () => {
@@ -336,6 +341,11 @@ export default function SagradoPage() {
     setVipLeads((data || []) as Array<Record<string, unknown>>);
   }, []);
 
+  const loadGateway = useCallback(async () => {
+    const { data } = await supabase.rpc('dev_get_gateway_state');
+    if (data && typeof data === 'object') setGwState(data as any);
+  }, []);
+
   const loadFaqs = useCallback(async () => {
     const { data } = await supabase.from('faq_items').select('*').order('sort_order', { ascending: true });
     if (data) setFaqs(data as FaqRow[]);
@@ -389,7 +399,7 @@ export default function SagradoPage() {
     (async () => {
       const ok = await loadStaff();
       if (ok) {
-        await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores(), loadSlotMode(), loadVip(), loadVipLeads(), loadHomeMode(), loadHomeCtaMode()]);
+        await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores(), loadSlotMode(), loadVip(), loadVipLeads(), loadHomeMode(), loadHomeCtaMode(), loadGateway()]);
       }
       setBooting(false);
     })();
@@ -410,6 +420,7 @@ export default function SagradoPage() {
     if (authed && tab === 'auditoria') loadAudit();
     if (authed && tab === 'funil') loadFunnel();
     if (authed && tab === 'vip') loadVipLeads();
+    if (authed && tab === 'gateway') loadGateway();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authed, tab]);
 
@@ -428,6 +439,7 @@ export default function SagradoPage() {
     if (canLotes) available.push('lotes');
     if (canContent) available.push('conteudo');
     if (canVip) available.push('vip');
+    if (canGateway) available.push('gateway');
     if (canSubs) available.push('inscritos');
     if (canSubs) available.push('funil');
     if (isJudge) available.push('avaliacao');
@@ -436,7 +448,7 @@ export default function SagradoPage() {
     available.push('conta');
     setTab(t => (available.includes(t) ? t : available[0]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authed, me?.role, canLotes, canContent, canSubs, canTeam, canAudit, canVip, isJudge]);
+  }, [authed, me?.role, canLotes, canContent, canSubs, canTeam, canAudit, canVip, canGateway, isJudge]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -455,7 +467,7 @@ export default function SagradoPage() {
       setLoggingIn(false);
       return;
     }
-    await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores(), loadSlotMode(), loadVip(), loadVipLeads(), loadHomeMode(), loadHomeCtaMode()]);
+    await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores(), loadSlotMode(), loadVip(), loadVipLeads(), loadHomeMode(), loadHomeCtaMode(), loadGateway()]);
     setLoggingIn(false);
     setPassword('');
   };
@@ -768,6 +780,19 @@ export default function SagradoPage() {
     return 'ok';
   });
 
+  const saveGateway = () => guarded('gateway', async () => {
+    if (!mpToken.trim()) return 'Informe o Access Token de produção do Mercado Pago.';
+    const { data: res, error } = await supabase.rpc('dev_save_gateway_keys', {
+      p_token: mpToken.trim(), p_secret: mpSecret.trim()
+    });
+    if (error) return 'Erro ao salvar: ' + error.message;
+    if (res !== 'ok') return String(res);
+    setMpToken(''); setMpSecret('');
+    await loadGateway();
+    setMsg('gateway', 'ok', 'Chaves do gateway salvas com segurança.');
+    return 'ok';
+  });
+
   const openAuditTab = () => { loadAudit(); };
 
   // ---------- conta ----------
@@ -855,6 +880,7 @@ export default function SagradoPage() {
               { id: 'auditoria', label: 'Auditoria', icon: History, show: canAudit },
               { id: 'funil', label: 'Funil', icon: BarChart3, show: canSubs },
               { id: 'vip', label: 'Grupo VIP', icon: Users, show: canVip },
+              { id: 'gateway', label: 'Pagamentos', icon: KeyRound, show: canGateway },
               { id: 'conta', label: 'Minha conta', icon: UserCog, show: true },
             ].filter(t => t.show).map(t => (
               <button
@@ -1696,6 +1722,70 @@ export default function SagradoPage() {
               </div>
             );
           })()}
+
+          {/* GATEWAY DE PAGAMENTOS */}
+          {tab === 'gateway' && canGateway && (
+            <div className="space-y-4 max-w-xl fade-up-800">
+              <Notice kind="info">
+                Conecte sua conta Mercado Pago para ativar o Pix real com confirmação automática. As chaves são armazenadas com criptografia e nunca ficam expostas.
+              </Notice>
+
+              <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
+                <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                  <h3 className="font-display font-bold text-white uppercase">Mercado Pago</h3>
+                  <span className={`font-mono text-[11px] font-bold px-2.5 py-1 rounded-full uppercase border ${
+                    gwState?.token_set ? 'text-[#10B981] border-[#10B981]/30 bg-[#10B981]/10' : 'text-amber-500 border-amber-500/30 bg-amber-500/10'
+                  }`}>
+                    {gwState?.token_set ? 'conectado' : 'não configurado'}
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">Access Token de produção</label>
+                  <input
+                    type="password"
+                    className={inputCls}
+                    value={mpToken}
+                    onChange={(e) => setMpToken(e.target.value)}
+                    placeholder={gwState?.token_mask || 'APP_USR-...'}
+                    autoComplete="off"
+                  />
+                  {gwState?.token_set && (
+                    <span className="font-mono text-[10px] text-gray-500 block">Chave atual: {gwState.token_mask}. Insira uma nova para substituir.</span>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">Webhook Secret (opcional por enquanto)</label>
+                  <input
+                    type="password"
+                    className={inputCls}
+                    value={mpSecret}
+                    onChange={(e) => setMpSecret(e.target.value)}
+                    placeholder="Secret para validação de notificações"
+                    autoComplete="off"
+                  />
+                </div>
+
+                <div className="flex justify-end items-center gap-3 flex-wrap">
+                  {notice['gateway'] && <Notice kind={notice['gateway'].kind}>{notice['gateway'].msg}</Notice>}
+                  <button type="button" onClick={saveGateway} disabled={busy === 'gateway'} className={btnGold}>
+                    {busy === 'gateway' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Salvar chaves'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-[#0B0F19]/40 border border-white/5 rounded-2xl p-4 space-y-2">
+                <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold block">Como obter as chaves</span>
+                <p className="text-xs text-gray-300 leading-relaxed">
+                  1. Acesse developers.mercadopago.com com a conta PJ do estúdio.<br />
+                  2. Crie uma aplicação e ative Pix + Cartão em modo produção.<br />
+                  3. Copie o Access Token de produção e cole aqui.<br />
+                  4. Salve. A partir do próximo pagamento, o sistema usa o gateway real automaticamente.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* EQUIPE */}
           {tab === 'equipe' && canTeam && (

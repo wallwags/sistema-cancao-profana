@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 
 interface CountdownBarProps {
   targetDate?: string | null;
+  liveStatus?: 'em_breve' | 'ao_vivo' | 'encerrada';
+  dia0Price?: number;
 }
 
 function computeLeft(targetMs: number) {
@@ -22,18 +24,21 @@ function computeLeft(targetMs: number) {
   };
 }
 
-export default function CountdownBar({ targetDate }: CountdownBarProps) {
+export default function CountdownBar({ targetDate, liveStatus = 'em_breve', dia0Price }: CountdownBarProps) {
   const [timeLeft, setTimeLeft] = useState({
     days: '00',
-    hours: '--',
-    minutes: '--',
-    seconds: '--'
+    hours: '00',
+    minutes: '00',
+    seconds: '00'
   });
 
   useEffect(() => {
     const parsed = targetDate ? new Date(String(targetDate).replace(' ', 'T')).getTime() : NaN;
-    const fallback = new Date('2026-09-14T23:59:00-03:00').getTime();
-    const target = !isNaN(parsed) ? parsed : fallback;
+    if (isNaN(parsed)) {
+      setTimeLeft({ days: '00', hours: '00', minutes: '00', seconds: '00' });
+      return;
+    }
+    const target = parsed;
 
     const tick = () => {
       const left = computeLeft(target);
@@ -50,32 +55,61 @@ export default function CountdownBar({ targetDate }: CountdownBarProps) {
     return () => clearInterval(timer);
   }, [targetDate]);
 
+  const isLive = liveStatus === 'ao_vivo';
+  const isPreLive = liveStatus === 'em_breve';
+
+  // Faixa contextual por fase do evento
+  let phaseLabel = '';
+  let phaseValue = '';
+  let barCls = 'bg-[#8B1E1E]';
+
+  if (isLive) {
+    phaseLabel = 'AO VIVO AGORA';
+    phaseValue = `Dia 0 por R$ ${dia0Price ?? 25},00 por tempo limitado`;
+    barCls = 'bg-gradient-to-r from-red-800 via-red-600 to-red-800';
+  } else if (isPreLive) {
+    phaseLabel = 'Inscrições via Grupo VIP';
+    phaseValue = 'Live em breve';
+    barCls = 'bg-gradient-to-r from-[#3b1a4a] via-[#8B1E1E] to-[#3b1a4a]';
+  } else {
+    phaseLabel = 'Inscrições encerradas';
+    phaseValue = 'Acompanhe o concurso';
+    barCls = 'bg-[#121215]';
+  }
+
   return (
-    <div className="w-full bg-[#8B1E1E] py-2 px-4 flex justify-center items-center gap-2 sm:gap-3 select-none text-center relative z-50 text-xs sm:text-sm border-b border-white/5 shadow-md">
-      {/* High-visibility golden/yellow pulsating indicator */}
-      <span className="relative flex h-2 w-2 shrink-0">
+    <div className={`w-full ${barCls} py-2 px-4 flex justify-center items-center gap-2 sm:gap-3 select-none text-center relative z-50 text-xs sm:text-sm border-b border-white/5 shadow-md transition-colors duration-500`}>
+      <span className={`relative flex h-2 w-2 shrink-0 ${isLive || isPreLive ? '' : 'hidden'}`}>
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F0C265] opacity-75"></span>
         <span className="relative inline-flex rounded-full h-2 w-2 bg-[#F0C265]"></span>
       </span>
-      
+
       <span className="font-mono text-[#F0EAE0] font-bold uppercase tracking-widest text-[10px] sm:text-[11px] whitespace-nowrap">
-        Lote 1 ativo até:
+        {phaseLabel}
       </span>
-      
-      {/* Elegantly styled countdown ticking digits */}
-      <div className="bg-[#05070B] px-3 py-1 rounded-full font-mono font-black text-[#F0C265] tracking-wider flex items-center gap-1.5 shadow-inner border border-white/5 text-[10px] sm:text-xs">
-        <span className="text-[#F0C265] font-extrabold">{timeLeft.days}</span>
-        <span className="text-gray-500 text-[9px] font-bold">D</span>
-        <span className="text-[#F0C265]/40 font-bold">:</span>
-        <span className="text-[#F0C265] font-extrabold">{timeLeft.hours}</span>
-        <span className="text-gray-500 text-[9px] font-bold">H</span>
-        <span className="text-[#F0C265]/40 font-bold">:</span>
-        <span className="text-[#F0C265] font-extrabold">{timeLeft.minutes}</span>
-        <span className="text-gray-500 text-[9px] font-bold">M</span>
-        <span className="text-[#F0C265]/40 font-bold">:</span>
-        <span className="text-[#F0C265] font-extrabold text-[#FFF2D4]">{timeLeft.seconds}</span>
-        <span className="text-gray-500 text-[9px] font-bold">S</span>
-      </div>
+
+      {(isLive || isPreLive) && (
+        <span className="font-mono text-[#F0C265] font-bold uppercase tracking-wider text-[10px] sm:text-[11px] whitespace-nowrap">
+          {phaseValue}
+        </span>
+      )}
+
+      {/* countdown do lote ativo */}
+      {!isPreLive && targetDate && (
+        <div className="bg-[#05070B] px-3 py-1 rounded-full font-mono font-black text-[#F0C265] tracking-wider flex items-center gap-1.5 shadow-inner border border-white/5 text-[10px] sm:text-xs">
+          <span className="text-[#F0C265] font-extrabold">{timeLeft.days}</span>
+          <span className="text-gray-500 text-[9px] font-bold">D</span>
+          <span className="text-[#F0C265]/40 font-bold">:</span>
+          <span className="text-[#F0C265] font-extrabold">{timeLeft.hours}</span>
+          <span className="text-gray-500 text-[9px] font-bold">H</span>
+          <span className="text-[#F0C265]/40 font-bold">:</span>
+          <span className="text-[#F0C265] font-extrabold">{timeLeft.minutes}</span>
+          <span className="text-gray-500 text-[9px] font-bold">M</span>
+          <span className="text-[#F0C265]/40 font-bold">:</span>
+          <span className="text-[#FFF2D4] font-extrabold">{timeLeft.seconds}</span>
+          <span className="text-gray-500 text-[9px] font-bold">S</span>
+        </div>
+      )}
     </div>
   );
 }

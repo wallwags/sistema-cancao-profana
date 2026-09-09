@@ -61,6 +61,7 @@ export default function Page() {
   const [liveLaunch, setLiveLaunch] = useState<string | null>(null);
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
   const [dia0Price, setDia0Price] = useState<number>(25);
+  const [liveStatusBar, setLiveStatusBar] = useState<'em_breve' | 'ao_vivo' | 'encerrada'>('em_breve');
   const [slotMode, setSlotMode] = useState<'band' | 'integrante'>('band');
   const [sheetCode, setSheetCode] = useState<string | null>(null);
   const [sheetStart, setSheetStart] = useState<'confirm' | 'pick'>('confirm');
@@ -97,6 +98,7 @@ export default function Page() {
           .select('*')
           .eq('id', 1)
           .maybeSingle();
+        if (liveData?.status) setLiveStatusBar(liveData.status);
 
         const [settingsRes, faqRes] = await Promise.all([
           supabase.from('site_settings').select('key,value'),
@@ -244,7 +246,11 @@ export default function Page() {
 
       {/* UNIFIED FIXED CONTAINER FOR COUNTDOWN AND NAVBAR — retrátil ao rolar */}
       <div ref={headerRef} className="fixed top-0 left-0 right-0 z-50 w-full bg-[#05070B]/95 backdrop-blur-md">
-        <CountdownBar targetDate={countdownTarget} />
+        <CountdownBar
+          targetDate={countdownTarget}
+          liveStatus={liveStatusBar}
+          dia0Price={dia0Price}
+        />
         <Navbar onOpenQuiz={handleOpenQuiz} />
       </div>
 
