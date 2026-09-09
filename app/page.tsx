@@ -314,9 +314,11 @@ export default function Page() {
                 onClick={() => (waitlistMode ? setWaitlistOpen(true) : handleOpenQuiz())}
                 onMouseEnter={preloadQuiz}
                 disabled={lotesConfig.live.status === 'ao_vivo'}
-                className="btn-gold-shimmer px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black shadow-[0_0_30px_rgba(227,181,82,0.35)] w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className={waitlistMode
+                  ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-white shadow-[0_0_30px_rgba(52,211,153,0.35)] border border-[#10B981] px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all'
+                  : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs sm:text-sm uppercase tracking-widest font-black shadow-[0_0_30px_rgba(227,181,82,0.35)] w-full sm:w-auto text-center outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed'}
               >
-                {lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas: Live no ar' : 'INSCREVER-SE'}
+                {waitlistMode ? 'GRUPO VIP' : (lotesConfig.live.status === 'ao_vivo' ? 'Inscrições pausadas: Live no ar' : 'INSCREVER-SE')}
               </button>
               <a
                 href="#premios"

@@ -64,7 +64,7 @@ export default function CountdownBar({ targetDate, liveStatus = 'em_breve', dia0
   let barCls = 'bg-[#8B1E1E]';
 
   if (isLive) {
-    phaseLabel = 'Live de Abertura';
+    phaseLabel = 'AO VIVO AGORA';
     phaseValue = `$${dia0Price ?? 25} até o fim da Live`;
     barCls = 'bg-gradient-to-r from-red-800 via-red-600 to-red-800';
   } else if (isPreLive) {
