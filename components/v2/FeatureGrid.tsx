@@ -43,7 +43,7 @@ function FeatureCard({ badge, icon, title, description }: FeatureCardProps) {
 export default function FeatureGrid() {
   const gridRef = useRef<HTMLDivElement | null>(null);
 
-  // Scroll reveal — GSAP stagger when the grid enters the viewport (once), same
+  // Scroll reveal - GSAP stagger when the grid enters the viewport (once), same
   // choreography as before (opacity 0→1, y 30→0, 0.15s stagger, soft ease).
   useEffect(() => {
     const el = gridRef.current;

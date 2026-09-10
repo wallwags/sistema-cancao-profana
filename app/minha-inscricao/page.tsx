@@ -258,7 +258,7 @@ export default function MinhaInscricaoPage() {
           </div>
         </div>
 
-        {/* URGÊNCIA — partes pendentes */}
+        {/* URGÊNCIA - partes pendentes */}
         {data.status === 'awaiting_members' && (() => {
           const paidCount = data.members.filter(m => m.payment_status === 'paid').length;
           const minReq = data.min_payable ?? 2;
@@ -295,14 +295,14 @@ export default function MinhaInscricaoPage() {
               </div>
 
               <p className="text-xs text-gray-300 leading-snug relative">
-                <strong className="text-amber-400">Atenção:</strong> bandas com menos de 2 partes pagas podem perder a vaga na virada do lote{data.slot_mode === 'integrante' ? ', e as partes seguintes passam a valer o preço do novo lote.' : '.'}
+                <strong className="text-amber-400">Atenção:</strong> bandas com menos de 2 partes pagas podem perder a vaga na virada do lote{data.slot_mode === 'integrante' ? ', e as partes seguintes passam a valer a oferta do novo lote.' : '.'}
               </p>
 
-              {/* tags informativas (não clicáveis) — visual passivo */}
+              {/* tags informativas (não clicáveis) - visual passivo */}
               <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-thin pb-1 relative">
                 <span className="inline-flex items-center gap-1.5 text-[11px] text-gray-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-md">
                   <Clock className="w-3 h-3 text-amber-400" />
-                  Lote encerra em {endsIn !== null ? `${endsIn} dia${endsIn === 1 ? '' : 's'}` : '—'}
+                  Lote encerra em {endsIn !== null ? `${endsIn} dia${endsIn === 1 ? '' : 's'}` : '-'}
                 </span>
                 {typeof data.vagas_lote === 'number' && (
                   <span className="inline-flex items-center gap-1.5 text-[11px] text-gray-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-md">
@@ -316,7 +316,7 @@ export default function MinhaInscricaoPage() {
                 </span>
               </div>
 
-              {/* ações — sólidas, claramente clicáveis */}
+              {/* ações - sólidas, claramente clicáveis */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 relative pt-1">
                 {data.invite_code && (
                   <button

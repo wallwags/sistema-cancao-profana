@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { Inter, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 
-// Self-hosted via next/font — same families as before (variable axis covers every weight used),
+// Self-hosted via next/font - same families as before (variable axis covers every weight used),
 // no render-blocking external CSS. NOTE: Space Grotesk has no real 900; `font-black` keeps being
 // synthesized by the browser exactly like it was with the old Google Fonts <link>.
 const inter = Inter({

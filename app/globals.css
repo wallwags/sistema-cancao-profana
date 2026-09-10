@@ -93,7 +93,7 @@
 }
 
 /* ════════════════════════════════════════════
-   BENTO SYSTEM — Canção Profana v2.1
+   BENTO SYSTEM - Canção Profana v2.1
    Fonte da verdade: tailwind.config.js
    Este arquivo: compound components,
    keyframes, scrollbar apenas.
@@ -217,7 +217,7 @@
   border-top: 1px solid rgba(255,255,255,0.05);
   margin: 1rem 0;
 }
-/* Ponto ao vivo — CSS puro */
+/* Ponto ao vivo - CSS puro */
 @keyframes live-pulse {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.15; }
@@ -255,7 +255,7 @@
   border-radius: 9999px;
 }
 
-/* CSS-animated popups (LegalModals) — replaces framer-motion for zero-JS-cost modals */
+/* CSS-animated popups (LegalModals) - replaces framer-motion for zero-JS-cost modals */
 @keyframes legal-pop {
   from { opacity: 0; transform: scale(0.96) translateY(12px); }
   to { opacity: 1; transform: scale(1) translateY(0); }

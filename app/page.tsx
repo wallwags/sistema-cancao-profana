@@ -9,6 +9,7 @@ import Link from 'next/link';
 import Navbar from '../components/v2/Navbar';
 import HeroCard from '../components/v2/HeroCard';
 import FeatureGrid from '../components/v2/FeatureGrid';
+import GlobalCta from '../components/v2/GlobalCta';
 import CountdownBar from '../components/v2/CountdownBar';
 import { parseDbDate } from '../lib/dates';
 import { TermsModal, PrivacyModal } from '../components/v2/LegalModals';
@@ -37,7 +38,7 @@ interface LotesConfig {
 
 export default function Page() {
   const [lotesConfig, setLotesConfig] = useState<LotesConfig>({
-    lote1: { status: 'em_breve', vagasRestantes: 10, total: 10, valor: 35, desc: 'Primeiras inscrições. Menor preço histórico.' },
+    lote1: { status: 'em_breve', vagasRestantes: 10, total: 10, valor: 35, desc: 'Primeiras inscrições. Menor oferta histórica.' },
     lote2: { status: 'em_breve', vagasRestantes: 10, total: 10, valor: 40, desc: 'Disponível na fase intermediária.' },
     lote3: { status: 'em_breve', vagasRestantes: 10, total: 10, valor: 45, desc: 'Reta final de inscrições regulamentares.' },
     live: { status: 'em_breve' }
@@ -56,7 +57,7 @@ export default function Page() {
     { q: 'O que acontece se eu me inscrever e não puder participar?', a: 'Caso ocorram imprevistos justificáveis, o grupo deve notificar a equipe de estúdio com no mínimo 5 dias de antecedência para realocação em novas datas sob disponibilidade. Em casos extremos, a inscrição pode ser transferida para outro projeto parceiro sob análise técnica.' },
     { q: 'Posso inscrever uma música em parceria ou coautoria?', a: 'Sim! Com certeza. Desde que a banda detranque os direitos autorais para as transmissões oficiais da gravação e pelo menos uma das faixas do repertório de 3 músicas seja de autoria e em língua portuguesa.' },
     { q: 'Onde acontecem as gravações?', a: 'Todas as gravações acontecem presencialmente no Estúdio Pedra Profana em Teresópolis, RJ. Somente inscritos que possam comparecer ao estúdio nas datas estipuladas serão aceitos no concurso.' },
-        { q: 'Como funciona cada fase do concurso?', a: 'O concurso possui 3 fases ativas: Etapa 1 (Transmissão ao Vivo): as bandas gravam ao vivo no estúdio e transmitem com arrecadação direta na tela. Etapa 2 (Podcast especial): as bandas selecionadas participam de um podcast de divulgação. Etapa 3 (Grande Final): Apresentação presencial ao vivo para o público e revelação dos vencedores pela média final de notas.' },
+        { q: 'Como funciona cada fase do concurso?', a: 'O concurso possui 3 fases ativas: Etapa 1 (Ao Vivo): as bandas gravam ao vivo no estúdio e transmitem com arrecadação direta na tela. Etapa 2 (Podcast especial): as bandas selecionadas participam de um podcast de divulgação. Etapa 3 (Grande Final): Apresentação presencial ao vivo para o público e revelação dos vencedores pela média final de notas.' },
     { q: 'Quais são os prêmios e benefícios para os vencedores?', a: '1º lugar: EP de 5 faixas + clipe + fotos + distribuição; 2º lugar: 3 faixas + fotos; 3º lugar: 1 single.' }
   ]);
   const [countdownTarget, setCountdownTarget] = useState<string | null>(null);
@@ -172,7 +173,7 @@ export default function Page() {
           setLoteDates({ lote1: b1.ends_at ?? null, lote1_end: b1.ends_at ?? null, lote2: b2.ends_at ?? null, lote2_end: b2.ends_at ?? null, lote3: b3.ends_at ?? null, lote3_end: b3.ends_at ?? null });
 
           setLotesConfig({
-            lote1: { status: b1.status, vagasRestantes: b1.vagas_restantes, total: Number(b1.vagas_total ?? 10), valor: Number(b1.price_per_member), desc: 'Primeiras inscrições. Menor preço histórico.' },
+            lote1: { status: b1.status, vagasRestantes: b1.vagas_restantes, total: Number(b1.vagas_total ?? 10), valor: Number(b1.price_per_member), desc: 'Primeiras inscrições. Menor oferta histórica.' },
             lote2: { status: b2.status, vagasRestantes: b2.vagas_restantes, total: Number(b2.vagas_total ?? 10), valor: Number(b2.price_per_member), desc: 'Disponível na fase intermediária.' },
             lote3: { status: b3.status, vagasRestantes: b3.vagas_restantes, total: Number(b3.vagas_total ?? 10), valor: Number(b3.price_per_member), desc: 'Reta final de inscrições regulamentares.' },
             live: { status: liveData ? liveData.status : 'em_breve' }
@@ -207,7 +208,7 @@ export default function Page() {
   const activeLoteName = isLiveNow ? 'LIVE' : loteFocoNome;
 
 
-  // Scroll FX engine — reveals de seção, grupos em stagger, linha da timeline
+  // Scroll FX engine - reveals de seção, grupos em stagger, linha da timeline
   // desenhando e barra de vagas animando ao entrarem na viewport (uma vez só).
   useEffect(() => {
     const revealEls = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
@@ -246,7 +247,7 @@ export default function Page() {
     return () => io.disconnect();
   }, []);
 
-  // Open quiz instantly (no artificial loading) — chunk is code-split and pre-warmed on hover
+  // Open quiz instantly (no artificial loading) - chunk is code-split and pre-warmed on hover
   const preloadQuiz = () => {
     import('../components/v2/QuizFlow');
   };
@@ -303,10 +304,6 @@ export default function Page() {
     }
   };
 
-  const ctaCls = waitlistMode
-    ? 'bg-gradient-to-b from-[#34D399] to-[#059669] text-black shadow-[0_0_25px_rgba(52,211,153,0.3)] border border-[#10B981]/50 px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all'
-    : 'btn-gold-shimmer px-8 py-3.5 rounded-full text-xs uppercase tracking-widest font-black active:scale-[0.98] transition-all';
-
   const ctaText = waitlistMode ? 'ENTRAR NO GRUPO VIP' : (isLiveNow ? 'INSCREVER-SE · AO VIVO' : 'INSCREVER-SE');
 
   // Durante a transmissao ao vivo a inscricao abre direto (regra do periodo de live)
@@ -318,7 +315,7 @@ export default function Page() {
   return (
     <div className="bg-[#05070B] text-[#F0EAE0] min-h-screen relative font-sans antialiased">
 
-      {/* UNIFIED FIXED CONTAINER FOR COUNTDOWN AND NAVBAR — retrátil ao rolar */}
+      {/* UNIFIED FIXED CONTAINER FOR COUNTDOWN AND NAVBAR - retrátil ao rolar */}
       <div ref={headerRef} className="fixed top-0 left-0 right-0 z-50 w-full bg-[#05070B]/95 backdrop-blur-md">
         <CountdownBar
           targetDate={liveStatusBar === 'em_breve' && liveLaunchFuture ? liveLaunch : countdownTarget}
@@ -331,7 +328,7 @@ export default function Page() {
       </div>
 
       {/* MAIN CONTAINER WITH FIXED NAVBAR ADJUSTMENT PT */}
-      <main className="max-w-6xl mx-auto px-6 pt-32 sm:pt-40 pb-10 grow space-y-24 relative z-10">
+      <main className="max-w-6xl mx-auto px-6 pt-32 sm:pt-40 pb-4 grow space-y-24 relative z-10">
 
         {/* HERO SECTION */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-center">
@@ -348,14 +345,7 @@ export default function Page() {
               <span>• GRAVAÇÃO INCLUÍDA</span>
             </div>
             <div className="fade-up-800 [animation-delay:260ms] flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3">
-              <button
-                type="button"
-                onClick={ctaAction}
-                onMouseEnter={preloadQuiz}
-                className={ctaCls}
-              >
-                {ctaText}
-              </button>
+              <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode} />
               <a
                 href="#premios"
                 className="border border-white/10 hover:border-white/35 text-white font-mono text-sm font-bold uppercase tracking-widest px-8 py-3.5 rounded-full transition-colors text-center w-full sm:w-auto outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B]"
@@ -496,18 +486,10 @@ export default function Page() {
             </div>
 
           </div>
+          <div className="text-center !mt-6">
+            <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode} />
+          </div>
         </section>
-
-        {/* CTA antes de fases */}
-        <div className="text-center pt-2">
-          <button
-            onClick={ctaAction}
-            onMouseEnter={preloadQuiz}
-            className={ctaCls}
-          >
-            {ctaText}
-          </button>
-        </div>
 
         {/* C. FASES DO CONCURSO (Timeline) */}
         <section id="cronograma" className="space-y-12">
@@ -523,7 +505,7 @@ export default function Page() {
             <div data-fx="timeline-line" className="hidden md:block absolute top-1/2 left-0 right-0 h-[1.5px] bg-white/5 z-0 will-change-transform"></div>
             {[
               { f: 'F1', t: 'Inscrição Expressa', d: 'Matrícula no Quiz, lineup e upload da foto de divulgação.' },
-              { f: 'F2', t: 'Transmissão ao Vivo', d: 'Gravação no estúdio com live e QR code para arrecadação.' },
+              { f: 'F2', t: 'Ao Vivo Agora', d: 'Gravação no estúdio com live e QR code para arrecadação.' },
               { f: 'F3', t: 'Mídias Ativas', d: 'Podcast especial de apresentação e abertura de voto popular.' },
               { f: 'F4', t: 'Grande Final', d: 'Apresentação presencial e revelação dos vencedores pela média final.' }
             ].map((p, i) => (
@@ -555,18 +537,10 @@ export default function Page() {
 
           {/* Hero Premium Card - Rendered below items as requested */}
           <HeroCard />
+          <div className="text-center !mt-6">
+            <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode} />
+          </div>
         </section>
-
-        {/* CTA antes de lotes */}
-        <div className="text-center pt-2">
-          <button
-            onClick={ctaAction}
-            onMouseEnter={preloadQuiz}
-            className={ctaCls}
-          >
-            {ctaText}
-          </button>
-        </div>
 
         {/* JURADOS OFICIAIS: peso e credibilidade */}
         <div data-reveal className="reveal-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#8B1E1E]/15 via-[#0B0F19]/70 to-[#05070B]/90 px-5 sm:px-10 py-10 sm:py-12 space-y-8 sm:space-y-10">
@@ -610,7 +584,7 @@ export default function Page() {
             {/* Live Status banner simulation */}
             {lotesConfig.live.status === 'ao_vivo' && (
               <div className="py-4 px-6 rounded-2xl border-2 border-red-500 bg-red-950/20 text-red-500 flex flex-col sm:flex-row justify-between items-center gap-4 animate-pulse">
-                <span className="font-mono text-sm md:text-base font-black tracking-widest uppercase">🔴 TRANSMISSÃO AO VIVO AGORA</span>
+                <span className="font-mono text-sm md:text-base font-black tracking-widest uppercase">🔴 AO VIVO AGORA</span>
                 {liveUrl && <a href={liveUrl} target="_blank" rel="noopener noreferrer" className="bg-red-600 hover:bg-red-500 text-white font-mono text-sm font-bold uppercase px-5 py-2 rounded-xl border border-black shadow">ASSISTIR LIVE</a>}
               </div>
             )}
@@ -638,8 +612,8 @@ export default function Page() {
 
           <div data-reveal-group className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
-              { key: 'dia0', title: 'LIVE', status: lotesConfig.live.status === 'ao_vivo' ? 'ativo' : lotesConfig.live.status === 'encerrada' ? 'encerrado' : 'em_breve', desc: 'Apenas durante a transmissão ao vivo.', valor: dia0Price },
-              { key: 'lote1', title: 'Lote 1', status: lotesConfig.lote1.status, desc: 'Primeiras inscrições. Menor preço histórico.', valor: lotesConfig.lote1.valor, vagas: lotesConfig.lote1.vagasRestantes, total: lotesConfig.lote1.total },
+              { key: 'dia0', title: 'LIVE', status: lotesConfig.live.status === 'ao_vivo' ? 'ativo' : lotesConfig.live.status === 'encerrada' ? 'encerrado' : 'em_breve', desc: 'Apenas durante a live.', valor: dia0Price },
+              { key: 'lote1', title: 'Lote 1', status: lotesConfig.lote1.status, desc: 'Primeiras inscrições. Menor oferta histórica.', valor: lotesConfig.lote1.valor, vagas: lotesConfig.lote1.vagasRestantes, total: lotesConfig.lote1.total },
               { key: 'lote2', title: 'Lote 2', status: lotesConfig.lote2.status, desc: 'Disponível na fase intermediária.', valor: lotesConfig.lote2.valor, vagas: lotesConfig.lote2.vagasRestantes, total: lotesConfig.lote2.total },
               { key: 'lote3', title: 'Lote 3', status: lotesConfig.lote3.status, desc: 'Reta final de inscrições regulamentares.', valor: lotesConfig.lote3.valor, vagas: lotesConfig.lote3.vagasRestantes, total: lotesConfig.lote3.total }
             ].map((l, i) => {
@@ -694,11 +668,11 @@ export default function Page() {
                         </div>
                         <div className="flex items-center gap-1.5 text-xs text-[#F0C265]">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#F0C265] shrink-0"></span>
-                          <span>Preço exclusivo de lançamento;</span>
+                          <span>Oferta exclusiva de lançamento;</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-xs text-[#F0C265]">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#F0C265] shrink-0"></span>
-                          <span>Vagas limitadas à transmissão;</span>
+                          <span>Vagas limitadas à live;</span>
                         </div>
                         {isLiveNow && (
                           <button
@@ -757,18 +731,12 @@ export default function Page() {
 
           <p className="text-center font-mono text-xs text-gray-500 tracking-wider">
             {slotMode === 'integrante'
-              ? 'Vagas individuais: cada integrante paga a própria parte pelo preço do lote vigente.'
-              : 'Vagas por banda/projeto: preço travado para todos os integrantes no valor do lote de origem.'}
+              ? 'Vagas individuais: cada integrante paga a própria parte pela oferta do lote vigente.'
+              : 'Vagas por banda/projeto: oferta travada para todos os integrantes no valor do lote de origem.'}
           </p>
 
-          <div className="pt-4 text-center">
-            <button
-              onClick={ctaAction}
-              onMouseEnter={preloadQuiz}
-              className={ctaCls}
-            >
-              {ctaText}
-            </button>
+          <div className="text-center !mt-6">
+            <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode} />
           </div>
         </section>
 
@@ -813,7 +781,7 @@ export default function Page() {
       </main>
 
       {/* FOOTER */}
-      <footer className="bg-[#030407] border-t border-white/5 py-10 px-6 mt-16 text-center text-sm font-mono text-gray-400 uppercase tracking-widest relative z-20">
+      <footer className="bg-[#030407] border-t border-white/5 py-10 px-6 text-center text-sm font-mono text-gray-400 uppercase tracking-widest relative z-20">
         <div className="max-w-6xl mx-auto flex flex-col items-center gap-4">
           <div>
             Estúdio Pedra Profana © 2026 • Todos os Direitos Reservados.
@@ -829,7 +797,7 @@ export default function Page() {
         </div>
       </footer>
 
-      {/* QUIZ + CHECKOUT + SUCCESS — code-split, loads only when opened */}
+      {/* QUIZ + CHECKOUT + SUCCESS - code-split, loads only when opened */}
       {quizMounted && (
         <QuizFlow
           isOpen={isQuizOpen}
@@ -842,7 +810,7 @@ export default function Page() {
         />
       )}
 
-      {/* CONVITE DE INTEGRANTE — bottom sheet sobre a landing */}
+      {/* CONVITE DE INTEGRANTE - bottom sheet sobre a landing */}
       {sheetCode && (
         <InviteSheet inviteCode={sheetCode} startPhase={sheetStart} onClose={() => setSheetCode(null)} />
       )}
@@ -907,7 +875,7 @@ export default function Page() {
         </div>
       )}
 
-      {/* Legal popups (footer) — CSS-animated, zero JS cost when closed */}
+      {/* Legal popups (footer) - CSS-animated, zero JS cost when closed */}
       <TermsModal open={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
       <PrivacyModal open={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
 

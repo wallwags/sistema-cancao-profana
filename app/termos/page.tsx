@@ -10,7 +10,7 @@ export default function TermosPage() {
         
         <div className="border-b border-white/5 pb-6 text-center md:text-left">
           <h1 className="font-display font-black text-3xl text-white uppercase tracking-tight">TERMOS DE USO DO PORTAL</h1>
-          <p className="text-xs text-[#F0C265] font-mono uppercase tracking-widest mt-2">CONCURSO MUSICAL CANÇÃO PROFANA — ESTÚDIO PEDRA PROFANA</p>
+          <p className="text-xs text-[#F0C265] font-mono uppercase tracking-widest mt-2">CONCURSO MUSICAL CANÇÃO PROFANA - ESTÚDIO PEDRA PROFANA</p>
         </div>
 
         <div className="space-y-6 text-sm text-[#A89880] leading-relaxed">
@@ -32,7 +32,7 @@ export default function TermosPage() {
 
           <div className="space-y-2">
             <h2 className="font-display font-bold text-lg text-white">3. DIREITOS AUTORAIS E DISTRIBUIÇÃO</h2>
-            <p>3.1. Ao se inscrever, a banda autoriza expressamente a captação de áudio, gravação de vídeo e transmissão ao vivo (streaming) de sua apresentação durante as etapas do concurso.</p>
+            <p>3.1. Ao se inscrever, a banda autoriza expressamente a captação de áudio, gravação de vídeo e exibição ao vivo (streaming) de sua apresentação durante as etapas do concurso.</p>
             <p>3.2. Os direitos autorais morais sobre as composições permanecem com seus respectivos autores. O acordo e os percentuais de distribuição digital das gravações oficiais geradas no concurso serão decididos amigavelmente entre as partes ao encerramento das etapas.</p>
           </div>
 

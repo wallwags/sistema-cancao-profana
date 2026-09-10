@@ -218,7 +218,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     }
   }, [quizVisible]);
 
-  // Step transition — enter-only (slide-in with direction), no exit choreography
+  // Step transition - enter-only (slide-in with direction), no exit choreography
   useIsomorphicLayoutEffect(() => {
     if (quizVisible && !draftToRestore) {
       logFunnel('quiz_step', String(quizStep));
@@ -283,7 +283,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     }
   };
 
-  // Member inline form — whole block (container + content) expands together
+  // Member inline form - whole block (container + content) expands together
   const openMemberForm = () => {
     setMemberErrors({});
     setIsAddingMemberInline(true);
@@ -331,7 +331,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  // Auto-save Quiz progress draft — debounced (500ms) to avoid write-per-keystroke jank
+  // Auto-save Quiz progress draft - debounced (500ms) to avoid write-per-keystroke jank
   useEffect(() => {
     if (!isOpen || draftToRestore) return;
     if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
@@ -780,7 +780,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       try {
         await navigator.share({ title: 'Canção Profana 2026', text });
         return;
-      } catch { /* user cancelled or unsupported — fall back to clipboard */ }
+      } catch { /* user cancelled or unsupported - fall back to clipboard */ }
     }
     try {
       await navigator.clipboard.writeText(text);
@@ -848,7 +848,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         />
       )}
 
-      {/* QUIZ INTERACTIVE POPUP MODAL — external page scroll, no internal modal scroll */}
+      {/* QUIZ INTERACTIVE POPUP MODAL - external page scroll, no internal modal scroll */}
       {quizVisible && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start sm:items-center">
 
@@ -1132,7 +1132,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                               </button>
                             </div>
 
-                            {/* Interactive dynamic inline member insert form — whole block expands together (GSAP height auto) */}
+                            {/* Interactive dynamic inline member insert form - whole block expands together (GSAP height auto) */}
                             {memberFormRendered && (
                               <div ref={collapseRef} className="overflow-hidden">
                                 <div className="bg-black/50 p-4 border border-[#E3B552]/30 rounded-2xl space-y-4">
@@ -1319,7 +1319,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                         )}
                     </div>
 
-                    {/* verificação anti-robô — somente na primeira etapa */}
+                    {/* verificação anti-robô - somente na primeira etapa */}
                     {quizStep === 1 && (
                       <div className="flex justify-center pt-1 shrink-0">
                         <div id="cf-ts" />
@@ -1354,7 +1354,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         </div>
       )}
 
-      {/* CHECKOUT POPUP MODAL — external page scroll */}
+      {/* CHECKOUT POPUP MODAL - external page scroll */}
       {checkoutVisible && (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start sm:items-center">
 
@@ -1418,11 +1418,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F0C265] opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-[#F0C265]"></span>
                       </span>
-                      <span className="text-[11px] uppercase tracking-widest">Preço garantido por</span>
+                      <span className="text-[11px] uppercase tracking-widest">Oferta garantida por</span>
                       <span className="text-sm text-[#F0C265]">{formatCheckoutTime(checkoutTimeLeft)}</span>
                     </div>
                   ) : (
-                    <span className="font-mono text-[10px] text-red-400 block uppercase font-bold tracking-widest">Tempo do preço garantido esgotado</span>
+                    <span className="font-mono text-[10px] text-red-400 block uppercase font-bold tracking-widest">Tempo da oferta garantida esgotado</span>
                   )}
                 </div>
               </div>
@@ -1430,7 +1430,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
               {checkoutExpired ? (
                 <div className="space-y-3">
                   <div className="bg-[#8B1E1E]/10 border border-[#8B1E1E]/40 rounded-xl p-4 text-center space-y-2">
-                    <span className="font-mono text-xs text-[#FF4B2E] uppercase font-bold tracking-widest block">⏰ Reserva de preço expirada</span>
+                    <span className="font-mono text-xs text-[#FF4B2E] uppercase font-bold tracking-widest block">⏰ Reserva de oferta expirada</span>
                     <p className="text-xs text-gray-300 leading-relaxed">Seus dados continuam salvos. Renove o prazo e gere o Pix novamente para garantir o valor do {activeLoteName}.</p>
                   </div>
                   <button onClick={renewReservation} className="font-mono text-sm font-bold text-black btn-gold-shimmer py-3 rounded-xl w-full uppercase border-none">Renovar 10 minutos</button>
@@ -1477,7 +1477,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
           </div>
         )}
 
-      {/* SUCCESS STATE — BACKSTAGE PASS / CONCERT TICKET */}
+      {/* SUCCESS STATE - BACKSTAGE PASS / CONCERT TICKET */}
       {successVisible && (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start sm:items-center">
 

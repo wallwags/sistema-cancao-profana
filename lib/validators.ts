@@ -1,4 +1,4 @@
-// Shared validators and input masks — logic preserved exactly from app/v2/page.tsx
+// Shared validators and input masks - logic preserved exactly from app/v2/page.tsx
 export const applyCpfMask = (val: string): string => {
   let value = val.replace(/\D/g, "");
   if (value.length > 11) value = value.substring(0, 11);

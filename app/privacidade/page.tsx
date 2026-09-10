@@ -10,7 +10,7 @@ export default function PrivacidadePage() {
         
         <div className="border-b border-white/5 pb-6 text-center md:text-left">
           <h1 className="font-display font-black text-3xl text-white uppercase tracking-tight">POLÍTICA DE PRIVACIDADE</h1>
-          <p className="text-xs text-[#F0C265] font-mono uppercase tracking-widest mt-2">TRATAMENTO DE DADOS PESSOAIS — ESTÚDIO PEDRA PROFANA</p>
+          <p className="text-xs text-[#F0C265] font-mono uppercase tracking-widest mt-2">TRATAMENTO DE DADOS PESSOAIS - ESTÚDIO PEDRA PROFANA</p>
         </div>
 
         <div className="space-y-6 text-sm text-[#A89880] leading-relaxed">

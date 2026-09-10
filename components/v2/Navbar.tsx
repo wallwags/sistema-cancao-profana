@@ -87,7 +87,7 @@ export default function Navbar({ onOpenQuiz, waitlistMode = false, activeLoteNam
           </div>
         </div>
 
-        {/* INTERACTIVE NAVIGATION LINKS — gold underline slides via GSAP */}
+        {/* INTERACTIVE NAVIGATION LINKS - gold underline slides via GSAP */}
         <nav ref={navRef} className="hidden md:flex relative items-center gap-8 text-[11px] font-mono font-bold tracking-wider text-[#B3B3B3] uppercase">
           {menuItems.map((item) => {
             const isActive = activeTab === item;
@@ -107,7 +107,7 @@ export default function Navbar({ onOpenQuiz, waitlistMode = false, activeLoteNam
           <span ref={underlineRef} className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#F0C265] pointer-events-none" />
         </nav>
 
-        {/* CTA BUTTON — CSS touch-aware feedback (works on mobile via :active) */}
+        {/* CTA BUTTON - CSS touch-aware feedback (works on mobile via :active) */}
         <div>
           <button
             onClick={onOpenQuiz}

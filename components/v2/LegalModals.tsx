@@ -39,7 +39,7 @@ export function TermsModal({ open, onClose }: LegalModalProps) {
 
           <div className="space-y-1">
             <h2 className="font-display font-bold text-sm text-white">3. DIREITOS AUTORAIS E DISTRIBUIÇÃO</h2>
-            <p>3.1. Ao se inscrever, a banda autoriza expressamente a captação de áudio, gravação de vídeo e transmissão ao vivo (streaming) de sua apresentação durante as etapas do concurso.</p>
+            <p>3.1. Ao se inscrever, a banda autoriza expressamente a captação de áudio, gravação de vídeo e exibição ao vivo (streaming) de sua apresentação durante as etapas do concurso.</p>
             <p>3.2. Os direitos autorais morais sobre as composições permanecem com seus respectivos autores. O acordo e os percentuais de distribuição digital das gravações oficiais geradas no concurso serão decididos amigavelmente entre as partes ao encerramento das etapas.</p>
           </div>
 

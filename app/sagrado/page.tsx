@@ -94,8 +94,8 @@ interface BatchDraft {
 
 const TZ = 'America/Sao_Paulo';
 const PERM_KEYS = [
-  { key: 'manage_lotes', label: 'Gerenciar lotes, preços e live' },
-  { key: 'manage_content', label: 'Gerenciar conteúdo do site (datas, link, preço Dia 0, FAQ)' },
+  { key: 'manage_lotes', label: 'Gerenciar lotes, ofertas e live' },
+  { key: 'manage_content', label: 'Gerenciar conteúdo do site (datas, link, oferta da live, FAQ)' },
   { key: 'manage_subscriptions', label: 'Gerenciar inscrições, pagamentos e notas' },
   { key: 'view_sensitive_data', label: 'Visualizar dados pessoais dos inscritos (CPF, contato)' },
   { key: 'manage_team', label: 'Gerenciar acessos da equipe' },
@@ -116,7 +116,10 @@ const PROJECT_STATUS: Record<string, { label: string; cls: string }> = {
 
 function parseDbDate(v?: string | null): Date | null {
   if (!v) return null;
-  const d = new Date(String(v).replace(' ', 'T'));
+  let s = String(v).trim().replace(' ', 'T');
+  // Offsets '+00' sem minutos sao rejeitados pelo Safari/Firefox: normaliza para '+00:00'
+  if (/[+-]\d{2}$/.test(s)) s += ':00';
+  const d = new Date(s);
   return isNaN(d.getTime()) ? null : d;
 }
 
@@ -135,7 +138,7 @@ function fromInputValue(v: string): string | null {
 
 function fmtDate(v?: string | null): string {
   const d = parseDbDate(v);
-  if (!d) return '—';
+  if (!d) return '-';
   return new Intl.DateTimeFormat('pt-BR', { timeZone: TZ, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(d);
 }
 
@@ -507,7 +510,7 @@ export default function SagradoPage() {
     const d = draftFor(b);
     if (!d.name.trim()) return 'Informe o nome do lote.';
     const price = Number(d.price);
-    if (isNaN(price) || price <= 0) return 'Preço inválido.';
+    if (isNaN(price) || price <= 0) return 'Oferta inválida.';
     const vTotal = parseInt(String(d.vagasTotal), 10);
     const vRest = parseInt(String(d.vagasRest), 10);
     if (isNaN(vTotal) || vTotal < 0 || isNaN(vRest) || vRest < 0 || vRest > vTotal) return 'Vagas inválidas (restantes ≤ total).';
@@ -656,7 +659,7 @@ export default function SagradoPage() {
     const { error } = await supabase.rpc('set_live_phase', { phase });
     if (error) return 'Não foi possível: ' + error.message;
     await Promise.all([loadLive(), loadBatches()]);
-    setMsg('live-phase', 'ok', phase === 'ao_vivo' ? 'Live no ar. Lotes ativos foram pausados automaticamente.' : 'Fase da live atualizada. O lote que estava ativo antes da transmissão foi restaurado.');
+    setMsg('live-phase', 'ok', phase === 'ao_vivo' ? 'Live no ar. Lotes ativos foram pausados automaticamente.' : 'Fase da live atualizada. O lote que estava ativo antes da live foi restaurado.');
     return 'ok';
   });
 
@@ -689,7 +692,7 @@ export default function SagradoPage() {
     if (error) return friendlyStaffError(error.message);
     await loadStaff();
     setInvite({ username: '', name: '', password: '', role: 'jurado' });
-    setMsg('invite', 'ok', 'Acesso criado. Envie o e-mail e a senha inicial à pessoa — ela deve trocar a senha em Minha conta.');
+    setMsg('invite', 'ok', 'Acesso criado. Envie o e-mail e a senha inicial à pessoa - ela deve trocar a senha em Minha conta.');
     return 'ok';
   });
 
@@ -710,8 +713,8 @@ export default function SagradoPage() {
     setSlotMode(mode);
     await loadBatches();
     setMsg('slotmode', 'ok', mode === 'band'
-      ? 'Vagas por banda/projeto: preço travado para todos os integrantes da banda.'
-      : 'Vagas por integrante: cada pagamento usa o preço do lote vigente na hora.');
+      ? 'Vagas por banda/projeto: oferta travada para todos os integrantes da banda.'
+      : 'Vagas por integrante: cada pagamento usa a oferta do lote vigente na hora.');
     return 'ok';
   });
 
@@ -908,8 +911,8 @@ export default function SagradoPage() {
             <div className="space-y-4 fade-up-800">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { label: 'Lote vigente', value: (batches.find(b => b.status === 'ativo')?.name || '—'), accent: 'text-[#10B981]' },
-                  { label: 'Vagas restantes', value: String(batches.find(b => b.status === 'ativo')?.vagas_restantes ?? '—'), accent: 'text-white' },
+                  { label: 'Lote vigente', value: (batches.find(b => b.status === 'ativo')?.name || '-'), accent: 'text-[#10B981]' },
+                  { label: 'Vagas restantes', value: String(batches.find(b => b.status === 'ativo')?.vagas_restantes ?? '-'), accent: 'text-white' },
                   { label: 'Inscrições', value: String(totalCount), accent: 'text-[#F0C265]' },
                   { label: 'Pagas', value: String(paidCount), accent: 'text-[#10B981]' },
                 ].map(s => (
@@ -947,7 +950,7 @@ export default function SagradoPage() {
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
                   <Field label="Abertura em (BRT)">
-                    <input type="datetime-local" className={inputCls} value={settingDrafts['cart_open_at'] ?? ''} onChange={(e) => setSettingDrafts(p => ({ ...p, cart_open_at: e.target.value }))} />
+                    <input type="datetime-local" className={inputCls} value={settingDrafts['cart_open_at'] || toInputValue(settings['cart_open_at'])} onChange={(e) => setSettingDrafts(p => ({ ...p, cart_open_at: e.target.value }))} />
                   </Field>
                   <Field label="Lote 1 (dias)"><input type="number" min={1} className={inputCls} value={cartDays.lote1} onChange={(e) => setCartDays(p => ({ ...p, lote1: e.target.value }))} /></Field>
                   <Field label="Lote 2 (dias)"><input type="number" min={1} className={inputCls} value={cartDays.lote2} onChange={(e) => setCartDays(p => ({ ...p, lote2: e.target.value }))} /></Field>
@@ -967,8 +970,8 @@ export default function SagradoPage() {
                     <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Modo de contagem de vagas</span>
                     <span className="text-xs text-gray-400 leading-snug block mt-1">
                       {slotMode === 'band'
-                        ? 'Por banda/projeto: cada banda consome 1 vaga do lote e o preço fica travado para todos os integrantes — mesmo após a virada do lote.'
-                        : 'Por integrante: cada pagamento consome uma vaga individual e usa o preço do lote vigente na hora do pagamento.'}
+                        ? 'Por banda/projeto: cada banda consome 1 vaga do lote e a oferta fica travada para todos os integrantes - mesmo após a virada do lote.'
+                        : 'Por integrante: cada pagamento consome uma vaga individual e usa a oferta do lote vigente na hora do pagamento.'}
                     </span>
                   </div>
                   <div className="flex gap-2 shrink-0">
@@ -986,7 +989,7 @@ export default function SagradoPage() {
               <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 border-[#E3B552]/40 rounded-2xl p-5 space-y-4">
                 <div className="flex justify-between items-center border-b border-white/5 pb-3">
                   <div className="flex items-center gap-2.5">
-                    <h3 className="font-display font-bold text-white uppercase">🔴 Live — Transmissão ao vivo</h3>
+                    <h3 className="font-display font-bold text-white uppercase">🔴 Live · Ao vivo agora</h3>
                     <span className={`text-[11px] font-bold px-2 py-0.5 rounded font-mono uppercase border ${
                       liveStatus === 'ao_vivo' ? 'bg-red-500/15 text-red-400 border-red-500/30 animate-pulse'
                       : liveStatus === 'encerrada' ? 'bg-[#121215] text-gray-500 border-white/5'
@@ -997,13 +1000,13 @@ export default function SagradoPage() {
                   <span className="font-mono text-[11px] text-gray-400 uppercase">Lançamento: {fmtDate(settings.live_launch)}</span>
                 </div>
                 <p className="text-sm text-gray-300 leading-relaxed">
-                  Colocar a live no ar pausa automaticamente qualquer lote ativo (o preço da Live passa a valer). Voltar para em breve ou encerrar restaura o lote que estava ativo antes. Ativar um lote também encerra a transmissão.
+                  Colocar a live no ar pausa automaticamente qualquer lote ativo (a oferta da Live passa a valer). Voltar para em breve ou encerrar restaura o lote que estava ativo antes. Ativar um lote também encerra a live.
                 </p>
                 <div className="flex flex-wrap gap-2.5">
                   <button type="button" onClick={() => setLivePhase('ao_vivo')} disabled={busy === 'live-phase' || liveStatus === 'ao_vivo'} className={btnGold}>
                     {busy === 'live-phase' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Ativar ao vivo'}
                   </button>
-                  <button type="button" onClick={() => setLivePhase('encerrada')} disabled={busy === 'live-phase' || liveStatus === 'encerrada'} className={btnGhost}>Encerrar transmissão</button>
+                  <button type="button" onClick={() => setLivePhase('encerrada')} disabled={busy === 'live-phase' || liveStatus === 'encerrada'} className={btnGhost}>Encerrar live</button>
                   <button type="button" onClick={() => setLivePhase('em_breve')} disabled={busy === 'live-phase' || liveStatus === 'em_breve'} className={btnGhost}>Voltar para em breve</button>
                 </div>
                 {notice['live-phase'] && <Notice kind={notice['live-phase'].kind}>{notice['live-phase'].msg}</Notice>}
@@ -1034,7 +1037,7 @@ export default function SagradoPage() {
 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       <Field label="Nome"><input className={inputCls} value={d.name} onChange={(e) => setBatchDrafts(p => ({ ...p, [b.id]: { ...p[b.id], name: e.target.value } }))} /></Field>
-                      <Field label="Preço por integrante (R$)"><input type="number" min={1} step="0.01" className={inputCls} value={d.price} onChange={(e) => setBatchDrafts(p => ({ ...p, [b.id]: { ...p[b.id], price: e.target.value } }))} /></Field>
+                      <Field label="Oferta por integrante (R$)"><input type="number" min={1} step="0.01" className={inputCls} value={d.price} onChange={(e) => setBatchDrafts(p => ({ ...p, [b.id]: { ...p[b.id], price: e.target.value } }))} /></Field>
                       <div className="grid grid-cols-2 gap-2">
                         <Field label="Vagas total"><input type="number" min={0} className={inputCls} value={d.vagasTotal} onChange={(e) => setBatchDrafts(p => ({ ...p, [b.id]: { ...p[b.id], vagas_total: e.target.value } }))} /></Field>
                         <Field label="Restantes"><input type="number" min={0} className={inputCls} value={d.vagasRest} onChange={(e) => setBatchDrafts(p => ({ ...p, [b.id]: { ...p[b.id], vagas_restantes: e.target.value } }))} /></Field>
@@ -1063,13 +1066,13 @@ export default function SagradoPage() {
                 {[
                   { key: 'countdown_target', label: 'Fim do lote vigente (contagem regressiva)', kind: 'datetime' as const, current: fmtDate(settings['countdown_target']) },
                   { key: 'live_launch', label: 'Lançamento oficial da live', kind: 'datetime' as const, current: fmtDate(settings['live_launch']) },
-                  { key: 'live_url', label: 'Link da transmissão ao vivo (YouTube)', kind: 'text' as const, current: settings['live_url'] || 'não definido' },
-                  { key: 'dia0_price', label: 'Preço da Live (R$)', kind: 'number' as const, current: settings['dia0_price'] || '25' },
+                  { key: 'live_url', label: 'Link da live (YouTube)', kind: 'text' as const, current: settings['live_url'] || 'não definido' },
+                  { key: 'dia0_price', label: 'Oferta da Live (R$)', kind: 'number' as const, current: settings['dia0_price'] || '25' },
                 ].map(s => (
                   <div key={s.key} className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
-                    <Field label={`${s.label} — atual: ${s.current}`}>
+                    <Field label={`${s.label} - atual: ${s.current}`}>
                       {s.kind === 'datetime'
-                        ? <input type="datetime-local" className={inputCls} value={settingDrafts[s.key] ?? ''} onChange={(e) => setSettingDrafts(p => ({ ...p, [s.key]: e.target.value }))} />
+                        ? <input type="datetime-local" className={inputCls} value={settingDrafts[s.key] || (s.kind === 'datetime' ? toInputValue(settings[s.key]) : '')} onChange={(e) => setSettingDrafts(p => ({ ...p, [s.key]: e.target.value }))} />
                         : s.kind === 'number'
                           ? <input type="number" min={1} step="0.01" className={inputCls} value={settingDrafts[s.key] ?? ''} onChange={(e) => setSettingDrafts(p => ({ ...p, [s.key]: e.target.value }))} />
                           : <input type="url" placeholder="https://youtube.com/live/..." className={inputCls} value={settingDrafts[s.key] ?? ''} onChange={(e) => setSettingDrafts(p => ({ ...p, [s.key]: e.target.value }))} />}
@@ -1083,7 +1086,7 @@ export default function SagradoPage() {
               </div>
 
               <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
-                <h3 className="font-display font-bold text-white uppercase border-b border-white/5 pb-3">FAQ — perguntas frequentes</h3>
+                <h3 className="font-display font-bold text-white uppercase border-b border-white/5 pb-3">FAQ - perguntas frequentes</h3>
                 {notice['faq-list'] && <Notice kind={notice['faq-list'].kind}>{notice['faq-list'].msg}</Notice>}
 
                 <div className="space-y-3">
@@ -1115,7 +1118,7 @@ export default function SagradoPage() {
                 <div className="bg-black/40 border border-dashed border-[#E3B552]/30 rounded-xl p-4 space-y-3">
                   <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-bold">Nova pergunta</span>
                 <p className="text-[11px] text-gray-400 font-mono leading-relaxed">
-                  Tags dinâmicas disponíveis (substituídas no site pelos valores atuais): <span className="text-[#F0C265]">[data-lote1]</span> <span className="text-[#F0C265]">[data-lote2]</span> <span className="text-[#F0C265]">[data-lote3]</span> abertura de cada lote • <span className="text-[#F0C265]">[data-lote1-fim]</span> <span className="text-[#F0C265]">[data-lote2-fim]</span> <span className="text-[#F0C265]">[data-lote3-fim]</span> encerramento de cada lote • <span className="text-[#F0C265]">[data-live]</span> lançamento da live • <span className="text-[#F0C265]">[data-link-live]</span> link da transmissão • <span className="text-[#F0C265]">[data-preco-lote1]</span> <span className="text-[#F0C265]">[data-preco-lote2]</span> <span className="text-[#F0C265]">[data-preco-lote3]</span> <span className="text-[#F0C265]">[data-preco-dia0]</span> preços • <span className="text-[#F0C265]">[data-vagas]</span> vagas restantes do lote vigente.
+                  Tags dinâmicas disponíveis (substituídas no site pelos valores atuais): <span className="text-[#F0C265]">[data-lote1]</span> <span className="text-[#F0C265]">[data-lote2]</span> <span className="text-[#F0C265]">[data-lote3]</span> abertura de cada lote • <span className="text-[#F0C265]">[data-lote1-fim]</span> <span className="text-[#F0C265]">[data-lote2-fim]</span> <span className="text-[#F0C265]">[data-lote3-fim]</span> encerramento de cada lote • <span className="text-[#F0C265]">[data-live]</span> lançamento da live • <span className="text-[#F0C265]">[data-link-live]</span> link da live • <span className="text-[#F0C265]">[data-preco-lote1]</span> <span className="text-[#F0C265]">[data-preco-lote2]</span> <span className="text-[#F0C265]">[data-preco-lote3]</span> <span className="text-[#F0C265]">[data-preco-dia0]</span> ofertas • <span className="text-[#F0C265]">[data-vagas]</span> vagas restantes do lote vigente.
                 </p>
                   <input className={inputCls} value={newFaq.question} onChange={(e) => setNewFaq(p => ({ ...p, question: e.target.value }))} placeholder="Pergunta" />
                   <textarea className={`${inputCls} resize-none`} rows={2} value={newFaq.answer} onChange={(e) => setNewFaq(p => ({ ...p, answer: e.target.value }))} placeholder="Resposta" />
@@ -1147,7 +1150,7 @@ export default function SagradoPage() {
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/5 pb-4">
                         <div>
                           <h3 className="font-display font-black text-xl text-white uppercase leading-tight">{p.name}</h3>
-                          <span className="font-mono text-xs text-gray-400 uppercase block mt-1">{p.style || '—'} • cadastrada em {fmtDate(p.created_at)}</span>
+                          <span className="font-mono text-xs text-gray-400 uppercase block mt-1">{p.style || '-'} • cadastrada em {fmtDate(p.created_at)}</span>
                           {p.pre_registrado && (
                             <span className="font-mono text-[11px] font-bold text-sky-400 bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 rounded uppercase mt-1 inline-block">Pré-inscrição</span>
                           )}
@@ -1187,9 +1190,9 @@ export default function SagradoPage() {
                               else setMsg('stage', 'err', 'Erro ao definir etapa: ' + error.message);
                             }}
                           >
-                            <option value="1">Etapa 1 — Ao Vivo</option>
-                            <option value="2">Etapa 2 — Podcast</option>
-                            <option value="3">Etapa 3 — Grande Final</option>
+                            <option value="1">Etapa 1 - Ao Vivo</option>
+                            <option value="2">Etapa 2 - Podcast</option>
+                            <option value="3">Etapa 3 - Grande Final</option>
                           </select>
                           {notice['stage'] && <Notice kind={notice['stage'].kind}>{notice['stage'].msg}</Notice>}
                         </div>
@@ -1198,19 +1201,19 @@ export default function SagradoPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="md:col-span-2 space-y-1">
                           <span className="font-mono text-xs text-gray-400 uppercase font-bold block">BIOGRAFIA OFICIAL:</span>
-                          <p className="text-xs text-gray-200 leading-relaxed">{proj.bio || '—'}</p>
+                          <p className="text-xs text-gray-200 leading-relaxed">{proj.bio || '-'}</p>
                         </div>
                         <div className="space-y-1">
                           <span className="font-mono text-xs text-gray-400 uppercase font-bold block">INSTAGRAM:</span>
                           {proj.instagram
                             ? <a href={`https://instagram.com/${String(proj.instagram).replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[#F0C265] font-bold text-xs font-mono hover:underline break-all">{String(proj.instagram)}</a>
-                            : <span className="text-xs text-gray-500 font-mono">—</span>}
+                            : <span className="text-xs text-gray-500 font-mono">-</span>}
                         </div>
                         <div className="space-y-1">
                           <span className="font-mono text-xs text-gray-400 uppercase font-bold block">LINK DA MÚSICA / VÍDEO:</span>
                           {proj.video_link
                             ? <a href={String(proj.video_link)} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline text-xs font-mono break-all">{String(proj.video_link)}</a>
-                            : <span className="text-xs text-gray-500 font-mono">—</span>}
+                            : <span className="text-xs text-gray-500 font-mono">-</span>}
                         </div>
                         <div className="space-y-1 md:col-span-2">
                           <span className="font-mono text-xs text-gray-400 uppercase font-bold block">FOTO DE DIVULGAÇÃO ENVIADA:</span>
@@ -1222,7 +1225,7 @@ export default function SagradoPage() {
                               onClick={() => setPhotoView(String(proj.photo_url))}
                             />
                           ) : (
-                            <span className="text-xs font-mono text-gray-300 block">{proj.photo_url ? `✓ ${proj.photo_url} (arquivo local — enviado antes do armazenamento em nuvem)` : '—'}</span>
+                            <span className="text-xs font-mono text-gray-300 block">{proj.photo_url ? `✓ ${proj.photo_url} (arquivo local - enviado antes do armazenamento em nuvem)` : '-'}</span>
                           )}
                         </div>
                       </div>
@@ -1256,10 +1259,10 @@ export default function SagradoPage() {
                                 <span className="font-mono text-[11px] text-gray-500">#{i + 1}</span>
                               </div>
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 font-mono text-xs text-gray-300">
-                                <span>CPF: {m.cpf || '—'}</span>
-                                <span>Nasc.: {m.birth_date || '—'}</span>
-                                <span>WhatsApp: {m.phone || '—'}</span>
-                                <span>E-mail: {(m as any).email || '—'}</span>
+                                <span>CPF: {m.cpf || '-'}</span>
+                                <span>Nasc.: {m.birth_date || '-'}</span>
+                                <span>WhatsApp: {m.phone || '-'}</span>
+                                <span>E-mail: {(m as any).email || '-'}</span>
                               </div>
                             </div>
                           ))}
@@ -1267,12 +1270,12 @@ export default function SagradoPage() {
                       </div>
 
                       <div className="space-y-2 bg-black/40 border border-white/5 rounded-xl p-4">
-                        <span className="font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-widest block">Recibo da cobrança{detail && detail.subsTotal > 1 ? ` (mais recente de ${detail.subsTotal})` : ''}{detail?.invite_code ? ' — convite: link ativo' : ' — modelo antigo (pagamento único)'}</span>
+                        <span className="font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-widest block">Recibo da cobrança{detail && detail.subsTotal > 1 ? ` (mais recente de ${detail.subsTotal})` : ''}{detail?.invite_code ? ' - convite: link ativo' : ' - modelo antigo (pagamento único)'}</span>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs text-gray-300">
-                          <span>Valor: <strong className="text-[#10B981]">{sub?.amount_paid != null ? `R$ ${sub.amount_paid},00` : '—'}</strong></span>
-                          <span>Lote: {sub?.batch_name || '—'}</span>
-                          <span>Cobrança: {sub?.status || '—'}</span>
-                          <span>ID: {sub?.charge_id ? String(sub.charge_id).slice(0, 18) : '—'}</span>
+                          <span>Valor: <strong className="text-[#10B981]">{sub?.amount_paid != null ? `R$ ${sub.amount_paid},00` : '-'}</strong></span>
+                          <span>Lote: {sub?.batch_name || '-'}</span>
+                          <span>Cobrança: {sub?.status || '-'}</span>
+                          <span>ID: {sub?.charge_id ? String(sub.charge_id).slice(0, 18) : '-'}</span>
                           <span className="md:col-span-2">Pago em: {fmtDate(sub?.paid_at ?? null)}</span>
                         </div>
                       </div>
@@ -1326,7 +1329,7 @@ export default function SagradoPage() {
                             )}
                           </div>
                           {notice[`st-${p.id}`] && <Notice kind={notice[`st-${p.id}`].kind}>{notice[`st-${p.id}`].msg}</Notice>}
-                          <p className="text-xs text-gray-500 font-mono leading-relaxed">Estas ações alteram apenas o estado da inscrição — os dados cadastrados pela banda permanecem intactos para análise da gerência.</p>
+                          <p className="text-xs text-gray-500 font-mono leading-relaxed">Estas ações alteram apenas o estado da inscrição - os dados cadastrados pela banda permanecem intactos para análise da gerência.</p>
                         </div>
                       )}
                     </div>
@@ -1390,7 +1393,7 @@ export default function SagradoPage() {
                           <div className="space-y-0.5 min-w-0">
                             <span className="text-sm font-bold text-white block truncate">{p.name}</span>
                             <span className="font-mono text-xs text-gray-400 uppercase block">
-                              {p.style || '—'} • {count} integrante{count === 1 ? '' : 's'} • {fmtDate(p.created_at)} {sub?.batches?.name ? `• ${sub.batches.name}` : ''} {sub?.amount_paid ? `• R$ ${sub.amount_paid},00` : ''}
+                              {p.style || '-'} • {count} integrante{count === 1 ? '' : 's'} • {fmtDate(p.created_at)} {sub?.batches?.name ? `• ${sub.batches.name}` : ''} {sub?.amount_paid ? `• R$ ${sub.amount_paid},00` : ''}
                             </span>
                           </div>
                           <div className="flex items-center gap-2.5 shrink-0">
@@ -1424,7 +1427,7 @@ export default function SagradoPage() {
             const juryList = q ? paidProjects.filter(p => p.name.toLowerCase().includes(q)) : paidProjects;
             return (
             <div className="space-y-4 fade-up-800">
-              <Notice kind="info">Somente inscrições com pagamento confirmado entram na avaliação. Abra uma banda para ver a ficha artística e registrar as notas (0 a 10) — sua nota pode ser ajustada a qualquer momento.</Notice>
+              <Notice kind="info">Somente inscrições com pagamento confirmado entram na avaliação. Abra uma banda para ver a ficha artística e registrar as notas (0 a 10) - sua nota pode ser ajustada a qualquer momento.</Notice>
               <input className={inputCls + ' max-w-md'} placeholder="Buscar banda paga..." value={jurySearch} onChange={(e) => setJurySearch(e.target.value)} />
               {juryList.length === 0 && (
                 <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-5">
@@ -1440,7 +1443,7 @@ export default function SagradoPage() {
                       <button type="button" onClick={() => setOpenJury(o => (o === p.id ? null : p.id))} className="w-full flex justify-between items-center gap-3 text-left">
                         <div>
                           <span className="text-sm font-bold text-white block">{p.name}</span>
-                          <span className="font-mono text-xs text-gray-400 uppercase block">{p.style || '—'} • {p.members?.[0]?.count ?? 0} integrante{(p.members?.[0]?.count ?? 0) === 1 ? '' : 's'}</span>
+                          <span className="font-mono text-xs text-gray-400 uppercase block">{p.style || '-'} • {p.members?.[0]?.count ?? 0} integrante{(p.members?.[0]?.count ?? 0) === 1 ? '' : 's'}</span>
                         </div>
                         <span className="font-mono text-lg text-[#F0C265] font-black shrink-0">{avg}</span>
                       </button>
@@ -1453,7 +1456,7 @@ export default function SagradoPage() {
                             <div className="flex flex-wrap gap-3 font-mono text-xs">
                               {p.instagram && <a href={`https://instagram.com/${String(p.instagram).replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[#F0C265] hover:underline">{String(p.instagram)}</a>}
                               {p.video_link && <a href={String(p.video_link)} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all">ouvir/ver música ↗</a>}
-                              <span className="text-gray-500">foto: {p.photo_url ? 'enviada ✓' : '—'}</span>
+                              <span className="text-gray-500">foto: {p.photo_url ? 'enviada ✓' : '-'}</span>
                             </div>
                           </div>
 
@@ -1482,7 +1485,7 @@ export default function SagradoPage() {
             );
           })()}
 
-          {/* FUNIL — infográfico */}
+          {/* FUNIL - infográfico */}
           {tab === 'funil' && canSubs && (() => {
             const f = (funnel || {}) as Record<string, any>;
             const checkout = (f.checkout || {}) as Record<string, number>;
@@ -1815,7 +1818,7 @@ export default function SagradoPage() {
           {/* EQUIPE */}
           {tab === 'equipe' && canTeam && (
             <div className="space-y-4 fade-up-800">
-              <Notice kind="info">Crie acessos da equipe e ajuste os nomes de exibição. A senha inicial é definida aqui — a pessoa deve trocá-la em Minha conta após o primeiro acesso.</Notice>
+              <Notice kind="info">Crie acessos da equipe e ajuste os nomes de exibição. A senha inicial é definida aqui - a pessoa deve trocá-la em Minha conta após o primeiro acesso.</Notice>
 
               {isDev ? staffList.map(s => {
                 const self = s.id === me?.id;
@@ -1941,7 +1944,7 @@ export default function SagradoPage() {
                   return (
                     <div key={String(a.id)} className="bg-black/40 border border-white/5 rounded-xl p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                       <div className="min-w-0">
-                        <span className="text-xs text-white font-bold block">{String(a.actor_name || '—')} <span className="text-gray-400 font-normal">{String(a.action)}</span></span>
+                        <span className="text-xs text-white font-bold block">{String(a.actor_name || '-')} <span className="text-gray-400 font-normal">{String(a.action)}</span></span>
                         <span className="font-mono text-xs text-[#F0C265] block truncate">{String(a.target || '')}</span>
                         {detailText && <span className="font-mono text-[11px] text-gray-500 block">{detailText}</span>}
                       </div>
