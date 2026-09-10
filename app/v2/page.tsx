@@ -127,7 +127,7 @@ export default function Page() {
         const { data: batches } = await supabase
           .from('batches')
           .select('*')
-          .order('created_at', { ascending: true });
+          .order('sort_order', { ascending: true });
 
         const { data: liveData } = await supabase
           .from('live_broadcast')

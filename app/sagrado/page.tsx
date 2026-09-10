@@ -298,7 +298,8 @@ export default function SagradoPage() {
   }, []);
 
   const loadBatches = useCallback(async () => {
-    const { data } = await supabase.from('batches').select('*').order('created_at', { ascending: true });
+    // Ordem fixa por sort_order (1,2,3): created_at e identico entre lotes e a ordem fisica muda apos UPDATE
+    const { data } = await supabase.from('batches').select('*').order('sort_order', { ascending: true });
     if (data) setBatches(data as BatchRow[]);
   }, []);
 
@@ -309,7 +310,12 @@ export default function SagradoPage() {
       map[r.key] = typeof r.value === 'string' ? r.value : String(r.value ?? '');
     });
     setSettings(map);
-    setSettingDrafts(map);
+    // Campos de data precisam de YYYY-MM-DDTHH:mm para o input datetime-local exibir o valor salvo
+    const drafts = { ...map };
+    (['cart_open_at', 'countdown_target', 'live_launch'] as const).forEach(k => {
+      if (drafts[k]) drafts[k] = toInputValue(drafts[k]);
+    });
+    setSettingDrafts(drafts);
   }, []);
 
   const loadSlotMode = useCallback(async () => {
@@ -524,7 +530,7 @@ export default function SagradoPage() {
     const { error } = await supabase.rpc('set_active_lote', { target_id: b.id });
     if (error) return 'Não foi possível ativar: ' + error.message;
     await Promise.all([loadBatches(), loadSettings()]);
-    setMsg(`activate-${b.id}`, 'ok', `Lote ativado. Os demais lótes foram ajustados automaticamente e a data do site foi sincronizada.`);
+    setMsg(`activate-${b.id}`, 'ok', `Lote ativado. Os demais lotes foram ajustados automaticamente e a data do site foi sincronizada.`);
     return 'ok';
   });
 
@@ -980,7 +986,7 @@ export default function SagradoPage() {
               <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 border-[#E3B552]/40 rounded-2xl p-5 space-y-4">
                 <div className="flex justify-between items-center border-b border-white/5 pb-3">
                   <div className="flex items-center gap-2.5">
-                    <h3 className="font-display font-bold text-white uppercase">🔴 Live — Dia 0</h3>
+                    <h3 className="font-display font-bold text-white uppercase">🔴 Live — Transmissão ao vivo</h3>
                     <span className={`text-[11px] font-bold px-2 py-0.5 rounded font-mono uppercase border ${
                       liveStatus === 'ao_vivo' ? 'bg-red-500/15 text-red-400 border-red-500/30 animate-pulse'
                       : liveStatus === 'encerrada' ? 'bg-[#121215] text-gray-500 border-white/5'
@@ -1058,7 +1064,7 @@ export default function SagradoPage() {
                   { key: 'countdown_target', label: 'Fim do lote vigente (contagem regressiva)', kind: 'datetime' as const, current: fmtDate(settings['countdown_target']) },
                   { key: 'live_launch', label: 'Lançamento oficial da live', kind: 'datetime' as const, current: fmtDate(settings['live_launch']) },
                   { key: 'live_url', label: 'Link da transmissão ao vivo (YouTube)', kind: 'text' as const, current: settings['live_url'] || 'não definido' },
-                  { key: 'dia0_price', label: 'Preço do Dia 0 — Live (R$)', kind: 'number' as const, current: settings['dia0_price'] || '25' },
+                  { key: 'dia0_price', label: 'Preço da Live (R$)', kind: 'number' as const, current: settings['dia0_price'] || '25' },
                 ].map(s => (
                   <div key={s.key} className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
                     <Field label={`${s.label} — atual: ${s.current}`}>
