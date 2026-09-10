@@ -15,12 +15,12 @@ export async function GET(req: NextRequest, { params }: { params: { code: string
   const bandName = band?.band ? String(band.band) : 'nossa banda';
   const leader = band?.leader_first ? String(band.leader_first) : 'o líder';
 
-  await supabase.from('funnel_events').insert({
-    ref: code,
-    event: 'whatsapp_click',
-    step: band?.project_id ? String(band.project_id) : '',
-    ip: (req.headers.get('x-forwarded-for') || '').split(',')[0].trim(),
-    user_agent: (req.headers.get('user-agent') || '').slice(0, 200),
+  await supabase.rpc('log_funnel_event', {
+    p_ref: code,
+    p_event: 'whatsapp_click',
+    p_step: band?.project_id ? String(band.project_id) : '',
+    p_ip: (req.headers.get('x-forwarded-for') || '').split(',')[0].trim(),
+    p_user_agent: (req.headers.get('user-agent') || '').slice(0, 200),
   });
 
   const origin = req.nextUrl.origin;

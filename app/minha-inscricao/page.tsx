@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -15,14 +15,12 @@ import {
 interface Member {
   id?: string;
   name: string;
-  cpf: string;
   role_in_band?: string;
   removed?: boolean;
-  birth_date: string;
-  phone: string | null;
-  email?: string | null;
   is_responsible: boolean;
   payment_status?: string;
+  has_cpf?: boolean;
+  cpf_mask?: string | null;
 }
 
 interface RegistrationData {
@@ -35,6 +33,7 @@ interface RegistrationData {
   style: string;
   bio: string;
   photo_url: string | null;
+  leader?: { name: string; phone?: string | null; email?: string | null; cpf_mask?: string | null; payment_status?: string } | null;
   instagram: string | null;
   video_link: string | null;
   status: 'pending' | 'paid' | 'failed' | 'blocked' | 'suspended' | 'refunded' | 'awaiting_members';
@@ -61,6 +60,7 @@ export default function MinhaInscricaoPage() {
   const [gateBusy, setGateBusy] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   const [data, setData] = useState<RegistrationData | null>(null);
+  const meCpfRef = useRef<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Apply CPF Mask
@@ -74,8 +74,8 @@ export default function MinhaInscricaoPage() {
   };
 
   const loadBandByCodeSafe = async () => {
-    if (!accessCode) return;
-    const { data: reg } = await supabase.rpc('get_registration_by_code', { p_code: accessCode });
+    if (!accessCode || !meCpfRef.current) return;
+    const { data: reg } = await supabase.rpc('get_registration_by_code', { p_code: accessCode, p_cpf: meCpfRef.current });
     if (reg && reg.project) applyRegistration(reg);
   };
 
@@ -84,14 +84,12 @@ export default function MinhaInscricaoPage() {
     const typedMembers: Member[] = (reg.members || []).map((m: any) => ({
       id: m.id,
       name: m.name,
-      cpf: m.cpf,
-      birth_date: m.birth_date,
-      phone: m.phone,
-      email: m.email ?? null,
       is_responsible: m.is_responsible,
       payment_status: m.payment_status,
       role_in_band: m.role_in_band,
-      removed: m.removed
+      removed: m.removed,
+      has_cpf: !!m.has_cpf,
+      cpf_mask: m.cpf_mask ?? null
     }));
     setData({
       id: project.id,
@@ -100,6 +98,7 @@ export default function MinhaInscricaoPage() {
       total_members: project.total_members,
       entry_price: project.entry_price,
       pending_edits: Number(reg.pending_edits || 0),
+      leader: reg.leader || null,
       name: project.name,
       style: project.style,
       bio: project.bio,
@@ -131,19 +130,20 @@ export default function MinhaInscricaoPage() {
   const identifyByCpf = async (code: string, cpf: string) => {
     setGateBusy(true);
     setGateError('');
-    const { data: reg, error } = await supabase.rpc('get_registration_by_code', { p_code: code });
+    const { data: reg, error } = await supabase.rpc('get_registration_by_code', { p_code: code, p_cpf: cpf });
     if (error || !reg || !reg.project) {
       setGateBusy(false);
       router.replace('/v2');
       return;
     }
-    const norm = (v: string) => (v || '').replace(/\D/g, '');
-    const me = (reg.members || []).find((m: any) => norm(m.cpf) === norm(cpf) && !m.removed);
+    // O servidor valida o CPF e devolve me_id (os dados pessoais nunca saem do banco)
+    const me = (reg.members || []).find((m: any) => m.id === reg.me_id && !m.removed);
     if (!me) {
       setGateBusy(false);
       setGateError('CPF não localizado nesta banda. Confira com o líder.');
       return;
     }
+    meCpfRef.current = cpf.replace(/\D/g, '');
     setMe({
       id: me.id,
       name: me.name,
@@ -222,7 +222,8 @@ export default function MinhaInscricaoPage() {
   }
 
   // Render project details view
-  const leader = data.members.find(m => m.is_responsible);
+  const leader: { name: string; phone?: string | null; email?: string | null; cpf_mask?: string | null; payment_status?: string } | null | undefined =
+    data.leader || data.members.find(m => m.is_responsible);
   const regularMembers = data.members.filter(m => !m.is_responsible);
 
   return (
@@ -263,7 +264,7 @@ export default function MinhaInscricaoPage() {
           const paidCount = data.members.filter(m => m.payment_status === 'paid').length;
           const minReq = data.min_payable ?? 2;
           const faltam = Math.max(0, minReq - paidCount);
-          const pendentes = data.members.filter(m => m.payment_status !== 'paid' && (m.is_responsible || m.cpf)).length;
+          const pendentes = data.members.filter(m => m.payment_status !== 'paid' && (m.is_responsible || m.has_cpf)).length;
           const endsIn = data.lote_ends ? Math.max(0, Math.floor(((parseDbDate(data.lote_ends)?.getTime() ?? NaN) - Date.now()) / 86400000)) : null;
           return (
             <div className="relative overflow-hidden rounded-2xl border-2 border-[#F0C265] bg-gradient-to-br from-[#8B1E1E]/40 via-[#0B0F19]/95 to-[#8B1E1E]/25 p-5 space-y-4 shadow-[0_0_35px_rgba(240,194,101,0.25)]">
@@ -493,7 +494,7 @@ export default function MinhaInscricaoPage() {
               </div>
               <div className="space-y-1">
                 <span className="font-mono text-xs text-gray-400 uppercase font-bold block">CPF LÍDER:</span>
-                <span className="text-white font-bold text-xs block font-mono">{leader.cpf}</span>
+                <span className="text-white font-bold text-xs block font-mono">{leader.cpf_mask || '-'}</span>
               </div>
               {leader.email && (
                 <div className="space-y-1">
@@ -522,7 +523,7 @@ export default function MinhaInscricaoPage() {
                     <span className="w-6 h-6 rounded-full bg-[#F0C265]/20 text-[#F0C265] flex items-center justify-center font-mono text-[11px] font-bold border border-[#F0C265]/35">1</span>
                     <div>
                       <span className="text-sm font-bold text-white block">{leader.name}</span>
-                      <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Líder Responsável • CPF: {leader.cpf ? '***.' + leader.cpf.slice(4, 7) + '.***' : '---'}</span>
+                      <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Líder Responsável • CPF: {leader.cpf_mask || '---'}</span>
                       <span className={`font-mono text-xs uppercase font-bold block mt-0.5 ${leader.payment_status === 'paid' ? 'text-[#10B981]' : 'text-amber-500'}`}>
                         {leader.payment_status === 'paid' ? '✓ Parte paga' : '⏳ Parte pendente'}
                       </span>
@@ -539,10 +540,10 @@ export default function MinhaInscricaoPage() {
                     <span className="w-6 h-6 rounded-full bg-[#E3B552]/10 text-[#F0C265] flex items-center justify-center font-mono text-[11px] font-bold border border-[#E3B552]/20">{i + 2}</span>
                     <div>
                       <span className="text-sm font-bold text-white block">{m.name}</span>
-                      <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Integrante {i + 2} • CPF: {m.cpf ? '***.' + m.cpf.slice(4, 7) + '.***' : 'aguardando confirmação'}</span>
+                      <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Integrante {i + 2} • CPF: {m.cpf_mask || 'aguardando confirmação'}</span>
                       {m.payment_status && (
                         <span className={`font-mono text-xs uppercase font-bold block mt-0.5 ${m.payment_status === 'paid' ? 'text-[#10B981]' : 'text-amber-500'}`}>
-                          {m.payment_status === 'paid' ? '✓ Parte paga' : (m.cpf ? '⏳ Parte pendente' : '⏳ Aguardando confirmação')}
+                          {m.payment_status === 'paid' ? '✓ Parte paga' : (m.has_cpf ? '⏳ Parte pendente' : '⏳ Aguardando confirmação')}
                         </span>
                       )}
                     </div>

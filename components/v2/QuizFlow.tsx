@@ -21,15 +21,6 @@ interface QuizFlowProps {
   waitlistMode?: boolean;
 }
 
-interface BandMatch {
-  project_id: string;
-  invite_code: string;
-  name: string;
-  style: string;
-  photo_url: string | null;
-  leader_first: string;
-  free_slots: number;
-}
 
 export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false }: QuizFlowProps) {
   const [quizStep, setQuizStep] = useState(1);
@@ -94,7 +85,6 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [bandResult, setBandResult] = useState<{ pago: number; minimo: number; total: number; ativa: boolean } | null>(null);
   const [similarBands, setSimilarBands] = useState<string[]>([]);
   const [similarChoice, setSimilarChoice] = useState<'none' | 'mine' | 'other'>('none');
-  const [bandMatches, setBandMatches] = useState<BandMatch[]>([]);
   const [joinState, setJoinState] = useState<'idle' | 'asking' | 'picking' | 'declined'>('idle');
   const sessionRef = useRef<string>('');
   const inviteCodeRef = useRef<string>('');
@@ -117,25 +107,17 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const checkoutClosingRef = useRef(false);
   const quizOpenedAt = useRef<number>(0);
 
-  // Fluxo "sou integrante": busca bandas parecidas enquanto digita o nome
-  useEffect(() => {
-    if (quizStep !== 1 || joinState === 'picking') return;
-    if (!projectName || projectName.trim().length < 4) {
-      setBandMatches([]);
-      setJoinState(st => (st === 'asking' || st === 'picking') ? 'idle' : st);
-      return;
-    }
-    const t = setTimeout(async () => {
-      try {
-        const { data } = await supabase.rpc('find_band_by_name', { p_name: projectName.trim() });
-        const found = (data || []) as unknown as BandMatch[];
-        setBandMatches(found);
-        if (found.length > 0 && joinState === 'idle') setJoinState('asking');
-      } catch { /* silencioso */ }
-    }, 400);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectName, quizStep, joinState]);
+  // Gateway Pix real (ativado pelo dev no painel): definem o modo do checkout
+  const [pixActive, setPixActive] = useState(false);
+  const [pixData, setPixData] = useState<{ paymentId: string; qr: string | null; qrBase64: string | null } | null>(null);
+  const pixDataRef = useRef<{ paymentId: string; qr: string | null; qrBase64: string | null } | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const applyPixData = (d: { paymentId: string; qr: string | null; qrBase64: string | null } | null) => {
+    pixDataRef.current = d;
+    setPixData(d);
+  };
+
   const demoRef = useRef(false);
   const funnelLogged = useRef<Set<string>>(new Set());
   const tsRenderedRef = useRef(false);
@@ -563,7 +545,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         p_name: projectName,
         p_style: projectStyle,
         p_bio: projectBio,
-        p_photo_url: photoUrl || 'default_photo.png',
+        p_photo_url: photoUrl,
         p_instagram: projectInstagram || null,
         p_video_link: projectVideoLink || null,
         p_leader: { name: respName, cpf: respCpf, birth: respBirth, phone: respPhone, email: respEmail, role: leaderRoleEffective },
@@ -654,6 +636,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       setIsCheckoutLoading(false);
       setPollingStep(0);
       setShowManualConfirm(false);
+      applyPixData(null);
     };
     if (checkoutCardRef.current && typeof window !== 'undefined') {
       gsap.to(checkoutCardRef.current, {
@@ -683,10 +666,18 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     return () => clearInterval(interval);
   }, [isCheckoutOpen, checkoutExpired]);
 
-  // Dynamic automatic payment confirmation polling (reduced: ~5s total, was ~10.5s)
+  // Flag do gateway (lido do painel): Pix real x simulacao
   useEffect(() => {
-    let t1: ReturnType<typeof setTimeout>, t2: ReturnType<typeof setTimeout>, t3: ReturnType<typeof setTimeout>, tManual: ReturnType<typeof setTimeout>;
-    if (isCheckoutOpen && !checkoutExpired) {
+    if (!isOpen) return;
+    supabase.from('site_settings').select('key,value').eq('key', 'gateway_pix_active').maybeSingle()
+      .then(({ data }) => setPixActive(String(data?.value ?? '') === 'true'), () => setPixActive(false));
+  }, [isOpen]);
+
+  // Confirmacao de pagamento: Pix real (gateway) ou simulacao local (fallback pre-chaves)
+  useEffect(() => {
+    if (!isCheckoutOpen || checkoutExpired) return;
+    if (!pixActive) {
+      let t1: ReturnType<typeof setTimeout>, t2: ReturnType<typeof setTimeout>, t3: ReturnType<typeof setTimeout>, tManual: ReturnType<typeof setTimeout>;
       setShowManualConfirm(false);
       t1 = setTimeout(() => setPollingStep(1), 1800);
       t2 = setTimeout(() => setPollingStep(2), 3600);
@@ -695,14 +686,61 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       tManual = setTimeout(() => {
         if (!webhookDoneRef.current) setShowManualConfirm(true);
       }, 15000);
+      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(tManual); };
     }
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(tManual); };
+    // Pix real: gera a cobranca no gateway e consulta o status a cada 5s
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const id = savePromiseRef.current ? await savePromiseRef.current : saveIdRef.current;
+        const codeNow = inviteCodeRef.current;
+        if (cancelled) return;
+        if (!id || !codeNow) { setShowManualConfirm(true); return; }
+        const res = await fetch('/api/pix/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: codeNow, email: respEmail, name: respName })
+        });
+        const data = await res.json().catch(() => null);
+        if (cancelled) return;
+        if (!res.ok || !data?.ok || !data?.paymentId) {
+          setCheckoutError('Não foi possível gerar o Pix agora. Toque em "Verificar novamente".');
+          setShowManualConfirm(true);
+          return;
+        }
+        applyPixData({ paymentId: String(data.paymentId), qr: data.qr ? String(data.qr) : null, qrBase64: data.qrBase64 ? String(data.qrBase64) : null });
+        setIsCheckoutLoading(false);
+      } catch {
+        if (!cancelled) {
+          setCheckoutError('Falha de conexão com o gateway. Toque em "Verificar novamente".');
+          setShowManualConfirm(true);
+        }
+      }
+    };
+    run();
+    const poll = setInterval(async () => {
+      if (webhookDoneRef.current || !pixDataRef.current?.paymentId) return;
+      try {
+        const sres = await fetch(`/api/pix/status?id=${pixDataRef.current.paymentId}`);
+        const sdata = await sres.json().catch(() => null);
+        if (sdata?.paid && !webhookDoneRef.current) {
+          webhookDoneRef.current = true;
+          clearInterval(poll);
+          handleSimulateWebhook(true);
+        }
+      } catch { /* tenta no proximo tick */ }
+    }, 5000);
+    pollRef.current = poll;
+    return () => {
+      cancelled = true;
+      clearInterval(poll);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCheckoutOpen, checkoutExpired]);
+  }, [isCheckoutOpen, checkoutExpired, pixActive]);
 
-  const handleSimulateWebhook = async () => {
+  const handleSimulateWebhook = async (force = false) => {
     // Guard against double execution (auto polling + manual click)
-    if (webhookDoneRef.current) return;
+    if (webhookDoneRef.current && !force) return;
     webhookDoneRef.current = true;
     setCheckoutError(null);
     setIsCheckoutLoading(true);
@@ -755,10 +793,32 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     }
   };
 
+  // Verificacao manual no modo Pix real: consulta o gateway agora
+  const handleManualPixCheck = async () => {
+    const pid = pixDataRef.current?.paymentId;
+    if (!pid) { handleSimulateWebhook(); return; }
+    setCheckoutError(null);
+    setIsCheckoutLoading(true);
+    try {
+      const sres = await fetch(`/api/pix/status?id=${pid}`);
+      const sdata = await sres.json().catch(() => null);
+      setIsCheckoutLoading(false);
+      if (sdata?.paid) {
+        webhookDoneRef.current = true;
+        handleSimulateWebhook(true);
+      } else {
+        setCheckoutError('Pagamento ainda não identificado no banco. Aguarde alguns segundos e verifique de novo.');
+      }
+    } catch {
+      setIsCheckoutLoading(false);
+      setCheckoutError('Falha ao consultar o gateway. Tente novamente.');
+    }
+  };
+
   const deriveTicketCode = (id: string): string => {
     if (!id) return 'CP-2026-0000';
     const clean = id.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-    return 'CP-2026-' + clean.substring(0, 4);
+    return 'CP-2026-' + clean.substring(0, 8);
   };
 
   const renewReservation = () => {
@@ -791,7 +851,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
   const copyPixCode = async () => {
     try {
-      await navigator.clipboard.writeText(`PIX CANCAO PROFANA | ${activeLoteName} | R$ ${totalCost},00 | Estudio Pedra Profana`);
+      await navigator.clipboard.writeText(pixData?.qr || `PIX CANCAO PROFANA | ${activeLoteName} | R$ ${totalCost},00 | Estudio Pedra Profana`);
       setPixCopied(true);
       setTimeout(() => setPixCopied(false), 2500);
     } catch { /* clipboard blocked */ }
@@ -912,67 +972,6 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                   required
                                 />
                                 {fieldError('projectName')}
-                                {bandMatches.length > 0 && joinState !== 'declined' && (
-                                  <div className="mt-2 bg-[#10B981]/10 border border-[#10B981]/40 rounded-2xl p-4 space-y-3">
-                                    <span className="font-mono text-xs text-[#10B981] uppercase tracking-widest font-black block">
-                                      Banda com nome parecido já inscrita
-                                    </span>
-                                    <p className="text-sm text-gray-200 leading-relaxed">
-                                      Você é integrante dela e veio confirmar sua parte?
-                                    </p>
-
-                                    {joinState !== 'picking' ? (
-                                      <div className="grid grid-cols-2 gap-2.5">
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            if (bandMatches.length === 1 && onJoinBand) {
-                                              onJoinBand(bandMatches[0].invite_code);
-                                              requestCloseQuiz();
-                                              return;
-                                            }
-                                            setJoinState('picking');
-                                          }}
-                                          className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-[#10B981]/25 active:scale-[0.98] transition-transform"
-                                        >
-                                          Sim
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => setJoinState('declined')}
-                                          className="font-mono text-sm font-black text-white bg-gradient-to-b from-red-500 to-red-700 px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-red-900/30 active:scale-[0.98] transition-transform"
-                                        >
-                                          Não
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      <div className="space-y-2.5">
-                                        {bandMatches.map(b => (
-                                          <button
-                                            key={b.project_id}
-                                            type="button"
-                                            onClick={() => { if (onJoinBand) { onJoinBand(b.invite_code); requestCloseQuiz(); } }}
-                                            className="w-full text-left flex items-center gap-3 bg-black/40 border border-white/10 hover:border-[#F0C265]/50 rounded-xl p-3 transition-colors"
-                                          >
-                                            {b.photo_url && String(b.photo_url).startsWith('http') ? (
-                                              <img src={String(b.photo_url)} alt="" className="w-11 h-11 rounded-lg object-cover border border-white/10 shrink-0" />
-                                            ) : (
-                                              <span className="w-11 h-11 rounded-lg bg-[#F0C265]/15 border border-[#F0C265]/30 flex items-center justify-center text-[#F0C265] font-display font-black shrink-0">{b.name.charAt(0)}</span>
-                                            )}
-                                            <span className="flex-1 min-w-0">
-                                              <span className="block text-sm font-bold text-white truncate">{b.name}</span>
-                                              <span className="block font-mono text-[11px] text-gray-400 uppercase">{b.style || 'não informado'} • líder {b.leader_first} • {b.free_slots} vaga{b.free_slots === 1 ? '' : 's'} livre{b.free_slots === 1 ? '' : 's'}</span>
-                                            </span>
-                                            <span className="font-mono text-[11px] text-[#F0C265] uppercase font-bold shrink-0">Sou eu →</span>
-                                          </button>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                                {joinState === 'declined' && bandMatches.length > 0 && (
-                                  <p className="text-[11px] text-amber-300/80 font-mono mt-2">Ok, sua banda será registrada como uma nova. Nomes parecidos ficam sinalizados para a organização.</p>
-                                )}
                               </div>
                               <div className="space-y-1">
                                 <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Estilo / Gênero *</label>
@@ -1373,6 +1372,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
               <div className="bg-[#030407] p-4 rounded-xl flex flex-col items-center space-y-4 border border-white/5">
                 <div className="w-48 h-48 bg-white p-3 rounded-xl flex items-center justify-center relative shadow-lg">
+                  {pixData?.qrBase64 ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={`data:image/png;base64,${pixData.qrBase64}`} alt="QR Code Pix" className="w-full h-full object-contain rounded-lg" />
+                  ) : (
                   <div className="w-full h-full border border-black/10 flex flex-col justify-between p-2">
                     <div className="flex justify-between">
                       <div className="w-8 h-8 bg-black"></div>
@@ -1384,6 +1387,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                       <div className="w-12 h-12 border border-black border-dashed flex items-center justify-center"><div className="w-6 h-6 bg-[#F0C265]"></div></div>
                     </div>
                   </div>
+                  )}
                   {isCheckoutLoading && (
                     <div className="absolute inset-0 bg-[#05070B]/95 flex flex-col items-center justify-center text-center p-3 rounded-xl">
                       <span className="w-8 h-8 rounded-full border-2 border-[#F0C265] border-t-transparent animate-spin mb-3"></span>
@@ -1442,9 +1446,15 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                     {pixCopied ? '✓ Código Pix Copiado!' : 'Copiar Código Pix'}
                   </button>
                   {showManualConfirm && (
-                    <button onClick={handleSimulateWebhook} className="font-mono text-[10px] text-gray-400 hover:text-[#F0C265] uppercase tracking-widest w-full py-1 transition-colors">
-                      Pagamento não identificado? Verificar novamente
-                    </button>
+                    pixActive ? (
+                      <button onClick={handleManualPixCheck} className="font-mono text-[10px] text-gray-400 hover:text-[#F0C265] uppercase tracking-widest w-full py-1 transition-colors">
+                        Pagamento não identificado? Verificar novamente
+                      </button>
+                    ) : (
+                      <button onClick={() => handleSimulateWebhook()} className="font-mono text-[10px] text-gray-400 hover:text-[#F0C265] uppercase tracking-widest w-full py-1 transition-colors">
+                        Pagamento não identificado? Verificar novamente
+                      </button>
+                    )
                   )}
                   {checkoutError && (
                     <div className="bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3 flex items-start gap-2.5">
@@ -1504,7 +1514,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   <h3 className="font-display font-black text-2xl text-white uppercase tracking-tightest leading-tight">MATRÍCULA CONFIRMADA!</h3>
                 </div>
 
-                <p className="text-xs text-gray-400 leading-relaxed max-w-xs mx-auto">Inscrição registrada com sucesso! Após a confirmação do Pix pela equipe do estúdio, sua matrícula fica ativa no portal do candidato.</p>
+                <p className="text-xs text-gray-400 leading-relaxed max-w-xs mx-auto">Inscrição registrada com sucesso! Sua matrícula fica ativa no portal do candidato após a confirmação do pagamento.</p>
               </div>
 
               {/* DASHED SEPARATOR LINE */}
