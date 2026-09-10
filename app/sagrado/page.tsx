@@ -1327,6 +1327,9 @@ export default function SagradoPage() {
                             {(p.status === 'suspended' || p.status === 'blocked' || p.status === 'refunded') && (
                               <button type="button" onClick={() => setProjectState(p, 'paid', 'Inscrição reativada como paga.')} disabled={busy === `st-${p.id}`} className="bg-[#10B981] text-black font-mono text-[11px] font-bold px-3 py-2 rounded uppercase disabled:opacity-50">Reativar (paga)</button>
                             )}
+                            {(p.status === 'blocked' || p.status === 'suspended') && (
+                              <button type="button" onClick={() => setProjectState(p, 'awaiting_members', 'Inscrição devolvida para aguardando pagamentos.')} disabled={busy === `st-${p.id}`} className="bg-white/10 text-gray-300 font-mono text-[11px] font-bold px-3 py-2 rounded uppercase border border-white/10 disabled:opacity-50">Devolver (aguardando)</button>
+                            )}
                           </div>
                           {notice[`st-${p.id}`] && <Notice kind={notice[`st-${p.id}`].kind}>{notice[`st-${p.id}`].msg}</Notice>}
                           <p className="text-xs text-gray-500 font-mono leading-relaxed">Estas ações alteram apenas o estado da inscrição - os dados cadastrados pela banda permanecem intactos para análise da gerência.</p>
