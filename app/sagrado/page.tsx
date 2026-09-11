@@ -224,6 +224,7 @@ export default function SagradoPage() {
   const [jurySearch, setJurySearch] = useState('');
   const [photoView, setPhotoView] = useState<string | null>(null);
   const [funnel, setFunnel] = useState<Record<string, unknown> | null>(null);
+  const [funnelDays, setFunnelDays] = useState(0);
   const [slotMode, setSlotMode] = useState<'band' | 'integrante'>('band');
   const [cartDays, setCartDays] = useState({ lote1: '10', lote2: '10', lote3: '12' });
   const [homeMode, setHomeMode] = useState<'classic' | 'vip'>('classic');
@@ -400,8 +401,8 @@ export default function SagradoPage() {
     setAudit((data || []) as Array<Record<string, unknown>>);
   }, []);
 
-  const loadFunnel = useCallback(async () => {
-    const { data } = await supabase.rpc('get_funnel_stats');
+  const loadFunnel = useCallback(async (days = 0) => {
+    const { data } = await supabase.rpc('get_funnel_stats', { p_days: days });
     setFunnel((data || null) as Record<string, unknown> | null);
   }, []);
 
@@ -428,11 +429,11 @@ export default function SagradoPage() {
 
   useEffect(() => {
     if (authed && tab === 'auditoria') loadAudit();
-    if (authed && tab === 'funil') loadFunnel();
+    if (authed && tab === 'funil') loadFunnel(funnelDays);
     if (authed && tab === 'vip') loadVipLeads();
     if (authed && tab === 'gateway') loadGateway();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authed, tab]);
+  }, [authed, tab, funnelDays]);
 
   useEffect(() => {
     if (!authed) return;
@@ -1488,22 +1489,33 @@ export default function SagradoPage() {
             );
           })()}
 
-          {/* FUNIL - infográfico */}
+          {/* FUNIL - analytics do evento */}
           {tab === 'funil' && canSubs && (() => {
             const f = (funnel || {}) as Record<string, any>;
+            const leads = (f.leads || {}) as Record<string, any>;
+            const trafego = (f.trafego || {}) as Record<string, number>;
             const checkout = (f.checkout || {}) as Record<string, number>;
             const convites = (f.convites || {}) as Record<string, number>;
+            const fontes = (leads.fontes || []) as Array<{ fonte: string; n: number }>;
+            const porDia = (leads.por_dia || []) as Array<{ dia: string; n: number }>;
+            const ultimos = (leads.ultimos || []) as Array<{ email: string; quando: string }>;
             const steps = (f.quiz_steps || []) as Array<{ step: string; n: number }>;
             const stepMap: Record<string, number> = {};
             steps.forEach(x => { stepMap[x.step] = Number(x.n); });
+            const maxDia = Math.max(1, ...porDia.map(d => Number(d.n)));
+            const totalLeads = Number(leads.total || 0);
+            const pageviews = Number(trafego.pageviews || 0);
 
-            const s1 = stepMap['1'] || 0;
-            const s3 = stepMap['3'] || 0;
-            const s5 = stepMap['5'] || 0;
+            const periodos: Array<{ label: string; days: number }> = [
+              { label: 'Tudo', days: 0 },
+              { label: '7 dias', days: 7 },
+              { label: '30 dias', days: 30 },
+            ];
+
             const stages = [
-              { label: 'Abriu o quiz', n: s1, w: 100 },
-              { label: 'Chegou aos dados pessoais', n: s3, w: 78 },
-              { label: 'Revisão final', n: s5, w: 60 },
+              { label: 'Abriu o quiz', n: stepMap['1'] || 0, w: 100 },
+              { label: 'Chegou aos dados pessoais', n: stepMap['3'] || 0, w: 78 },
+              { label: 'Revisão final', n: stepMap['5'] || 0, w: 60 },
               { label: 'Abriu o checkout', n: Number(checkout.abertos || 0), w: 46 },
               { label: 'Confirmou a parte', n: Number(checkout.pagos_lider || 0), w: 36 },
             ];
@@ -1518,61 +1530,135 @@ export default function SagradoPage() {
             ];
             const maxInv = Math.max(1, ...invBars.map(b => b.value));
 
+            const Card = ({ label, value, accent = 'text-white', sub }: { label: string; value: string | number; accent?: string; sub?: string }) => (
+              <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 space-y-1">
+                <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest block">{label}</span>
+                <span className={`font-display font-black text-2xl block ${accent}`}>{value}</span>
+                {sub && <span className="font-mono text-[10px] text-gray-500 block">{sub}</span>}
+              </div>
+            );
+
             return (
               <div className="space-y-5 fade-up-800">
-                <div className="flex justify-between items-center">
-                  <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold">Funil de inscrições</span>
-                  <button type="button" onClick={loadFunnel} className={btnGhost}>Atualizar</button>
-                </div>
-
-                {/* cards sintéticos */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  {[
-                    { label: 'Visitantes únicos', value: String(f.visitantes_unicos ?? 0), accent: 'text-[#F0C265]' },
-                    { label: 'IPs únicos', value: String(f.ips_unicos ?? 0), accent: 'text-white' },
-                    { label: 'Bandas ativas', value: `${String(f.ativas ?? 0)}/${String(f.bandas ?? 0)}`, accent: 'text-[#10B981]' },
-                    { label: 'Receita confirmada', value: `R$ ${Number(f.receita ?? 0).toFixed(0)}`, accent: 'text-[#F0C265]' },
-                  ].map(c => (
-                    <div key={c.label} className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 space-y-1">
-                      <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest block">{c.label}</span>
-                      <span className={`font-display font-black text-2xl block ${c.accent}`}>{c.value}</span>
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                  <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold">Analytics do evento</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex bg-white/5 border border-white/10 rounded-full p-0.5">
+                      {periodos.map(pd => (
+                        <button
+                          key={pd.days}
+                          type="button"
+                          onClick={() => { setFunnelDays(pd.days); loadFunnel(pd.days); }}
+                          className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full transition-colors ${funnelDays === pd.days ? 'bg-[#F0C265] text-black' : 'text-gray-400 hover:text-white'}`}
+                        >
+                          {pd.label}
+                        </button>
+                      ))}
                     </div>
-                  ))}
+                    <button type="button" onClick={() => loadFunnel(funnelDays)} className={btnGhost}>Atualizar</button>
+                  </div>
                 </div>
 
-                {/* funil em trapézios */}
-                <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-6 space-y-1.5">
-                  <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block mb-3">Do primeiro clique à vaga confirmada</span>
-                  {stages.map((st, i) => {
-                    const prev = i > 0 ? stages[i - 1].n : st.n;
-                    const conv = prev > 0 ? Math.round((st.n / prev) * 100) : 100;
-                    return (
-                      <div key={st.label} className="relative">
-                        {i > 0 && (
-                          <div className="flex justify-center items-center gap-2 py-0.5">
-                            <span className={`font-mono text-[11px] font-black px-2 py-0.5 rounded-full border ${conv >= 70 ? 'text-[#10B981] border-[#10B981]/30 bg-[#10B981]/10' : conv >= 40 ? 'text-[#F0C265] border-[#F0C265]/30 bg-[#F0C265]/10' : 'text-red-400 border-red-500/30 bg-red-500/10'}`}>
-                              {conv}%
-                            </span>
+                {/* ============ PRE-LIVE: interessados no grupo vip ============ */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#34D399] animate-pulse" />
+                    <h3 className="font-display font-black text-white uppercase text-sm tracking-tight">Pré-live · Interessados no Grupo VIP</h3>
+                  </div>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card label="Interessados" value={totalLeads} accent="text-[#34D399]" sub={`${Number(leads.hoje || 0)} hoje`} />
+                    <Card label="Visitas ao site" value={pageviews} sub={`${Number(trafego.pageviews_unicos || 0)} sessões únicas`} />
+                    <Card label="Popups VIP abertos" value={Number(trafego.popups_vip || 0)} sub={totalLeads > 0 && Number(trafego.popups_vip || 0) > 0 ? `${Math.round((totalLeads / Number(trafego.popups_vip)) * 100)}% deixaram o e-mail` : undefined} />
+                    <Card label="Cliques no WhatsApp" value={Number(trafego.cliques_whatsapp || 0)} sub="saídas para o grupo" />
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="lg:col-span-2 bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-5 space-y-3">
+                      <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Interessados por dia</span>
+                      <div className="flex items-end gap-1.5 h-32">
+                        {porDia.map(d => (
+                          <div key={d.dia} className="flex-1 flex flex-col items-center justify-end gap-1.5 h-full min-w-0" title={`${d.dia}: ${d.n}`}>
+                            <span className={`font-mono text-[10px] font-black ${Number(d.n) > 0 ? 'text-[#F0C265]' : 'text-gray-600'}`}>{Number(d.n) > 0 ? d.n : ''}</span>
+                            <div
+                              className={`w-full rounded-t-md transition-all ${Number(d.n) > 0 ? 'bg-gradient-to-t from-[#8B1E1E] to-[#F0C265]' : 'bg-white/5'}`}
+                              style={{ height: `${Math.max(3, (Number(d.n) / maxDia) * 100)}%` }}
+                            />
+                            <span className="font-mono text-[9px] text-gray-500 rotate-45 origin-top-left translate-y-1 whitespace-nowrap">{d.dia}</span>
                           </div>
-                        )}
-                        <div className="mx-auto" style={{ width: `${st.w}%` }}>
-                          <div
-                            className={`h-14 rounded-lg bg-gradient-to-b ${shades[i]} flex items-center justify-center gap-3 shadow-lg`}
-                            style={{ clipPath: 'polygon(4% 0, 96% 0, 100% 100%, 0% 100%)', opacity: 0.55 + 0.45 * (st.n / maxStage) }}
-                          >
-                            <span className="font-display font-black text-lg text-black">{st.n}</span>
-                            <span className="font-mono text-[11px] text-black/80 uppercase tracking-widest font-bold">{st.label}</span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-5 space-y-3">
+                      <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Origem do tráfego</span>
+                      <div className="space-y-2.5">
+                        {fontes.length === 0 && <span className="text-xs text-gray-500 font-mono">Sem dados ainda</span>}
+                        {fontes.map(fo => (
+                          <div key={fo.fonte} className="space-y-1">
+                            <div className="flex justify-between font-mono text-[11px] text-gray-300">
+                              <span className="truncate">{fo.fonte}</span><span>{fo.n}</span>
+                            </div>
+                            <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full bg-gradient-to-r from-[#34D399] to-[#059669]" style={{ width: `${totalLeads > 0 ? Math.max(4, (fo.n / totalLeads) * 100) : 0}%` }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="pt-1 border-t border-white/5 space-y-1.5">
+                        <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest block pt-1">Últimos interessados</span>
+                        {ultimos.slice(0, 4).map((u, i) => (
+                          <div key={i} className="flex justify-between font-mono text-[10px] text-gray-400">
+                            <span className="truncate">{u.email}</span><span className="text-gray-600 shrink-0">{u.quando}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ============ INSCRICOES ============ */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#F0C265] animate-pulse" />
+                    <h3 className="font-display font-black text-white uppercase text-sm tracking-tight">Inscrições · Bandas e pagamentos</h3>
+                  </div>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card label="Visitantes únicos" value={String(f.visitantes_unicos ?? 0)} accent="text-[#F0C265]" />
+                    <Card label="IPs únicos" value={String(f.ips_unicos ?? 0)} />
+                    <Card label="Bandas ativas" value={`${String(f.ativas ?? 0)}/${String(f.bandas ?? 0)}`} accent="text-[#10B981]" />
+                    <Card label="Receita confirmada" value={`R$ ${Number(f.receita ?? 0).toFixed(0)}`} accent="text-[#F0C265]" />
+                  </div>
+
+                  <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-6 space-y-1.5">
+                    <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block mb-3">Do primeiro clique à vaga confirmada</span>
+                    {stages.map((st, i) => {
+                      const prev = i > 0 ? stages[i - 1].n : st.n;
+                      const conv = prev > 0 ? Math.round((st.n / prev) * 100) : 100;
+                      return (
+                        <div key={st.label} className="relative">
+                          {i > 0 && (
+                            <div className="flex justify-center items-center gap-2 py-0.5">
+                              <span className={`font-mono text-[11px] font-black px-2 py-0.5 rounded-full border ${conv >= 70 ? 'text-[#10B981] border-[#10B981]/30 bg-[#10B981]/10' : conv >= 40 ? 'text-[#F0C265] border-[#F0C265]/30 bg-[#F0C265]/10' : 'text-red-400 border-red-500/30 bg-red-500/10'}`}>
+                                {conv}%
+                              </span>
+                            </div>
+                          )}
+                          <div className="mx-auto" style={{ width: `${st.w}%` }}>
+                            <div
+                              className={`h-14 rounded-lg bg-gradient-to-b ${shades[i]} flex items-center justify-center gap-3 shadow-lg`}
+                              style={{ clipPath: 'polygon(4% 0, 96% 0, 100% 100%, 0% 100%)', opacity: 0.55 + 0.45 * (st.n / maxStage) }}
+                            >
+                              <span className="font-display font-black text-lg text-black">{st.n}</span>
+                              <span className="font-mono text-[11px] text-black/80 uppercase tracking-widest font-bold">{st.label}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
 
-                {/* convites + integrantes */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-5 space-y-3">
-                    <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Convites de integrantes</span>
+                  <div className="bg-[#0B0F19]/40 border border-white/5 rounded-2xl p-5 space-y-3">
+                    <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold block">Convites e integrantes</span>
                     {invBars.map(b => (
                       <div key={b.label} className="space-y-1">
                         <div className="flex justify-between font-mono text-[11px] text-gray-300"><span>{b.label}</span><span>{b.value}</span></div>
@@ -1581,24 +1667,6 @@ export default function SagradoPage() {
                         </div>
                       </div>
                     ))}
-                  </div>
-
-                  <div className="bg-[#0B0F19]/60 border border-white/10 rounded-2xl p-5 space-y-3">
-                    <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Bandas</span>
-                    <div className="space-y-2.5">
-                      {[
-                        { l: 'Aguardando integrantes', v: Number(f.aguardando ?? 0), max: Math.max(1, Number(f.bandas ?? 0)), cls: 'from-amber-400 to-amber-600' },
-                        { l: 'Ativas no concurso', v: Number(f.ativas ?? 0), max: Math.max(1, Number(f.bandas ?? 0)), cls: 'from-[#10B981] to-[#059669]' },
-                        { l: 'Integrantes com parte paga', v: Number(f.integrantes_pagos ?? 0), max: Math.max(1, Number(f.integrantes_pagos ?? 1)), cls: 'from-emerald-400 to-emerald-600' },
-                      ].map(b => (
-                        <div key={b.l} className="space-y-1">
-                          <div className="flex justify-between font-mono text-[11px] text-gray-300"><span>{b.l}</span><span>{b.v}</span></div>
-                          <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full bg-gradient-to-r ${b.cls}`} style={{ width: `${(b.v / b.max) * 100}%` }} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 </div>
               </div>
@@ -1800,6 +1868,18 @@ export default function SagradoPage() {
 
                 <div className="flex justify-end items-center gap-3 flex-wrap">
                   {notice['gateway'] && <Notice kind={notice['gateway'].kind}>{notice['gateway'].msg}</Notice>}
+                  {notice['gwtest'] && <Notice kind={notice['gwtest'].kind}>{notice['gwtest'].msg}</Notice>}
+                  <button type="button" onClick={() => guarded('gwtest', async () => {
+                    try {
+                      const res = await fetch('/api/gateway/test');
+                      const d = await res.json().catch(() => null);
+                      if (d && d.ok) setMsg('gwtest', 'ok', `Conexão OK${d.nickname ? ' com a conta ' + d.nickname : ''}. O Pix real está ativo.`);
+                      else setMsg('gwtest', 'err', (d && d.msg) ? d.msg : 'Não foi possível validar a chave.');
+                    } catch { setMsg('gwtest', 'err', 'Falha de conexão. Tente novamente.'); }
+                    return 'ok';
+                  })} disabled={busy === 'gwtest'} className={btnGhost}>
+                    {busy === 'gwtest' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Testar conexão'}
+                  </button>
                   <button type="button" onClick={saveGateway} disabled={busy === 'gateway'} className={btnGold}>
                     {busy === 'gateway' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Salvar chaves'}
                   </button>

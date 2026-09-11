@@ -73,6 +73,25 @@ export default function Page() {
   const [waitlistError, setWaitlistError] = useState('');
   const vipAnchorRef = useRef<HTMLAnchorElement | null>(null);
 
+  // Analytics do pre-live: visitas e interacoes do grupo vip (via /api/track)
+  const trackPre = (event: string, step = '') => {
+    try {
+      const q = new URLSearchParams(window.location.search);
+      const ref = (q.get('ref') || q.get('utm_source') || 'direto').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40) || 'direto';
+      fetch('/api/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ref, event, step }),
+        keepalive: true
+      }).catch(() => {});
+    } catch { /* silencioso */ }
+  };
+
+  useEffect(() => {
+    trackPre('page_view', new URLSearchParams(window.location.search).get('utm_campaign') || '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // O botao e um link nativo do WhatsApp (nunca bloqueado como popup).
   // O registro do lead dispara em paralelo: a pagina permanece viva, entao o insert completa.
   const handleVipClick = (e?: React.MouseEvent) => {
@@ -84,6 +103,7 @@ export default function Page() {
       return;
     }
     if (waitlistBusy) { e?.preventDefault(); return; }
+    trackPre('vip_wa_click');
     setWaitlistBusy(true);
     supabase.from('vip_leads').insert({ name: 'Interessado (pré-inscrição)', email, source: 'pre_inscricao_home' })
       .then(() => setWaitlistBusy(false), () => setWaitlistBusy(false));
@@ -298,7 +318,7 @@ export default function Page() {
   // Durante a transmissao ao vivo a inscricao abre direto (regra do periodo de live)
   const ctaAction = () => {
     if (isLiveNow || !waitlistMode) handleOpenQuiz();
-    else setWaitlistOpen(true);
+    else { trackPre('vip_popup_open'); setWaitlistOpen(true); }
   };
 
   return (

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { rateLimit, clientIp } from '@/lib/ratelimit';
 
 // Verificacao server-side: consulta o pagamento no Mercado Pago e, se aprovado,
 // confirma via RPC idempotente e atualiza a trilha de conciliacao.
@@ -10,6 +11,9 @@ const supabase = SERVICE_KEY ? createClient(SUPABASE_URL, SERVICE_KEY) : null;
 export async function GET(req: NextRequest) {
   if (!supabase) {
     return NextResponse.json({ ok: false, paid: false, error: 'gateway_off' }, { status: 503 });
+  }
+  if (!rateLimit(`pixstatus:${clientIp(req)}`, 60, 60000)) {
+    return NextResponse.json({ ok: false, paid: false, error: 'muitas_tentativas' }, { status: 429 });
   }
   try {
     const id = (req.nextUrl.searchParams.get('id') || '').replace(/[^0-9]/g, '').slice(0, 20);

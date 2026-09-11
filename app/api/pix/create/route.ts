@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { rateLimit, clientIp } from '@/lib/ratelimit';
 
 // Server-only: acessa as chaves do gateway e grava a intent de pagamento.
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nzsbyfxcefmlclagoyii.supabase.co';
@@ -9,6 +10,9 @@ const supabase = SERVICE_KEY ? createClient(SUPABASE_URL, SERVICE_KEY) : null;
 export async function POST(req: NextRequest) {
   if (!supabase) {
     return NextResponse.json({ ok: false, error: 'gateway_off' }, { status: 503 });
+  }
+  if (!rateLimit(`pixcreate:${clientIp(req)}`, 10, 60000)) {
+    return NextResponse.json({ ok: false, error: 'muitas_tentativas' }, { status: 429 });
   }
   try {
     const body = await req.json();
