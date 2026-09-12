@@ -19,10 +19,12 @@ interface QuizFlowProps {
   onPaymentSuccess: () => void;
   onJoinBand?: (inviteCode: string) => void;
   waitlistMode?: boolean;
+  origem?: 'home' | 'v2';
+  sandboxPix?: boolean;
 }
 
 
-export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false }: QuizFlowProps) {
+export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false, origem = 'home', sandboxPix = false }: QuizFlowProps) {
   const [quizStep, setQuizStep] = useState(1);
 
   // Quiz form states
@@ -108,7 +110,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const quizOpenedAt = useRef<number>(0);
 
   // Gateway Pix real (ativado pelo dev no painel): definem o modo do checkout
-  const [pixActive, setPixActive] = useState(false);
+  const [pixGatewayOn, setPixGatewayOn] = useState(false);
   const [pixData, setPixData] = useState<{ paymentId: string; qr: string | null; qrBase64: string | null } | null>(null);
   const pixDataRef = useRef<{ paymentId: string; qr: string | null; qrBase64: string | null } | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -542,6 +544,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       const membersPayload = membersList.map(m => ({ name: m.name, cpf: m.cpf, birth: m.birth, role: m.role }));
 
       const { data, error } = await supabase.rpc('create_band_registration', {
+        p_origem: origem === 'v2' ? 'v2' : 'home',
         p_name: projectName,
         p_style: projectStyle,
         p_bio: projectBio,
@@ -666,12 +669,15 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     return () => clearInterval(interval);
   }, [isCheckoutOpen, checkoutExpired]);
 
-  // Flag do gateway (lido do painel): Pix real x simulacao
+  // Flag do gateway (lido do painel): Pix real x simulacao.
+  // Na home vale o flag global; na /v2 o dev decide via sandbox.
   useEffect(() => {
     if (!isOpen) return;
     supabase.from('site_settings').select('key,value').eq('key', 'gateway_pix_active').maybeSingle()
-      .then(({ data }) => setPixActive(String(data?.value ?? '') === 'true'), () => setPixActive(false));
+      .then(({ data }) => setPixGatewayOn(String(data?.value ?? '') === 'true'), () => setPixGatewayOn(false));
   }, [isOpen]);
+
+  const pixActive = origem === 'v2' ? (pixGatewayOn && sandboxPix) : pixGatewayOn;
 
   // Confirmacao de pagamento: Pix real (gateway) ou simulacao local (fallback pre-chaves)
   useEffect(() => {

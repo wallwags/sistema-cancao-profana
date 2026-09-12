@@ -72,6 +72,9 @@ export default function Page() {
   const [waitlistError, setWaitlistError] = useState('');
   const vipAnchorRef = useRef<HTMLAnchorElement | null>(null);
 
+  // Sandbox /v2 (controle do dev no painel): testes sem afetar a home
+  const [sandbox, setSandbox] = useState<{ ativo: boolean; preco: number | null; pixReal: boolean }>({ ativo: false, preco: null, pixReal: false });
+
   // Analytics do pre-live: visitas e interacoes do grupo vip (via /api/track)
   const trackPre = (event: string, step = '') => {
     try {
@@ -164,6 +167,13 @@ export default function Page() {
           if (map.vip_whatsapp_url) setVipWaUrl(map.vip_whatsapp_url);
           if (map.live_url) setLiveUrl(map.live_url);
           const dp = Number(map.dia0_price);
+          // Sandbox /v2 (config gravada pelo dev no painel)
+          if (map.v2_env) {
+            try {
+              const o = typeof map.v2_env === 'string' ? JSON.parse(map.v2_env) : (map.v2_env as Record<string, unknown>);
+              setSandbox({ ativo: o.ativo === true, preco: o.preco != null ? Number(o.preco) : null, pixReal: o.pix_real === true });
+            } catch { /* config invalida: ignora */ }
+          }
           const sm = map.slot_mode;
           if (sm === 'integrante') setSlotMode('integrante');
           if (!isNaN(dp) && dp > 0) setDia0Price(dp);
@@ -213,6 +223,11 @@ export default function Page() {
   })();
   const activePrice = isLiveNow ? dia0Price : lotesConfig[loteFoco].valor;
   const activeLoteName = isLiveNow ? 'LIVE' : loteFocoNome;
+
+  // Sandbox /v2 ativo: preco de teste e rotulo propio (nao mexe nos lotes reais)
+  const sandboxOn = sandbox.ativo;
+  const quizPrice = sandboxOn && sandbox.preco ? sandbox.preco : activePrice;
+  const quizLoteName = sandboxOn && !isLiveNow ? 'SANDBOX' : activeLoteName;
 
 
   // Scroll FX engine - reveals de seção, grupos em stagger, linha da timeline
@@ -796,10 +811,11 @@ export default function Page() {
         <QuizFlow
           isOpen={isQuizOpen}
           onClose={() => setIsQuizOpen(false)}
-          onJoinBand={(code) => { setSheetCode(code); setSheetStart('pick'); }}
-          activePrice={activePrice}
-          activeLoteName={activeLoteName}
+          activePrice={quizPrice}
+          activeLoteName={quizLoteName}
           onPaymentSuccess={handlePaymentSuccess}
+          origem="v2"
+          sandboxPix={sandbox.pixReal}
         />
       )}
 
@@ -865,6 +881,12 @@ export default function Page() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {sandbox.ativo && (
+        <div className="fixed bottom-4 right-4 z-40 bg-amber-400 text-black font-mono text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-lg pointer-events-none">
+          Sandbox · ambiente de teste
         </div>
       )}
 

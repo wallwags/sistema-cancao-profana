@@ -225,6 +225,8 @@ export default function SagradoPage() {
   const [photoView, setPhotoView] = useState<string | null>(null);
   const [funnel, setFunnel] = useState<Record<string, unknown> | null>(null);
   const [funnelDays, setFunnelDays] = useState(0);
+  const [v2env, setV2env] = useState<{ ativo: boolean; preco: number | null; pix_real: boolean } | null>(null);
+  const [v2preco, setV2preco] = useState('');
   const [slotMode, setSlotMode] = useState<'band' | 'integrante'>('band');
   const [cartDays, setCartDays] = useState({ lote1: '10', lote2: '10', lote3: '12' });
   const [homeMode, setHomeMode] = useState<'classic' | 'vip'>('classic');
@@ -401,6 +403,35 @@ export default function SagradoPage() {
     setAudit((data || []) as Array<Record<string, unknown>>);
   }, []);
 
+  const loadV2Env = useCallback(async () => {
+    const { data, error } = await supabase.rpc('dev_get_v2_env');
+    if (error || !data) { setV2env(null); return; }
+    const env = data as { ativo: boolean; preco: number | null; pix_real: boolean };
+    setV2env(env);
+    setV2preco(env.preco != null ? String(env.preco) : '');
+  }, []);
+
+  const saveV2Env = (ativo: boolean) => guarded('v2env', async () => {
+    const preco = v2preco.trim() ? Number(v2preco) : null;
+    if (v2preco.trim() && (isNaN(Number(preco)) || Number(preco) <= 0)) return 'Informe um preço de teste válido.';
+    const { data: res, error } = await supabase.rpc('dev_set_v2_env', { p_ativo: ativo, p_preco: preco, p_pix_real: v2env?.pix_real ?? false });
+    if (error) return 'Erro: ' + error.message;
+    if (res !== 'ok') return String(res);
+    setMsg('v2env', 'ok', ativo ? 'SANDBOX /v2 LIGADO. A /v2 aceita inscrições de teste e a / home segue intocada.' : 'SANDBOX /v2 DESLIGADO. A /v2 volta ao comportamento padrão.');
+    await loadV2Env();
+    return 'ok';
+  });
+
+  const toggleV2Pix = () => guarded('v2pix', async () => {
+    const novo = !(v2env?.pix_real ?? false);
+    const preco = v2preco.trim() ? Number(v2preco) : null;
+    const { data: res, error } = await supabase.rpc('dev_set_v2_env', { p_ativo: v2env?.ativo ?? false, p_preco: preco, p_pix_real: novo });
+    if (error) return 'Erro: ' + error.message;
+    if (res !== 'ok') return String(res);
+    await loadV2Env();
+    return 'ok';
+  });
+
   const loadFunnel = useCallback(async (days = 0) => {
     const { data } = await supabase.rpc('get_funnel_stats', { p_days: days });
     setFunnel((data || null) as Record<string, unknown> | null);
@@ -432,8 +463,9 @@ export default function SagradoPage() {
     if (authed && tab === 'funil') loadFunnel(funnelDays);
     if (authed && tab === 'vip') loadVipLeads();
     if (authed && tab === 'gateway') loadGateway();
+    if (authed && isDev && tab === 'lotes') loadV2Env();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authed, tab, funnelDays]);
+  }, [authed, tab, funnelDays, isDev]);
 
   useEffect(() => {
     if (!authed) return;
@@ -935,6 +967,66 @@ export default function SagradoPage() {
           )}
 
           {/* LOTES */}
+          {tab === 'lotes' && isDev && (
+            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 rounded-2xl p-5 space-y-4 fade-up-800 ${'border-amber-400/60' }">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-white/5 pb-3">
+                <div>
+                  <h3 className="font-display font-bold text-white uppercase">🧪 Sandbox /v2</h3>
+                  <p className="text-xs text-gray-400 leading-snug mt-1">
+                    Modo de teste de produção. Ligado: a <strong className="text-amber-400">/v2</strong> aceita inscrições com preço de teste
+                    {' '}(pré-live também) e pode usar o Pix real, sem afetar em nada a <strong className="text-[#F0C265]">/ home</strong> pública.
+                    Um aviso fixo marca a página de teste.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => saveV2Env(!(v2env?.ativo ?? false))}
+                    disabled={busy === 'v2env'}
+                    className={`font-mono text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl border transition-colors ${
+                      (v2env?.ativo ?? false)
+                        ? 'bg-amber-400 text-black border-amber-300'
+                        : 'text-gray-400 border-white/10 bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    {busy === 'v2env' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (v2env?.ativo ?? false) ? 'Ligado' : 'Desligado'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">Preço de teste (R$ por integrante)</label>
+                  <input
+                    type="number"
+                    min={0.01}
+                    step="0.01"
+                    className={inputCls}
+                    value={v2preco}
+                    onChange={(e) => setV2preco(e.target.value)}
+                    placeholder="Ex: 1.00 (aparece no checkout da /v2)"
+                  />
+                  <span className="font-mono text-[10px] text-gray-500 block">Cobrança real apenas com Pix real ligado. Vazio = preço do lote.</span>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">Pix real no sandbox</label>
+                  <button
+                    type="button"
+                    onClick={toggleV2Pix}
+                    disabled={busy === 'v2pix' || !(v2env?.ativo ?? false)}
+                    className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-xl border transition-colors ${
+                      (v2env?.pix_real ?? false) ? 'bg-[#10B981] text-black border-[#10B981]/50' : 'text-gray-400 border-white/10 bg-white/5 hover:text-white'
+                    } disabled:opacity-50`}
+                  >
+                    {busy === 'v2pix' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (v2env?.pix_real ?? false) ? 'Pix real ativo na /v2' : 'Simulação (padrão)'}
+                  </button>
+                  <span className="font-mono text-[10px] text-gray-500 block">Exige chaves do gateway salvas em Pagamentos.</span>
+                </div>
+              </div>
+              {notice['v2env'] && <Notice kind={notice['v2env'].kind}>{notice['v2env'].msg}</Notice>}
+            </div>
+          )}
+
           {tab === 'lotes' && (
             <div className="space-y-5 fade-up-800">
               <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 border-[#F0C265]/40 rounded-2xl p-5 space-y-4">
