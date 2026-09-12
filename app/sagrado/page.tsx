@@ -14,7 +14,7 @@ interface StaffRow {
   username?: string;
   display_name: string;
   role: 'dev' | 'admin' | 'jurado';
-  permissions: { manage_lotes?: boolean; manage_content?: boolean; manage_subscriptions?: boolean; view_sensitive_data?: boolean; manage_team?: boolean; view_audit?: boolean; manage_vip?: boolean; manage_gateway?: boolean };
+  permissions: { manage_lotes?: boolean; manage_content?: boolean; manage_subscriptions?: boolean; view_sensitive_data?: boolean; manage_team?: boolean; view_audit?: boolean; manage_vip?: boolean; manage_gateway?: boolean; ver_metodo_cobranca?: boolean };
 }
 
 interface MemberFull {
@@ -102,6 +102,7 @@ const PERM_KEYS = [
   { key: 'manage_vip', label: 'Gerenciar Grupo VIP e interessados' },
   { key: 'manage_gateway', label: 'Gerenciar integração de pagamentos' },
   { key: 'view_audit', label: 'Visualizar o histórico de auditoria' },
+  { key: 'ver_metodo_cobranca', label: 'Ver alternador de método de cobrança (aba Lotes)' },
 ] as const;
 
 const PROJECT_STATUS: Record<string, { label: string; cls: string }> = {
@@ -1026,6 +1027,52 @@ export default function SagradoPage() {
               {notice['v2env'] && <Notice kind={notice['v2env'].kind}>{notice['v2env'].msg}</Notice>}
             </div>
           )}
+
+          {tab === 'lotes' && (isDev || !!(me?.permissions as Record<string, unknown> | undefined)?.ver_metodo_cobranca) && (() => {
+            const modoAtual = String(settings['payment_mode'] ?? 'individual');
+            const setModo = (modo: 'individual' | 'lider') => guarded('paymode', async () => {
+              const { data: res, error } = await supabase.rpc('dev_set_payment_mode', { p_mode: modo });
+              if (error) return 'Erro: ' + error.message;
+              if (res !== 'ok') return String(res);
+              await loadSettings();
+              setMsg('paymode', 'ok', modo === 'lider'
+                ? 'Cobrança pelo LÍDER ativa: 1 único Pix do valor total no checkout do líder; integrantes não pagam.'
+                : 'Cobrança INDIVIDUAL ativa: cada integrante paga a própria parte (como antes).');
+              return 'ok';
+            });
+            return (
+              <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 border-[#E3B552]/50 rounded-2xl p-5 space-y-4 fade-up-800">
+                <div className="border-b border-white/5 pb-3">
+                  <h3 className="font-display font-bold text-white uppercase">💳 Método de cobrança da inscrição</h3>
+                  <p className="text-xs text-gray-400 leading-snug mt-1">
+                    Define quem paga a inscrição no site. <strong className="text-white">Por integrante:</strong> cada um paga a própria parte pelo link de convite.
+                    {' '}<strong className="text-white">Líder paga total:</strong> o líder recebe um único Pix do valor de todos e os integrantes não pagam nada.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setModo('individual')}
+                    disabled={busy === 'paymode' || modoAtual === 'individual'}
+                    className={`p-4 rounded-2xl border-2 text-left transition-colors ${modoAtual === 'individual' ? 'border-[#F0C265] bg-[#F0C265]/10' : 'border-white/10 bg-white/5 hover:border-white/25'}`}
+                  >
+                    <span className="block font-display font-black text-white uppercase text-sm">Por integrante</span>
+                    <span className="block text-xs text-gray-400 mt-1 leading-snug">Cada integrante paga a própria parte pelo convite do líder (modelo atual).</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModo('lider')}
+                    disabled={busy === 'paymode' || modoAtual === 'lider'}
+                    className={`p-4 rounded-2xl border-2 text-left transition-colors ${modoAtual === 'lider' ? 'border-[#F0C265] bg-[#F0C265]/10' : 'border-white/10 bg-white/5 hover:border-white/25'}`}
+                  >
+                    <span className="block font-display font-black text-white uppercase text-sm">Líder paga o total</span>
+                    <span className="block text-xs text-gray-400 mt-1 leading-snug">O líder gera 1 único Pix do valor total da banda e arca com a parte de todos.</span>
+                  </button>
+                </div>
+                {notice['paymode'] && <Notice kind={notice['paymode'].kind}>{notice['paymode'].msg}</Notice>}
+              </div>
+            );
+          })()}
 
           {tab === 'lotes' && (
             <div className="space-y-5 fade-up-800">

@@ -34,6 +34,7 @@ const inputCls = "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-
 
 export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClose }: { inviteCode: string; startPhase?: 'confirm' | 'pick'; onClose: () => void }) {
   const [phase, setPhase] = useState<'loading' | 'confirm' | 'pick' | 'form' | 'summary' | 'checkout' | 'done'>('loading');
+  const [paymentMode, setPaymentMode] = useState<'individual' | 'lider'>('individual');
   const [data, setData] = useState<InviteData | null>(null);
   const [slotId, setSlotId] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -80,6 +81,10 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
   };
 
   useEffect(() => {
+    // Modo de cobranca (lido do banco): lider paga tudo x individual
+    supabase.from('site_settings').select('key,value').eq('key', 'payment_mode').maybeSingle()
+      .then(({ data: pm }) => setPaymentMode(pm && String(pm.value) === 'lider' ? 'lider' : 'individual'), () => setPaymentMode('individual'));
+
     (async () => {
       const { data: inv, error } = await supabase.rpc('get_invite', { p_code: inviteCode });
       if (error || !inv) { setError('Convite não encontrado ou inválido.'); setPhase('loading'); setData(null); return; }
@@ -351,9 +356,21 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
                 </div>
               )}
 
+              {paymentMode === 'lider' ? (
+                <div className="space-y-3">
+                  <div className="bg-[#10B981]/10 border border-[#10B981]/40 rounded-xl px-4 py-3">
+                    <span className="text-xs text-[#10B981] font-bold uppercase tracking-wide block">✓ Parte coberta pelo líder</span>
+                    <span className="text-xs text-gray-300 leading-snug block mt-1">No modo atual, o líder faz um único Pix que cobre a parte de todos os integrantes. Você não paga nada - apenas confirme seus dados e mantenha contato com ele.</span>
+                  </div>
+                  <button onClick={slideDownClose} className="font-mono text-sm font-bold text-black bg-[#10B981] py-4 rounded-full w-full uppercase tracking-widest">
+                    Entendi
+                  </button>
+                </div>
+              ) : (
               <button onClick={startCheckout} className="font-mono text-sm font-bold text-black bg-[#10B981] py-4 rounded-full w-full uppercase tracking-widest">
                 Gerar Pix e pagar R$ {price},00
               </button>
+              )}
             </div>
           )}
 

@@ -111,6 +111,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
   // Gateway Pix real (ativado pelo dev no painel): definem o modo do checkout
   const [pixGatewayOn, setPixGatewayOn] = useState(false);
+  const [paymentMode, setPaymentMode] = useState<'individual' | 'lider'>('individual');
   const [pixData, setPixData] = useState<{ paymentId: string; qr: string | null; qrBase64: string | null } | null>(null);
   const pixDataRef = useRef<{ paymentId: string; qr: string | null; qrBase64: string | null } | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -342,6 +343,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   }, [isOpen, quizStep, projectName, projectStyle, projectBio, projectPhotoName, projectInstagram, projectVideoLink, respName, respCpf, respBirth, respPhone, respEmail, membersList, draftToRestore]);
 
   const totalCost = selectedMembers * activePrice;
+  // Modo lider: 1 unico Pix do valor total de todos os integrantes
+  const pixAmount = paymentMode === 'lider' ? totalCost : activePrice;
 
   // ---------- Inline validation helpers ----------
   const clearError = (key: string) => setErrors(prev => {
@@ -673,8 +676,13 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   // Na home vale o flag global; na /v2 o dev decide via sandbox.
   useEffect(() => {
     if (!isOpen) return;
-    supabase.from('site_settings').select('key,value').eq('key', 'gateway_pix_active').maybeSingle()
-      .then(({ data }) => setPixGatewayOn(String(data?.value ?? '') === 'true'), () => setPixGatewayOn(false));
+    supabase.from('site_settings').select('key,value').in('key', ['gateway_pix_active', 'payment_mode'])
+      .then(({ data }) => {
+        const map: Record<string, string> = {};
+        (data || []).forEach(r => { map[r.key] = typeof r.value === 'string' ? r.value : String(r.value ?? ''); });
+        setPixGatewayOn(map['gateway_pix_active'] === 'true');
+        setPaymentMode(map['payment_mode'] === 'lider' ? 'lider' : 'individual');
+      }, () => { setPixGatewayOn(false); setPaymentMode('individual'); });
   }, [isOpen]);
 
   const pixActive = origem === 'v2' ? (pixGatewayOn && sandboxPix) : pixGatewayOn;
@@ -857,7 +865,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
   const copyPixCode = async () => {
     try {
-      await navigator.clipboard.writeText(pixData?.qr || `PIX CANCAO PROFANA | ${activeLoteName} | R$ ${totalCost},00 | Estudio Pedra Profana`);
+      await navigator.clipboard.writeText(pixData?.qr || `PIX CANCAO PROFANA | ${activeLoteName} | R$ ${pixAmount},00 | Estudio Pedra Profana`);
       setPixCopied(true);
       setTimeout(() => setPixCopied(false), 2500);
     } catch { /* clipboard blocked */ }
@@ -1408,8 +1416,17 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
                 <div className="text-center space-y-3 w-full">
                   <div>
-                    <span className="font-mono text-[10px] text-gray-500 block uppercase font-bold">SUA PARTE (LÍDER):</span>
-                    <span className="text-2xl font-mono font-black text-lime block mt-0.5">R$ {activePrice},00</span>
+                    {paymentMode === 'lider' ? (
+                      <>
+                        <span className="font-mono text-[10px] text-gray-500 block uppercase font-bold">PAGAMENTO ÚNICO DO LÍDER (cobre os {selectedMembers} integrantes):</span>
+                        <span className="text-2xl font-mono font-black text-lime block mt-0.5">R$ {pixAmount},00</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-mono text-[10px] text-gray-500 block uppercase font-bold">SUA PARTE (LÍDER):</span>
+                        <span className="text-2xl font-mono font-black text-lime block mt-0.5">R$ {activePrice},00</span>
+                      </>
+                    )}
   </div>
 
                   {/* Live polling status line (feedback while QR is on screen) */}

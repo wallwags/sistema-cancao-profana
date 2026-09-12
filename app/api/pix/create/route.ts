@@ -33,14 +33,19 @@ export async function POST(req: NextRequest) {
     // Projeto + preco travado
     const { data: project } = await supabase
       .from('projects')
-      .select('id, name, entry_price, batch_id')
+      .select('id, name, entry_price, batch_id, total_members')
       .eq('invite_code', code)
       .maybeSingle();
     if (!project) {
       return NextResponse.json({ ok: false, error: 'codigo_invalido' }, { status: 404 });
     }
 
-    const amount = Number(project.entry_price);
+    // Modo de cobranca: lider paga 1 unico Pix do total de todos
+    const { data: modeData } = await supabase.from('site_settings').select('value').eq('key', 'payment_mode').maybeSingle();
+    const liderMode = String(modeData?.value ?? '') === 'lider';
+    const amount = liderMode
+      ? Number(project.entry_price) * Math.max(Number(project.total_members) || 1, 1)
+      : Number(project.entry_price);
     const idempotencyKey = `${code}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
     const mpRes = await fetch('https://api.mercadopago.com/v1/payments', {
@@ -55,6 +60,7 @@ export async function POST(req: NextRequest) {
         description: `Cancao Profana - ${String(project.name).slice(0, 60)}`,
         payment_method_id: 'pix',
         external_reference: `${code}:L`,
+        // (valor ja reflete o modo de cobranca calculado acima)
         payer: { email, first_name: name.slice(0, 60) || 'Candidato' },
       }),
     });
