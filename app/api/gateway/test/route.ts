@@ -16,10 +16,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'muitas_tentativas' }, { status: 429 });
   }
   try {
-    const { data: gdata } = await supabase.from('gateway_keys').select('access_token').eq('id', 1).maybeSingle();
+    const { data: gdata, error: gerr } = await supabase.from('gateway_keys').select('access_token').eq('id', 1).maybeSingle();
+    // Diagnostico: distingue "chave de servico invalida" de "tabela vazia"
+    if (gerr || gdata === null) {
+      return NextResponse.json({
+        ok: false,
+        error: 'service_key_invalida',
+        msg: 'A SUPABASE_SERVICE_ROLE_KEY na Vercel NAO consegue ler o banco. Va ao projeto correto do Supabase (nzsbyfxcefmlclagoyii) > Settings > API Keys > copie a Secret key (sb_secret_...) COMPLETA > cole de novo na Vercel > Redeploy sem cache.',
+        detalhe: String(gerr?.message || 'consulta vazia').slice(0, 120),
+      }, { status: 400 });
+    }
     const token = gdata?.access_token;
     if (!token) {
-      return NextResponse.json({ ok: false, error: 'sem_chave', msg: 'Nenhuma chave salva. Cole o Access Token e salve primeiro.' }, { status: 400 });
+      return NextResponse.json({ ok: false, error: 'sem_chave', msg: 'Nenhuma chave salva. Cole o Access Token do Mercado Pago e salve primeiro no painel.' }, { status: 400 });
     }
 
     const mpRes = await fetch('https://api.mercadopago.com/users/me', {
