@@ -365,7 +365,7 @@ export default function SagradoPage() {
     if (data) setFaqs(data as FaqRow[]);
   }, []);
 
-  const PAGE_SIZE = 25;
+  const PAGE_SIZE = 10;
 
   const loadProjects = useCallback(async () => {
     if (me?.role === 'jurado') {
@@ -1332,6 +1332,11 @@ export default function SagradoPage() {
           {/* INSCRIÇÕES */}
           {tab === 'inscritos' && (
             <div className="space-y-4 fade-up-800">
+              <div className="bg-[#F0C265]/10 border border-[#F0C265]/30 rounded-2xl px-4 py-3">
+                <span className="text-xs text-[#F0C265] leading-snug">
+                  <strong className="font-black uppercase tracking-wider">Pré-interessados (Grupo VIP)</strong> ficam na aba <strong>Grupo VIP</strong>. Esta aba lista apenas bandas inscritas de verdade ({totalCount} no total).
+                </span>
+              </div>
               {detailId ? (() => {
                 const p = projects.find(x => x.id === detailId);
                 if (!p) return <Notice kind="err">Inscrição não encontrada.</Notice>;
@@ -1607,7 +1612,7 @@ export default function SagradoPage() {
                     })}
                   </div>
 
-                  {totalCount > PAGE_SIZE && (
+                  {totalCount > 0 && (
                     <div className="flex justify-between items-center border-t border-white/5 pt-4">
                       <button type="button" disabled={page === 0 || busy !== null} onClick={() => setPage(p => Math.max(0, p - 1))} className={btnGhost}>← Anterior</button>
                       <span className="font-mono text-xs text-gray-400 uppercase">Página {page + 1} de {Math.ceil(totalCount / PAGE_SIZE)}</span>

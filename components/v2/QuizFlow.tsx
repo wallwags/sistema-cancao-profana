@@ -238,7 +238,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   useIsomorphicLayoutEffect(() => {
     if (quizVisible && !draftToRestore) {
       logFunnel('quiz_step', String(quizStep));
-      if (quizStep === 5) checkSimilarBands();
+
     }
     if (quizVisible && stepRef.current && !draftToRestore) {
       gsap.fromTo(stepRef.current,
@@ -423,6 +423,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     const errs = validateStep(quizStep);
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
+    // Passo 1: checa nomes parecidos ANTES de qualquer dado pessoal (aviso cedo, no lugar certo)
+    if (quizStep === 1) checkSimilarBands();
     setSlideDirection('next');
     setQuizStep(quizStep + 1);
   };
@@ -998,13 +1000,13 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
       {/* QUIZ INTERACTIVE POPUP MODAL - external page scroll, no internal modal scroll */}
       {quizVisible && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start sm:items-center">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start">
 
           <div className="absolute inset-0 cursor-pointer" onClick={requestCloseQuiz}></div>
 
           <div
             ref={quizCardRef}
-            className="bg-black/95 border-2 border-[#E3B552] w-full max-w-xl rounded-[32px] p-6 md:p-8 my-8 relative space-y-6 shadow-[0_10px_50px_rgba(0,0,0,0.8)] flex flex-col justify-between z-10"
+            className="bg-black/95 border-2 border-[#E3B552] w-full max-w-xl rounded-[32px] p-6 md:p-8 my-auto relative space-y-6 shadow-[0_10px_50px_rgba(0,0,0,0.8)] flex flex-col justify-between z-10"
           >
             <button type="button" onClick={requestCloseQuiz} className="absolute right-5 top-5 text-[#B3B3B3] hover:text-white font-mono text-2xl font-bold">&times;</button>
 
@@ -1060,6 +1062,44 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                   required
                                 />
                                 {fieldError('projectName')}
+                            {similarBands.length > 0 && (similarChoice === 'none' || similarChoice === 'mine') && joinState !== 'declined' && (
+                              <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl p-4 space-y-3">
+                            <span className="font-mono text-xs text-amber-400 uppercase tracking-widest font-black block">⚠ Atenção: nome parecido</span>
+                            <p className="text-sm text-amber-100/90 leading-relaxed">
+                              Já existe{similarBands.length > 1 ? 'm' : ''} banda{similarBands.length > 1 ? 's' : ''} com nome parecido inscrita{similarBands.length > 1 ? 's' : ''}: <strong className="text-white">{similarBands.join(', ')}</strong>.
+                              Sua banda é uma delas ou é outra banda mesmo?
+                            </p>
+                            {similarChoice !== 'mine' ? (
+                              <div className="grid grid-cols-2 gap-2.5">
+                                <button type="button" onClick={() => setSimilarChoice('mine')} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-[#10B981]/25 active:scale-[0.98] transition-transform">Sim, é minha</button>
+                                <button type="button" onClick={() => setSimilarChoice('other')} className="font-mono text-sm font-black text-white bg-gradient-to-b from-red-500 to-red-700 px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-red-900/30 active:scale-[0.98] transition-transform">Não, é outra</button>
+                              </div>
+                            ) : (
+                              <div className="space-y-2.5">
+                                <label className="block font-mono text-[11px] text-gray-300 font-bold uppercase tracking-wider">Seu CPF para localizar sua vaga</label>
+                                <input
+                                  inputMode="numeric"
+                                  value={mineCpf}
+                                  onChange={(e) => { setMineCpf(e.target.value.replace(/\D/g, '').slice(0, 11)); setMineResult(null); }}
+                                  placeholder="000.000.000-00"
+                                  className="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10B981] placeholder-gray-600"
+                                />
+                                {mineResult && (
+                                  <div className={`rounded-xl px-4 py-3 text-xs leading-snug ${mineResult.ok ? 'bg-[#10B981]/10 border border-[#10B981]/40 text-[#10B981]' : 'bg-red-500/10 border border-red-500/40 text-red-200'}`}>
+                                    {mineResult.ok ? '✓ ' : '⚠ '}{mineResult.msg}
+                                  </div>
+                                )}
+                                <div className="grid grid-cols-2 gap-2.5">
+                                  <button type="button" onClick={handleMineCheck} disabled={mineChecking || mineCpf.length !== 11} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider disabled:opacity-50 active:scale-[0.98] transition-transform">
+                                    {mineChecking ? 'Verificando...' : 'Localizar'}
+                                  </button>
+                                  <button type="button" onClick={() => { setSimilarChoice('none'); setMineCpf(''); setMineResult(null); }} className="font-mono text-sm font-bold text-gray-400 border border-white/10 px-3 py-3 rounded-xl uppercase hover:text-white transition-colors">Voltar</button>
+                                </div>
+                              </div>
+                            )}
+                              </div>
+                            )}
+
                               </div>
                               <div className="space-y-1">
                                 <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Estilo / Gênero *</label>
@@ -1363,43 +1403,6 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                               </div>
                             </div>
 
-                            {similarBands.length > 0 && (similarChoice === 'none' || similarChoice === 'mine') && joinState !== 'declined' && (
-                              <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl p-4 space-y-3">
-                                <span className="font-mono text-xs text-amber-400 uppercase tracking-widest font-black block">⚠ Atenção: nome parecido</span>
-                                <p className="text-sm text-amber-100/90 leading-relaxed">
-                                  Já existe{similarBands.length > 1 ? 'm' : ''} banda{similarBands.length > 1 ? 's' : ''} com nome parecido inscrita{similarBands.length > 1 ? 's' : ''}: <strong className="text-white">{similarBands.join(', ')}</strong>.
-                                  Sua banda é uma delas ou é outra banda mesmo?
-                                </p>
-                                {similarChoice !== 'mine' ? (
-                                  <div className="grid grid-cols-2 gap-2.5">
-                                    <button type="button" onClick={() => setSimilarChoice('mine')} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-[#10B981]/25 active:scale-[0.98] transition-transform">Sim, é minha</button>
-                                    <button type="button" onClick={() => setSimilarChoice('other')} className="font-mono text-sm font-black text-white bg-gradient-to-b from-red-500 to-red-700 px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-red-900/30 active:scale-[0.98] transition-transform">Não, é outra</button>
-                                  </div>
-                                ) : (
-                                  <div className="space-y-2.5">
-                                    <label className="block font-mono text-[11px] text-gray-300 font-bold uppercase tracking-wider">Seu CPF para localizar sua vaga</label>
-                                    <input
-                                      inputMode="numeric"
-                                      value={mineCpf}
-                                      onChange={(e) => { setMineCpf(e.target.value.replace(/\D/g, '').slice(0, 11)); setMineResult(null); }}
-                                      placeholder="000.000.000-00"
-                                      className="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10B981] placeholder-gray-600"
-                                    />
-                                    {mineResult && (
-                                      <div className={`rounded-xl px-4 py-3 text-xs leading-snug ${mineResult.ok ? 'bg-[#10B981]/10 border border-[#10B981]/40 text-[#10B981]' : 'bg-red-500/10 border border-red-500/40 text-red-200'}`}>
-                                        {mineResult.ok ? '✓ ' : '⚠ '}{mineResult.msg}
-                                      </div>
-                                    )}
-                                    <div className="grid grid-cols-2 gap-2.5">
-                                      <button type="button" onClick={handleMineCheck} disabled={mineChecking || mineCpf.length !== 11} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider disabled:opacity-50 active:scale-[0.98] transition-transform">
-                                        {mineChecking ? 'Verificando...' : 'Localizar'}
-                                      </button>
-                                      <button type="button" onClick={() => { setSimilarChoice('none'); setMineCpf(''); setMineResult(null); }} className="font-mono text-sm font-bold text-gray-400 border border-white/10 px-3 py-3 rounded-xl uppercase hover:text-white transition-colors">Voltar</button>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
                             {similarBands.length > 0 && similarChoice === 'other' && (
                               <p className="text-[11px] text-amber-300/80 font-mono">Ok, registraremos como uma banda diferente. Nomes parecidos ficam sinalizados para a organização.</p>
                             )}
@@ -1467,13 +1470,13 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
       {/* CHECKOUT POPUP MODAL - external page scroll */}
       {checkoutVisible && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start sm:items-center">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start">
 
             <div className="absolute inset-0 cursor-pointer" onClick={requestCloseCheckout}></div>
 
             <div
               ref={checkoutCardRef}
-              className="bg-black/95 border-2 border-[#E3B552] max-w-sm w-full p-6 rounded-[32px] relative space-y-6 shadow-2xl z-10"
+              className="bg-black/95 border-2 border-[#E3B552] max-w-sm w-full p-6 rounded-[32px] relative space-y-6 shadow-2xl z-10 my-auto"
             >
               <button onClick={requestCloseCheckout} className="absolute right-4 top-4 text-gray-400 hover:text-white font-mono text-xl">&times;</button>
 
@@ -1646,11 +1649,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
       {/* SUCCESS STATE - BACKSTAGE PASS / CONCERT TICKET */}
       {successVisible && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start sm:items-center">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start">
 
             <div
               ref={successCardRef}
-              className="bg-black/95 border-2 border-[#F0C265] max-w-md w-full rounded-[32px] text-center overflow-hidden shadow-2xl relative my-8"
+              className="bg-black/95 border-2 border-[#F0C265] max-w-md w-full rounded-[32px] text-center overflow-hidden shadow-2xl relative my-auto"
             >
 
               {/* Luxury Ticket Background Graphics */}
