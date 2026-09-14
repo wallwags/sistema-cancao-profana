@@ -164,6 +164,13 @@ export default function Page() {
           if (map.live_launch) setLiveLaunch(map.live_launch);
           if (map.home_cta_mode === 'quiz') setWaitlistMode(false);
           if (map.home_cta_mode === 'waitlist') setWaitlistMode(true);
+          // Sandbox /v2: forca modo QUIZ para testar o fluxo de inscricao (home intocada)
+          if (map.v2_env) {
+            try {
+              const o = typeof map.v2_env === 'string' ? JSON.parse(map.v2_env) : (map.v2_env as Record<string, unknown>);
+              if (o.ativo === true) setWaitlistMode(false);
+            } catch { /* ignora */ }
+          }
           if (map.vip_whatsapp_url) setVipWaUrl(map.vip_whatsapp_url);
           if (map.live_url) setLiveUrl(map.live_url);
           const dp = Number(map.dia0_price);
