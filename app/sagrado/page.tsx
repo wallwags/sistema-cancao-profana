@@ -1202,6 +1202,62 @@ export default function SagradoPage() {
           {tab === 'conteudo' && (
             <div className="space-y-5 fade-up-800">
               <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
+                <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                  <h3 className="font-display font-bold text-white uppercase">Aviso do portal do candidato</h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const ativo = (settings['portal_aviso_ativo'] === 'true');
+                      const novo = !ativo;
+                      setSettingDrafts(p => ({ ...p, portal_aviso_ativo: novo ? 'true' : 'false' }));
+                      (async () => {
+                        const { data: res, error } = await supabase.rpc('staff_save_setting', { p_key: 'portal_aviso_ativo', p_value: novo ? 'true' : 'false' });
+                        if (error || res !== 'ok') { setMsg('portal-aviso', 'err', 'Erro: ' + (error?.message || res)); return; }
+                        await loadSettings();
+                        setMsg('portal-aviso', 'ok', novo ? 'Aviso ATIVO - aparece como popup no portal.' : 'Aviso desativado.');
+                      })();
+                    }}
+                    disabled={busy === 'portal-aviso-toggle'}
+                    className={`font-mono text-[11px] font-black uppercase tracking-wider px-3.5 py-2 rounded-xl border transition-colors ${
+                      settings['portal_aviso_ativo'] === 'true' ? 'bg-amber-400 text-black border-amber-300' : 'text-gray-400 border-white/10 bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    {settings['portal_aviso_ativo'] === 'true' ? 'Ativo' : 'Desativado'}
+                  </button>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">Texto do aviso (aparece como popup destacado no portal Minha Inscrição)</label>
+                  <textarea
+                    rows={3}
+                    className={`${inputCls} resize-none`}
+                    value={settingDrafts['portal_aviso'] ?? settings['portal_aviso'] ?? ''}
+                    onChange={(e) => setSettingDrafts(p => ({ ...p, portal_aviso: e.target.value }))}
+                    placeholder="Ex: A gravação da Etapa 1 será dia 20/10. Confirme sua presença com o líder até sexta."
+                  />
+                  <div className="flex justify-end items-center gap-3 flex-wrap">
+                    {notice['portal-aviso'] && <Notice kind={notice['portal-aviso'].kind}>{notice['portal-aviso'].msg}</Notice>}
+                    <button
+                      type="button"
+                      onClick={() => guarded('portal-aviso-save', async () => {
+                        const v = (settingDrafts['portal_aviso'] ?? settings['portal_aviso'] ?? '').trim();
+                        if (!v) return 'Escreva o texto do aviso.';
+                        const { data: res, error } = await supabase.rpc('staff_save_setting', { p_key: 'portal_aviso', p_value: v });
+                        if (error) return 'Erro: ' + error.message;
+                        if (res !== 'ok') return String(res);
+                        await loadSettings();
+                        setMsg('portal-aviso', 'ok', 'Aviso publicado no portal (se estiver Ativo).');
+                        return 'ok';
+                      })}
+                      disabled={busy === 'portal-aviso-save'}
+                      className={btnGold}
+                    >
+                      {busy === 'portal-aviso-save' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Publicar aviso'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
                 <h3 className="font-display font-bold text-white uppercase border-b border-white/5 pb-3">Datas do site</h3>
                 {[
                   { key: 'countdown_target', label: 'Fim do lote vigente (contagem regressiva)', kind: 'datetime' as const, current: fmtDate(settings['countdown_target']) },

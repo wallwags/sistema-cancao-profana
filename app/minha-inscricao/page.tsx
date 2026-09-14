@@ -34,6 +34,9 @@ interface RegistrationData {
   bio: string;
   photo_url: string | null;
   leader?: { name: string; phone?: string | null; email?: string | null; cpf_mask?: string | null; payment_status?: string } | null;
+  aviso?: string | null;
+  aviso_ativo?: boolean;
+  stage?: number | null;
   instagram: string | null;
   video_link: string | null;
   status: 'pending' | 'paid' | 'failed' | 'blocked' | 'suspended' | 'refunded' | 'awaiting_members';
@@ -61,6 +64,12 @@ export default function MinhaInscricaoPage() {
   const [removing, setRemoving] = useState<string | null>(null);
   const [data, setData] = useState<RegistrationData | null>(null);
   const meCpfRef = useRef<string>('');
+  const [recoverOpen, setRecoverOpen] = useState(false);
+  const [recoverCpf, setRecoverCpf] = useState('');
+  const [recoverBusy, setRecoverBusy] = useState(false);
+  const [recoverMsg, setRecoverMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [avisoDismissed, setAvisoDismissed] = useState(false);
+  const [avisoState, setAvisoState] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Apply CPF Mask
@@ -99,6 +108,9 @@ export default function MinhaInscricaoPage() {
       entry_price: project.entry_price,
       pending_edits: Number(reg.pending_edits || 0),
       leader: reg.leader || null,
+      aviso: reg.aviso ?? null,
+      aviso_ativo: !!reg.aviso_ativo,
+      stage: reg.stage ?? null,
       name: project.name,
       style: project.style,
       bio: project.bio,
@@ -116,12 +128,20 @@ export default function MinhaInscricaoPage() {
   // ---------- acesso por link: ?k=codigo-da-banda ----------
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const k = (params.get('k') || '').replace(/[^a-z0-9]/g, '').slice(0, 12);
+    // Codigo e case-insensitive: se o usuario copiar com maiusculas, normaliza
+    const k = (params.get('k') || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12);
     if (!k) {
       router.replace('/v2');
       return;
     }
     setAccessCode(k);
+    // Aviso do admin (leitura publica, leve)
+    supabase.from('site_settings').select('key,value').in('key', ['portal_aviso', 'portal_aviso_ativo'])
+      .then(({ data: rows }) => {
+        const m: Record<string, string> = {};
+        (rows || []).forEach(r => { m[r.key] = typeof r.value === 'string' ? r.value : String(r.value ?? ''); });
+        if (m['portal_aviso_ativo'] === 'true' && m['portal_aviso']) setAvisoState(m['portal_aviso']);
+      });
     setLoading(false); // libera a tela do gate de CPF
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -159,6 +179,18 @@ export default function MinhaInscricaoPage() {
     return (
       <div className="pt-10 pb-16 px-6 bg-[#05070B] min-h-screen text-[#F0EAE0] flex items-center justify-center relative overflow-hidden">
         <div className="absolute -right-32 -top-32 w-80 h-80 bg-[#E3B552]/10 rounded-full blur-3xl pointer-events-none"></div>
+        {avisoState && !avisoDismissed && (
+          <div className="fixed inset-0 z-[80] bg-black/60 flex items-center justify-center p-4" onClick={() => setAvisoDismissed(true)}>
+            <div className="w-full max-w-sm bg-amber-400 rounded-2xl p-5 space-y-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-mono text-[11px] font-black uppercase tracking-widest text-black/70">Aviso da organização</span>
+                <button onClick={() => setAvisoDismissed(true)} className="text-black/60 hover:text-black text-xl leading-none">×</button>
+              </div>
+              <p className="text-sm text-black font-semibold leading-relaxed whitespace-pre-line">{avisoState}</p>
+              <button onClick={() => setAvisoDismissed(true)} className="w-full bg-black text-amber-400 font-display font-black text-xs uppercase tracking-widest py-3 rounded-xl active:scale-[0.98] transition-transform">OK, entendi</button>
+            </div>
+          </div>
+        )}
         <div className="glass-card-2 fade-up-800 max-w-sm w-full p-6 md:p-8 rounded-[32px] relative space-y-6 shadow-2xl text-center">
           <div className="space-y-2">
             <div className="w-12 h-12 mx-auto rounded bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] flex items-center justify-center font-display font-black text-black text-2xl border border-black shadow-md">P</div>
@@ -196,6 +228,48 @@ export default function MinhaInscricaoPage() {
             <button type="submit" disabled={gateBusy || cpfGate.length < 14} className="btn-gold-shimmer w-full py-4 rounded-xl text-sm uppercase tracking-widest font-black text-black disabled:opacity-50">
               {gateBusy ? 'Confirmando...' : 'Acessar minha banda'}
             </button>
+
+            <button type="button" onClick={() => { setRecoverOpen(!recoverOpen); setRecoverMsg(null); }} className="text-[11px] font-mono text-gray-400 hover:text-white uppercase tracking-widest transition-colors">
+              Perdi meu link de acesso
+            </button>
+            {recoverOpen && (
+              <div className="w-full space-y-2.5 text-left bg-black/40 border border-white/10 rounded-2xl p-4">
+                <label className="block font-mono text-[10px] text-[#F0C265] font-bold uppercase tracking-wider">Digite seu CPF para recuperar seus links</label>
+                <input
+                  inputMode="numeric"
+                  value={recoverCpf}
+                  onChange={(e) => { setRecoverCpf(e.target.value.replace(/[^0-9]/g, '').slice(0, 11)); setRecoverMsg(null); }}
+                  placeholder="000.000.000-00"
+                  className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600"
+                />
+                {recoverMsg && (
+                  <div className={`rounded-xl px-3 py-2.5 text-xs leading-relaxed break-all ${recoverMsg.ok ? 'bg-[#10B981]/10 border border-[#10B981]/40 text-[#10B981]' : 'bg-red-500/10 border border-red-500/40 text-red-200'}`}>
+                    {recoverMsg.text}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const cpf = recoverCpf.replace(/[^0-9]/g, '');
+                    if (cpf.length !== 11) { setRecoverMsg({ ok: false, text: 'Digite o CPF completo.' }); return; }
+                    setRecoverBusy(true);
+                    try {
+                      const { data, error } = await supabase.rpc('recover_band_links', { p_cpf: cpf });
+                      setRecoverBusy(false);
+                      const r = (typeof data === 'string' ? JSON.parse(data) : data) as { found?: boolean; links?: Array<{ nome: string; papel: string; codigo: string }> } | null;
+                      if (error || !r || !r.found || !r.links || r.links.length === 0) { setRecoverMsg({ ok: false, text: 'Nenhuma banda localizada para este CPF.' }); return; }
+                      const linhas = r.links.map(l => `${l.nome} (${l.papel}): ${window.location.origin}/minha-inscricao?k=${l.codigo}`);
+                      setRecoverMsg({ ok: true, text: linhas.join('  •  ') });
+                    } catch { setRecoverBusy(false); setRecoverMsg({ ok: false, text: 'Falha de conexão. Tente novamente.' }); }
+                  }}
+                  disabled={recoverBusy || recoverCpf.length !== 11}
+                  className="w-full bg-white/10 hover:bg-white/15 border border-white/10 text-white font-mono text-xs font-bold uppercase tracking-widest py-3 rounded-xl disabled:opacity-50 transition-colors"
+                >
+                  {recoverBusy ? 'Buscando...' : 'Recuperar acesso'}
+                </button>
+                <p className="text-[10px] text-gray-500 font-mono leading-snug">Seus links são exibidos somente aqui, após provar o CPF.</p>
+              </div>
+            )}
           </form>
           <Link href="/v2" className="inline-block text-[11px] font-mono text-gray-500 hover:text-white uppercase tracking-widest">← Voltar ao site</Link>
         </div>
@@ -278,7 +352,10 @@ export default function MinhaInscricaoPage() {
                   </span>
                   <p className="text-sm text-gray-200 leading-snug mt-1.5">
                     A banda entra no concurso com <strong className="text-white">no mínimo 2</strong> e{' '}
-                    <strong className="text-white">no máximo 7</strong> integrantes pagos (cada um paga a própria parte pelo link).
+                    <strong className="text-white">no máximo 7</strong> integrantes
+                    {data.leader?.payment_status === 'paid'
+                      ? '. Pagamento único do líder confirmado: todos estão cobertos.'
+                      : ' (cada um paga a própria parte pelo link).' }
                     {faltam > 0 && <> Faltam <strong className="text-[#F0C265]">{faltam}</strong>.</>}
                   </p>
                 </div>
@@ -323,7 +400,7 @@ export default function MinhaInscricaoPage() {
                   <button
                     onClick={async () => {
                       try {
-                        await navigator.clipboard.writeText(`${window.location.origin}/v2?b=${data.invite_code}`);
+                        await navigator.clipboard.writeText(`${window.location.origin}/minha-inscricao?k=${data.invite_code}`);
                         setLinkCopied(true);
                         setTimeout(() => setLinkCopied(false), 2500);
                       } catch { /* clipboard */ }
@@ -511,6 +588,40 @@ export default function MinhaInscricaoPage() {
             </div>
           )}
 
+          {/* MODO LIDER: convite para integrantes confirmarem presenca (sem pagar) */}
+          {me?.isLeader && (
+            <div className="bg-[#10B981]/10 border border-[#10B981]/40 rounded-2xl p-5 space-y-3">
+              <span className="font-mono text-xs text-[#10B981] uppercase tracking-widest font-black block">🔗 Convide os integrantes para confirmar presença</span>
+              <p className="text-sm text-gray-200 leading-relaxed">
+                No modo atual, o seu Pix cobre a parte de todos. Cada integrante acessa este link, confirma o CPF
+                (o mesmo que você escalou) e aparece no roster com a função dela na banda.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(`${window.location.origin}/minha-inscricao?k=${data.invite_code}`);
+                      setLinkCopied(true);
+                      setTimeout(() => setLinkCopied(false), 2500);
+                    } catch { /* clipboard */ }
+                  }}
+                  className="w-full sm:flex-1 font-mono text-xs font-bold text-white bg-white/10 border border-white/15 px-3 py-3 rounded-xl uppercase hover:bg-white/15 transition-colors"
+                >
+                  {linkCopied ? '✓ Link copiado!' : 'Copiar link de confirmação'}
+                </button>
+                <a
+                  href={`/api/wa/${data.invite_code}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:flex-1 flex items-center justify-center font-mono text-xs font-bold text-black bg-[#10B981] px-3 py-3 rounded-xl uppercase tracking-wide"
+                >
+                  Enviar por WhatsApp
+                </a>
+              </div>
+            </div>
+          )}
+
           {/* LINEUP MEMBER SHOWN AS TRACK ROWS */}
           <div className="space-y-4">
             <span className="font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-widest block">ROSTER DA BANDA (QUEUE DE INTEGRANTES)</span>
@@ -543,7 +654,7 @@ export default function MinhaInscricaoPage() {
                       <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Integrante {i + 2} • CPF: {m.cpf_mask || 'aguardando confirmação'}</span>
                       {m.payment_status && (
                         <span className={`font-mono text-xs uppercase font-bold block mt-0.5 ${m.payment_status === 'paid' ? 'text-[#10B981]' : 'text-amber-500'}`}>
-                          {m.payment_status === 'paid' ? '✓ Parte paga' : (m.has_cpf ? '⏳ Parte pendente' : '⏳ Aguardando confirmação')}
+                          {m.payment_status === 'paid' ? (data.leader?.payment_status === 'paid' && !m.is_responsible ? '✓ Coberto pelo líder' : '✓ Parte paga') : (m.has_cpf ? '⏳ Parte pendente' : '⏳ Aguardando confirmação')}
                         </span>
                       )}
                     </div>

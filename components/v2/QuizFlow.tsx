@@ -87,6 +87,36 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [bandResult, setBandResult] = useState<{ pago: number; minimo: number; total: number; ativa: boolean } | null>(null);
   const [similarBands, setSimilarBands] = useState<string[]>([]);
   const [similarChoice, setSimilarChoice] = useState<'none' | 'mine' | 'other'>('none');
+  const [mineCpf, setMineCpf] = useState('');
+  const [mineChecking, setMineChecking] = useState(false);
+  const [mineResult, setMineResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  // Fluxo "essa banda e minha": prova por CPF (servidor responde sim/nao + destino; nunca expoe codigos)
+  const handleMineCheck = async () => {
+    const cpf = mineCpf.replace(/\D/g, '');
+    if (cpf.length !== 11) { setMineResult({ ok: false, msg: 'Digite seu CPF completo (11 números).' }); return; }
+    setMineChecking(true);
+    setMineResult(null);
+    try {
+      const { data, error } = await supabase.rpc('claim_band_check', { p_name: projectName.trim(), p_cpf: cpf });
+      setMineChecking(false);
+      if (error || !data) { setMineResult({ ok: false, msg: 'Não foi possível verificar agora. Tente novamente.' }); return; }
+      const r = (typeof data === 'string' ? JSON.parse(data) : data) as { status: string; msg?: string; link?: string };
+      if (r.status === 'found' && r.link) {
+        setMineResult({ ok: true, msg: r.msg || 'Banda localizada!' });
+        setTimeout(() => { window.location.href = r.link as string; }, 900);
+      } else if (r.status === 'full') {
+        setMineResult({ ok: false, msg: r.msg || 'Essa banda já está com as vagas de integrantes completas.' });
+      } else if (r.status === 'not_member') {
+        setMineResult({ ok: false, msg: r.msg || 'Seu CPF não está entre os integrantes escalados. Peça ao líder para escalar você pelo portal da banda.' });
+      } else {
+        setMineResult({ ok: false, msg: r.msg || 'Banda não localizada. Continue como nova inscrição.' });
+      }
+    } catch {
+      setMineChecking(false);
+      setMineResult({ ok: false, msg: 'Falha de conexão. Tente novamente.' });
+    }
+  };
   const [joinState, setJoinState] = useState<'idle' | 'asking' | 'picking' | 'declined'>('idle');
   const sessionRef = useRef<string>('');
   const inviteCodeRef = useRef<string>('');
@@ -593,7 +623,12 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       setErrors({ acceptRules: 'Revise com calma as informações antes de gerar o Pix.' });
       return;
     }
-    if (similarBands.length > 0 && similarChoice === 'none' && joinState !== 'declined') {
+    if (similarBands.length > 0 && similarChoice === 'none') {
+      errs.acceptRules = 'Confirme se sua banda é uma das bandas com nome parecido listadas acima.';
+      return errs;
+    }
+    if (similarBands.length > 0 && similarChoice === 'mine' && (!mineResult || !mineResult.ok)) {
+      errs.acceptRules = 'Localize sua banda pelo CPF ou declare que é outra banda.';
       errs.acceptRules = 'Confirme se sua banda é uma das bandas com nome parecido listadas acima.';
     }
     if (!tsToken && !demoRef.current) {
@@ -1330,17 +1365,41 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                               </div>
                             </div>
 
-                            {similarBands.length > 0 && similarChoice === 'none' && joinState !== 'declined' && (
+                            {similarBands.length > 0 && (similarChoice === 'none' || similarChoice === 'mine') && joinState !== 'declined' && (
                               <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl p-4 space-y-3">
                                 <span className="font-mono text-xs text-amber-400 uppercase tracking-widest font-black block">⚠ Atenção: nome parecido</span>
                                 <p className="text-sm text-amber-100/90 leading-relaxed">
                                   Já existe{similarBands.length > 1 ? 'm' : ''} banda{similarBands.length > 1 ? 's' : ''} com nome parecido inscrita{similarBands.length > 1 ? 's' : ''}: <strong className="text-white">{similarBands.join(', ')}</strong>.
                                   Sua banda é uma delas ou é outra banda mesmo?
                                 </p>
-                                <div className="grid grid-cols-2 gap-2.5">
-                                  <button type="button" onClick={() => setSimilarChoice('mine')} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-[#10B981]/25 active:scale-[0.98] transition-transform">Sim</button>
-                                  <button type="button" onClick={() => setSimilarChoice('other')} className="font-mono text-sm font-black text-white bg-gradient-to-b from-red-500 to-red-700 px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-red-900/30 active:scale-[0.98] transition-transform">Não</button>
-                                </div>
+                                {similarChoice !== 'mine' ? (
+                                  <div className="grid grid-cols-2 gap-2.5">
+                                    <button type="button" onClick={() => setSimilarChoice('mine')} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-[#10B981]/25 active:scale-[0.98] transition-transform">Sim, é minha</button>
+                                    <button type="button" onClick={() => setSimilarChoice('other')} className="font-mono text-sm font-black text-white bg-gradient-to-b from-red-500 to-red-700 px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-red-900/30 active:scale-[0.98] transition-transform">Não, é outra</button>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2.5">
+                                    <label className="block font-mono text-[11px] text-gray-300 font-bold uppercase tracking-wider">Seu CPF para localizar sua vaga</label>
+                                    <input
+                                      inputMode="numeric"
+                                      value={mineCpf}
+                                      onChange={(e) => { setMineCpf(e.target.value.replace(/\D/g, '').slice(0, 11)); setMineResult(null); }}
+                                      placeholder="000.000.000-00"
+                                      className="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10B981] placeholder-gray-600"
+                                    />
+                                    {mineResult && (
+                                      <div className={`rounded-xl px-4 py-3 text-xs leading-snug ${mineResult.ok ? 'bg-[#10B981]/10 border border-[#10B981]/40 text-[#10B981]' : 'bg-red-500/10 border border-red-500/40 text-red-200'}`}>
+                                        {mineResult.ok ? '✓ ' : '⚠ '}{mineResult.msg}
+                                      </div>
+                                    )}
+                                    <div className="grid grid-cols-2 gap-2.5">
+                                      <button type="button" onClick={handleMineCheck} disabled={mineChecking || mineCpf.length !== 11} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider disabled:opacity-50 active:scale-[0.98] transition-transform">
+                                        {mineChecking ? 'Verificando...' : 'Localizar'}
+                                      </button>
+                                      <button type="button" onClick={() => { setSimilarChoice('none'); setMineCpf(''); setMineResult(null); }} className="font-mono text-sm font-bold text-gray-400 border border-white/10 px-3 py-3 rounded-xl uppercase hover:text-white transition-colors">Voltar</button>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
                             {similarBands.length > 0 && similarChoice === 'other' && (
@@ -1673,7 +1732,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                         type="button"
                         onClick={async () => {
                           try {
-                            await navigator.clipboard.writeText(`${window.location.origin}/v2?b=${inviteCode}`);
+                            await navigator.clipboard.writeText(`${window.location.origin}${origem === 'v2' ? '/v2' : ''}?b=${inviteCode}`);
                             setInviteCopied(true);
                             setTimeout(() => setInviteCopied(false), 2500);
                           } catch { /* clipboard */ }
