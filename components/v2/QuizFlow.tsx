@@ -998,7 +998,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
       {/* QUIZ INTERACTIVE POPUP MODAL - external page scroll, no internal modal scroll */}
       {quizVisible && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start sm:items-center">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start sm:items-center">
 
           <div className="absolute inset-0 cursor-pointer" onClick={requestCloseQuiz}></div>
 
@@ -1336,12 +1336,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                               <div className="border-t border-white/5 pt-4 space-y-4">
                                 <div>
                                   <span className="font-mono text-sm text-[#F0C265] font-bold block mb-2.5">RETORNO GARANTIDO INCLUÍDO:</span>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                  <div className="grid grid-cols-1 gap-2.5">
                                     {[
-                                      { t: 'Gravação + Live no Estúdio', v: 'R$ 1.500' },
-                                      { t: 'Mixagem e Masterização', v: 'R$ 600' },
-                                      { t: 'Direção Artística + Fotos', v: 'R$ 500' },
-                                      { t: 'Assessoria e Kit de Divulgação', v: 'R$ 400' },
+                                      { t: 'Apresentação ao vivo no Estúdio Pedra Profana', v: 'R$ 1.500' },
+                                      { t: 'Gravação profissional da live', v: 'Incluída' },
                                     ].map(b => (
                                       <div key={b.t} className="bg-black/40 border border-white/5 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
                                         <span className="text-xs text-gray-200 leading-snug">{b.t}</span>
@@ -1421,7 +1419,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                               <label className="flex items-start gap-3 cursor-pointer">
                                 <input type="checkbox" checked={acceptRules} onChange={(e) => { setAcceptRules(e.target.checked); clearError('acceptRules'); }} className="mt-1 w-4 h-4 text-[#F0C265] bg-black border-[#2E2820] rounded focus:ring-[#F0C265]" />
                                 <span className="text-xs text-gray-300 leading-relaxed font-normal">
-                                  Declaramos ler e anuir os <button type="button" onClick={(e) => { e.preventDefault(); setIsTermsOpen(true); }} className="text-[#F0C265] underline hover:text-[#FFF2D4]">termos de uso</button> e <button type="button" onClick={(e) => { e.preventDefault(); setIsPrivacyOpen(true); }} className="text-[#F0C265] underline hover:text-[#FFF2D4]">política de privacidade</button>, concordando com as etapas.
+                                  Declaramos ciência das regras do concurso e autorizamos a captação de áudio e vídeo da apresentação, concordando com as etapas.
                                 </span>
                               </label>
                               {fieldError('acceptRules')}
@@ -1469,7 +1467,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
       {/* CHECKOUT POPUP MODAL - external page scroll */}
       {checkoutVisible && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start sm:items-center">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start sm:items-center">
 
             <div className="absolute inset-0 cursor-pointer" onClick={requestCloseCheckout}></div>
 
@@ -1479,7 +1477,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
             >
               <button onClick={requestCloseCheckout} className="absolute right-4 top-4 text-gray-400 hover:text-white font-mono text-xl">&times;</button>
 
-              <div className="text-center space-y-2 pt-2">
+              <div className="text-center space-y-2 pt-1">
                 <span className="font-mono text-[11px] text-lime font-bold bg-lime/10 border border-lime/20 px-3 py-1 rounded-full w-max mx-auto block uppercase">● {pixActive ? 'Pagamento seguro via Mercado Pago' : (sandboxSimulacao ? 'Ambiente de teste (sandbox)' : 'Servidor autenticado')}</span>
                 <h3 className="font-display font-bold text-xl text-white uppercase tracking-tight">PIX DE INSCRIÇÃO</h3>
                 <p className="text-[11px] text-gray-400 leading-snug max-w-[260px] mx-auto">Escaneie o QR no app do banco ou use o Pix Copia e Cola. A confirmação é automática.</p>
@@ -1648,7 +1646,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
       {/* SUCCESS STATE - BACKSTAGE PASS / CONCERT TICKET */}
       {successVisible && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 sm:p-6 flex justify-center items-start sm:items-center">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start sm:items-center">
 
             <div
               ref={successCardRef}
@@ -1724,11 +1722,22 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                 {inviteCode && (
                   <div className="space-y-3.5 bg-black/40 border border-[#F0C265]/25 rounded-2xl p-5 text-left">
                     <span className="font-mono text-xs text-[#F0C265] uppercase tracking-widest font-black block">🔗 Link exclusivo da banda</span>
-                    <p className="text-sm text-gray-200 leading-relaxed">Envie aos integrantes: cada um acessa, confirma os próprios dados e paga a parte dele.</p>
-                    <p className="text-sm text-white leading-snug">
-                      A banda ativa no concurso ao atingir <strong className="text-[#F0C265]">{bandResult?.minimo ?? 2} partes pagas</strong>
-                      {bandResult ? <> agora: <strong className="text-[#F0C265]">{bandResult.pago}</strong></> : ''}.
-                    </p>
+                    {paymentMode === 'lider' ? (
+                      <>
+                        <p className="text-sm text-gray-200 leading-relaxed">Envie aos integrantes: cada um acessa, confirma os próprios dados e aparece no roster com a função dele. A parte de todos já está coberta pelo seu Pix.</p>
+                        <p className="text-sm text-white leading-snug">
+                          Banda <strong className="text-[#10B981]">ativa</strong> no concurso{bandResult ? <> · <strong className="text-[#F0C265]">{bandResult.pago}</strong>/<strong className="text-[#F0C265]">{bandResult.total}</strong> integrantes confirmados</> : ''}.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-gray-200 leading-relaxed">Envie aos integrantes: cada um acessa, confirma os próprios dados e paga a parte dele.</p>
+                        <p className="text-sm text-white leading-snug">
+                          A banda ativa no concurso ao atingir <strong className="text-[#F0C265]">{bandResult?.minimo ?? 2} partes pagas</strong>
+                          {bandResult ? <> agora: <strong className="text-[#F0C265]">{bandResult.pago}</strong></> : ''}.
+                        </p>
+                      </>
+                    )}
                     <div className="flex flex-col sm:flex-row gap-2.5">
                       <button
                         type="button"
