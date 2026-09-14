@@ -631,7 +631,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       errs.acceptRules = 'Localize sua banda pelo CPF ou declare que é outra banda.';
       errs.acceptRules = 'Confirme se sua banda é uma das bandas com nome parecido listadas acima.';
     }
-    if (!tsToken && !demoRef.current) {
+    if (!tsToken && !(demoRef.current && origem === 'v2')) {
       errs.acceptRules = 'Confirme a verificação anti-robô antes de gerar o Pix.';
     }
     setErrors(errs);
@@ -1441,7 +1441,9 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                     <div className="border-t border-[#2C2C2C] pt-4 space-y-3 shrink-0">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-[#F0EAE0] font-bold font-mono">0{quizStep}/05</span>
-                        <button type="button" onClick={fillDemoData} className="font-mono text-[11px] font-bold text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/20 px-3 py-1.5 rounded-lg uppercase hover:bg-[#F0C265] hover:text-black transition-colors">🧪 Testar Demo</button>
+                        {origem === 'v2' && (
+                          <button type="button" onClick={fillDemoData} className="font-mono text-[11px] font-bold text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/20 px-3 py-1.5 rounded-lg uppercase hover:bg-[#F0C265] hover:text-black transition-colors">🧪 Testar Demo</button>
+                        )}
                       </div>
 
                       <div className="flex gap-2.5">
