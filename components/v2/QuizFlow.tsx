@@ -112,6 +112,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   // Gateway Pix real (ativado pelo dev no painel): definem o modo do checkout
   const [pixGatewayOn, setPixGatewayOn] = useState(false);
   const [paymentMode, setPaymentMode] = useState<'individual' | 'lider'>('individual');
+  const [sandboxV2, setSandboxV2] = useState<{ ativo: boolean; pix_real: boolean }>({ ativo: false, pix_real: false });
   const [pixData, setPixData] = useState<{ paymentId: string; qr: string | null; qrBase64: string | null } | null>(null);
   const pixDataRef = useRef<{ paymentId: string; qr: string | null; qrBase64: string | null } | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -682,10 +683,32 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         (data || []).forEach(r => { map[r.key] = typeof r.value === 'string' ? r.value : String(r.value ?? ''); });
         setPixGatewayOn(map['gateway_pix_active'] === 'true');
         setPaymentMode(map['payment_mode'] === 'lider' ? 'lider' : 'individual');
+        // Sandbox /v2: config do dev (ativa o layout de teste e o botao de simulacao)
+        if (origem === 'v2' && map['v2_env']) {
+          try {
+            const raw = typeof map['v2_env'] === 'string' ? JSON.parse(map['v2_env']) : (map['v2_env'] as unknown);
+            const o = (raw || {}) as { ativo?: boolean; pix_real?: boolean };
+            setSandboxV2({ ativo: o.ativo === true, pix_real: o.pix_real === true });
+          } catch { /* ignora */ }
+        }
       }, () => { setPixGatewayOn(false); setPaymentMode('individual'); });
   }, [isOpen]);
 
+  // Gerar QR de simulacao (sandbox): payload EMV fake visualmente correto
+  const gerarSimulacao = () => {
+    setPollingStep(0);
+    setIsCheckoutLoading(false);
+    const payload = `00020126580014BR.GOV.BCB.PIX0136sandbox-cancao-profana-teste-5204000053039865802BR5909PROFANA6009SAO PAULO62070503***6304${Math.random().toString(16).slice(2, 6).toUpperCase()}`;
+    applyPixData({ paymentId: 'sandbox-' + Date.now(), qr: payload, qrBase64: null });
+  };
+  const simularPagamento = () => {
+    webhookDoneRef.current = true;
+    handleSimulateWebhook(true);
+  };
+
   const pixActive = origem === 'v2' ? (pixGatewayOn && sandboxPix) : pixGatewayOn;
+  // Na /v2 com sandbox ativo e Pix real desligado: checkout de SIMULACAO com layout real
+  const sandboxSimulacao = origem === 'v2' && sandboxV2.ativo && !pixActive;
 
   // Confirmacao de pagamento: Pix real (gateway) ou simulacao local (fallback pre-chaves)
   useEffect(() => {
@@ -701,6 +724,16 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         if (!webhookDoneRef.current) setShowManualConfirm(true);
       }, 15000);
       return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(tManual); };
+    }
+    // Sandbox simulacao: QR fake + botao de confirmacao manual (sem gateway)
+    if (sandboxSimulacao) {
+      (async () => {
+        const id = savePromiseRef.current ? await savePromiseRef.current : saveIdRef.current;
+        const codeNow = inviteCodeRef.current;
+        if (!id || !codeNow) { setShowManualConfirm(true); return; }
+        gerarSimulacao();
+      })();
+      return;
     }
     // Pix real: gera a cobranca no gateway e consulta o status a cada 5s
     let cancelled = false;
@@ -750,7 +783,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       clearInterval(poll);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCheckoutOpen, checkoutExpired, pixActive]);
+  }, [isCheckoutOpen, checkoutExpired, pixActive, sandboxSimulacao]);
 
   const handleSimulateWebhook = async (force = false) => {
     // Guard against double execution (auto polling + manual click)
@@ -1380,8 +1413,25 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
               <button onClick={requestCloseCheckout} className="absolute right-4 top-4 text-gray-400 hover:text-white font-mono text-xl">&times;</button>
 
               <div className="text-center space-y-2 pt-2">
-                <span className="font-mono text-sm text-lime font-bold bg-lime/10 border border-lime/20 px-3 py-1 rounded-full w-max mx-auto block uppercase">● Servidor Autenticado</span>
+                <span className="font-mono text-[11px] text-lime font-bold bg-lime/10 border border-lime/20 px-3 py-1 rounded-full w-max mx-auto block uppercase">● {pixActive ? 'Pagamento seguro via Mercado Pago' : (sandboxSimulacao ? 'Ambiente de teste (sandbox)' : 'Servidor autenticado')}</span>
                 <h3 className="font-display font-bold text-xl text-white uppercase tracking-tight">PIX DE INSCRIÇÃO</h3>
+                <p className="text-[11px] text-gray-400 leading-snug max-w-[260px] mx-auto">Escaneie o QR no app do banco ou use o Pix Copia e Cola. A confirmação é automática.</p>
+              </div>
+
+              {/* RESUMO DO PEDIDO */}
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl px-4 py-3 space-y-1.5">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-gray-400 font-mono uppercase tracking-wider">Inscrição · {activeLoteName}</span>
+                  <span className="text-white font-bold font-mono">{projectName || 'Banda'}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs border-t border-white/5 pt-1.5">
+                  <span className="text-gray-400 font-mono uppercase tracking-wider">{selectedMembers} integrante{selectedMembers > 1 ? 's' : ''} · R$ {activePrice},00 cada</span>
+                  <span className="text-gray-300 font-mono">{selectedMembers}kg alimento</span>
+                </div>
+                <div className="flex justify-between items-center border-t border-white/5 pt-2">
+                  <span className="font-mono text-[11px] text-gray-300 uppercase tracking-widest font-bold">{paymentMode === 'lider' ? 'Total único (líder)' : 'Sua parte'}</span>
+                  <span className="font-display font-black text-xl text-[#F0C265]">R$ {(pixActive || sandboxSimulacao) ? (paymentMode === 'lider' ? pixAmount : activePrice) : activePrice},00</span>
+                </div>
               </div>
 
               <div className="bg-[#030407] p-4 rounded-xl flex flex-col items-center space-y-4 border border-white/5">
@@ -1417,17 +1467,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                 <div className="text-center space-y-3 w-full">
                   <div>
                     {paymentMode === 'lider' ? (
-                      <>
-                        <span className="font-mono text-[10px] text-gray-500 block uppercase font-bold">PAGAMENTO ÚNICO DO LÍDER (cobre os {selectedMembers} integrantes):</span>
-                        <span className="text-2xl font-mono font-black text-lime block mt-0.5">R$ {pixAmount},00</span>
-                      </>
+                      <span className="font-mono text-[10px] text-gray-500 block uppercase font-bold">PAGAMENTO ÚNICO DO LÍDER · cobre os {selectedMembers} integrantes</span>
                     ) : (
-                      <>
-                        <span className="font-mono text-[10px] text-gray-500 block uppercase font-bold">SUA PARTE (LÍDER):</span>
-                        <span className="text-2xl font-mono font-black text-lime block mt-0.5">R$ {activePrice},00</span>
-                      </>
+                      <span className="font-mono text-[10px] text-gray-500 block uppercase font-bold">SUA PARTE (LÍDER)</span>
                     )}
-  </div>
+                  </div>
 
                   {/* Live polling status line (feedback while QR is on screen) */}
                   {!checkoutExpired && !isCheckoutLoading && (
@@ -1465,6 +1509,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                 </div>
               ) : (
                 <div className="space-y-3">
+                  {sandboxSimulacao && pixData && (
+                    <button onClick={simularPagamento} className="font-mono text-sm font-black text-black bg-gradient-to-b from-amber-300 to-amber-500 py-3.5 rounded-xl w-full uppercase tracking-widest active:scale-[0.98] transition-transform">
+                      ⚡ Simular pagamento (teste)
+                    </button>
+                  )}
                   <button onClick={copyPixCode} className="font-mono text-sm font-bold text-white bg-white/5 border border-[#2E2820] py-3 rounded-xl w-full hover:bg-white/10 transition-colors uppercase">
                     {pixCopied ? '✓ Código Pix Copiado!' : 'Copiar Código Pix'}
                   </button>
@@ -1491,6 +1540,26 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   )}
                 </div>
               )}
+
+              {/* Barra de seguranca e credibilidade (rodape) */}
+              <div className="border-t border-white/5 pt-3">
+                <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap opacity-70">
+                  <span className="flex items-center gap-1 font-mono text-[9px] text-gray-400 uppercase tracking-wider">
+                    <svg width="10" height="12" viewBox="0 0 10 12" fill="none"><rect x="0.5" y="5" width="9" height="6.5" rx="1.5" stroke="#F0C265"/><path d="M2.5 5V3.5a2.5 2.5 0 0 1 5 0V5" stroke="#F0C265"/></svg>
+                    SSL 256-bit
+                  </span>
+                  <span className="w-1 h-1 rounded-full bg-gray-700" />
+                  <span className="font-mono text-[9px] text-gray-400 uppercase tracking-wider font-black">Mercado Pago</span>
+                  <span className="w-1 h-1 rounded-full bg-gray-700" />
+                  <span className="font-mono text-[9px] text-gray-400 uppercase tracking-wider">Pix · Banco Central</span>
+                  <span className="w-1 h-1 rounded-full bg-gray-700" />
+                  <span className="flex items-center gap-1 font-mono text-[9px] text-gray-400 uppercase tracking-wider">
+                    <svg width="10" height="12" viewBox="0 0 10 12" fill="none"><path d="M5 1L1 2.5v3c0 2.8 1.7 4.6 4 5.5 2.3-.9 4-2.7 4-5.5v-3L5 1z" stroke="#F0C265"/></svg>
+                    Dados protegidos
+                  </span>
+                </div>
+                <p className="text-center font-mono text-[8px] text-gray-600 uppercase tracking-widest mt-2">Estúdio Pedra Profana · Transação processada pelo Mercado Pago</p>
+              </div>
 
               {/* In-modal close confirmation (no data loss, no native confirm) */}
               {confirmClose && (
