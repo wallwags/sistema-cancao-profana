@@ -75,6 +75,14 @@ export default function Page() {
   // Sandbox /v2 (controle do dev no painel): testes sem afetar a home
   const [sandbox, setSandbox] = useState<{ ativo: boolean; preco: number | null; pixReal: boolean }>({ ativo: false, preco: null, pixReal: false });
 
+  // jsonb pode chegar como objeto (supabase-js) ou string: parse tolerante
+  const parseV2Env = (raw: unknown): { ativo: boolean; preco: number | null; pixReal: boolean } => {
+    try {
+      const o = (typeof raw === 'string' ? JSON.parse(raw) : (raw || {})) as { ativo?: boolean; preco?: number; pix_real?: boolean };
+      return { ativo: o.ativo === true, preco: o.preco != null ? Number(o.preco) : null, pixReal: o.pix_real === true };
+    } catch { return { ativo: false, preco: null, pixReal: false }; }
+  };
+
   // Analytics do pre-live: visitas e interacoes do grupo vip (via /api/track)
   const trackPre = (event: string, step = '') => {
     try {
@@ -165,21 +173,17 @@ export default function Page() {
           if (map.home_cta_mode === 'quiz') setWaitlistMode(false);
           if (map.home_cta_mode === 'waitlist') setWaitlistMode(true);
           // Sandbox /v2: forca modo QUIZ para testar o fluxo de inscricao (home intocada)
-          if (map.v2_env) {
-            try {
-              const o = typeof map.v2_env === 'string' ? JSON.parse(map.v2_env) : (map.v2_env as Record<string, unknown>);
-              if (o.ativo === true) setWaitlistMode(false);
-            } catch { /* ignora */ }
+          if (settingsRes.data.some(r => r.key === 'v2_env')) {
+            const rawV2 = (settingsRes.data as Array<{ key: string; value: unknown }>).find(r => r.key === 'v2_env')!.value;
+            if (parseV2Env(rawV2).ativo) setWaitlistMode(false);
           }
           if (map.vip_whatsapp_url) setVipWaUrl(map.vip_whatsapp_url);
           if (map.live_url) setLiveUrl(map.live_url);
           const dp = Number(map.dia0_price);
           // Sandbox /v2 (config gravada pelo dev no painel)
-          if (map.v2_env) {
-            try {
-              const o = typeof map.v2_env === 'string' ? JSON.parse(map.v2_env) : (map.v2_env as Record<string, unknown>);
-              setSandbox({ ativo: o.ativo === true, preco: o.preco != null ? Number(o.preco) : null, pixReal: o.pix_real === true });
-            } catch { /* config invalida: ignora */ }
+          if (settingsRes.data.some(r => r.key === 'v2_env')) {
+            const rawV2 = (settingsRes.data as Array<{ key: string; value: unknown }>).find(r => r.key === 'v2_env')!.value;
+            setSandbox(parseV2Env(rawV2));
           }
           const sm = map.slot_mode;
           if (sm === 'integrante') setSlotMode('integrante');
