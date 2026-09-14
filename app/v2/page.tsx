@@ -64,7 +64,7 @@ export default function Page() {
   const [dia0Price, setDia0Price] = useState<number>(25);
   const [liveStatusBar, setLiveStatusBar] = useState<'em_breve' | 'ao_vivo' | 'encerrada'>('em_breve');
   const [slotMode, setSlotMode] = useState<'band' | 'integrante'>('band');
-  const [waitlistMode, setWaitlistMode] = useState(true);
+  const [waitlistMode, setWaitlistMode] = useState(false); // /v2 e bancada de teste: padrao quiz (sem flash de Grupo VIP)
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [waitlistEmail, setWaitlistEmail] = useState('');
   const [waitlistBusy, setWaitlistBusy] = useState(false);

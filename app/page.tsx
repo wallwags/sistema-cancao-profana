@@ -333,7 +333,7 @@ export default function Page() {
           liveUrl={liveUrl}
           launchLabel={launchLabel}
         />
-        <Navbar onOpenQuiz={ctaAction} waitlistMode={waitlistMode} activeLoteName={activeLoteName} />
+        <Navbar onOpenQuiz={ctaAction} waitlistMode={waitlistMode && !isLiveNow} activeLoteName={activeLoteName} />
       </div>
 
       {/* MAIN CONTAINER WITH FIXED NAVBAR ADJUSTMENT PT */}

@@ -164,7 +164,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     const w = window as unknown as { turnstile?: { render: (el: HTMLElement | string, opts: Record<string, unknown>) => void } };
     if (el && w.turnstile) {
       w.turnstile.render(el, {
-        sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA',
+        sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAE0kTUa2G49aYxX-',
         callback: (token: string) => setTsToken(token)
       });
       tsRenderedRef.current = true;
@@ -205,6 +205,15 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       keepalive: true
     }).then(() => funnelLogged.current.add(key)).catch(() => {});
   };
+
+  // checa nomes de banda parecidos AO DIGITAR (passo 1): aviso imediato, no lugar certo
+  useEffect(() => {
+    if (quizStep !== 1) return;
+    if (!projectName.trim() || projectName.trim().length < 3) { setSimilarBands([]); setSimilarChoice('none'); setMineResult(null); return; }
+    const t = setTimeout(() => { checkSimilarBands(); }, 500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectName, quizStep]);
 
   // checa nomes de banda parecidos antes do pagamento
   const checkSimilarBands = async () => {
@@ -423,8 +432,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     const errs = validateStep(quizStep);
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
-    // Passo 1: checa nomes parecidos ANTES de qualquer dado pessoal (aviso cedo, no lugar certo)
-    if (quizStep === 1) checkSimilarBands();
+
     setSlideDirection('next');
     setQuizStep(quizStep + 1);
   };
@@ -1426,6 +1434,15 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                 </span>
                               </label>
                               {fieldError('acceptRules')}
+                              {similarBands.length > 0 && (similarChoice === 'none' || (similarChoice === 'mine' && (!mineResult || !mineResult.ok))) && (
+                                <div className="bg-amber-500/10 border border-amber-500/40 rounded-xl px-4 py-3 space-y-2.5">
+                                  <span className="text-xs text-amber-300 font-bold uppercase tracking-wide block">Nome parecido pendente: {similarBands.join(', ')}</span>
+                                  <div className="flex flex-col sm:flex-row gap-2">
+                                    <button type="button" onClick={() => { setSimilarChoice('mine'); setQuizStep(1); setSlideDirection('prev'); }} className="font-mono text-[11px] font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-2.5 rounded-xl uppercase flex-1">É minha banda (verificar CPF)</button>
+                                    <button type="button" onClick={() => setSimilarChoice('other')} className="font-mono text-[11px] font-black text-white bg-gradient-to-b from-red-500 to-red-700 px-3 py-2.5 rounded-xl uppercase flex-1">É outra banda</button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
