@@ -750,6 +750,12 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         });
         const data = await res.json().catch(() => null);
         if (cancelled) return;
+        // Ja pagou antes (reabriu o checkout): confirma direto, sem nova cobranca
+        if (data?.ok && data?.alreadyPaid) {
+          webhookDoneRef.current = true;
+          handleSimulateWebhook(true);
+          return;
+        }
         if (!res.ok || !data?.ok || !data?.paymentId) {
           setCheckoutError('Não foi possível gerar o Pix agora. Toque em "Verificar novamente".');
           setShowManualConfirm(true);

@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     // Projeto + preco travado
     const { data: project } = await supabase
       .from('projects')
-      .select('id, name, entry_price, batch_id, total_members')
+      .select('id, name, entry_price, batch_id, total_members, status')
       .eq('invite_code', code)
       .maybeSingle();
     if (!project) {
@@ -46,6 +46,23 @@ export async function POST(req: NextRequest) {
     const amount = liderMode
       ? Number(project.entry_price) * Math.max(Number(project.total_members) || 1, 1)
       : Number(project.entry_price);
+
+    // ANTI-COBRANCA-DUPLICADA: se o pagamento correspondente ja foi feito, nao gera novo Pix
+    if (liderMode) {
+      if (project.status === 'paid') {
+        return NextResponse.json({ ok: true, alreadyPaid: true });
+      }
+    } else {
+      const { data: lider } = await supabase
+        .from('members')
+        .select('payment_status')
+        .eq('project_id', project.id)
+        .eq('is_responsible', true)
+        .maybeSingle();
+      if (lider?.payment_status === 'paid') {
+        return NextResponse.json({ ok: true, alreadyPaid: true });
+      }
+    }
     const idempotencyKey = `${code}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
     const mpRes = await fetch('https://api.mercadopago.com/v1/payments', {
