@@ -62,6 +62,7 @@ export default function Page() {
   ]);
   const [countdownTarget, setCountdownTarget] = useState<string | null>(null);
   const [liveLaunch, setLiveLaunch] = useState<string | null>(null);
+  const [cartOpen, setCartOpen] = useState<string | null>(null); // abertura real das inscricoes (fonte da faixa pre-live)
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
   const [dia0Price, setDia0Price] = useState<number>(25);
   const [liveStatusBar, setLiveStatusBar] = useState<'em_breve' | 'ao_vivo' | 'encerrada'>('em_breve');
@@ -161,6 +162,7 @@ export default function Page() {
           });
           if (map.countdown_target) setCountdownTarget(map.countdown_target);
           if (map.live_launch) setLiveLaunch(map.live_launch);
+          if (map.cart_open_at) setCartOpen(map.cart_open_at);
           if (map.vip_whatsapp_url) setVipWaUrl(map.vip_whatsapp_url);
           if (map.live_url) setLiveUrl(map.live_url);
           const dp = Number(map.dia0_price);
@@ -208,9 +210,11 @@ export default function Page() {
     : lotesConfig.lote1.status !== 'encerrado' ? 'lote1'
     : lotesConfig.lote2.status !== 'encerrado' ? 'lote2' : 'lote3') as 'lote1' | 'lote2' | 'lote3';
   const loteFocoNome = { lote1: 'LOTE 1', lote2: 'LOTE 2', lote3: 'LOTE 3' }[loteFoco];
-  const liveLaunchFuture = (parseDbDate(liveLaunch)?.getTime() ?? 0) > Date.now();
+  // Faixa pre-live aponta para a ABERTURA REAL (cart_open_at); fallback live_launch
+  const launchSource = cartOpen || liveLaunch;
+  const liveLaunchFuture = (parseDbDate(launchSource)?.getTime() ?? 0) > Date.now();
   const launchLabel = (() => {
-    const d = parseDbDate(liveLaunch);
+    const d = parseDbDate(launchSource);
     return d ? new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' }).format(d) : '';
   })();
   const activePrice = isLiveNow ? dia0Price : lotesConfig[loteFoco].valor;
@@ -327,7 +331,7 @@ export default function Page() {
       {/* UNIFIED FIXED CONTAINER FOR COUNTDOWN AND NAVBAR - retrátil ao rolar */}
       <div ref={headerRef} className="fixed top-0 left-0 right-0 z-50 w-full bg-[#05070B]/95 backdrop-blur-md">
         <CountdownBar
-          targetDate={liveStatusBar === 'em_breve' && liveLaunchFuture ? liveLaunch : countdownTarget}
+          targetDate={liveStatusBar === 'em_breve' && liveLaunchFuture ? (cartOpen || liveLaunch) : countdownTarget}
           liveStatus={liveStatusBar}
           dia0Price={dia0Price}
           liveUrl={liveUrl}
