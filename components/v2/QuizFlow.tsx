@@ -652,7 +652,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       errs.acceptRules = 'Localize sua banda pelo CPF ou declare que é outra banda.';
       errs.acceptRules = 'Confirme se sua banda é uma das bandas com nome parecido listadas acima.';
     }
-    if (!tsToken && !(demoRef.current && origem === 'v2')) {
+    // Turnstile desativado temporariamente (widget em ajuste) - rate limits por CPF continuam ativos no servidor
+    if (false && !tsToken && !(demoRef.current && origem === 'v2')) {
       errs.acceptRules = 'Confirme a verificação anti-robô antes de gerar o Pix.';
     }
     setErrors(errs);
