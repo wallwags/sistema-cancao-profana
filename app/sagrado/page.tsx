@@ -1081,6 +1081,57 @@ export default function SagradoPage() {
             );
           })()}
 
+          {tab === 'lotes' && isDev && (() => {
+            const [linkLote, setLinkLote] = useState('');
+            const [linkGerado, setLinkGerado] = useState<string | null>(null);
+            return (
+            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 rounded-2xl p-5 space-y-4 ${'border-sky-400/50'}">
+              <div className="border-b border-white/5 pb-3">
+                <h3 className="font-display font-bold text-white uppercase">🔗 Link de inscrição por lote</h3>
+                <p className="text-xs text-gray-400 leading-snug mt-1">
+                  Gera um link exclusivo que inscreve a banda <strong className="text-white">no lote escolhido</strong>,
+                  ignorando o lote vigente. Útil para convidar uma banda específica com a oferta de um lote que já fechou
+                  (ex.: reabrir a oferta da Live só para ela). O preço cobrado é o do lote escolhido.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end">
+                <div className="space-y-1.5">
+                  <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">Lote do link</label>
+                  <select className={inputCls} value={linkLote} onChange={(e) => { setLinkLote(e.target.value); setLinkGerado(null); }}>
+                    <option value="">Selecione o lote...</option>
+                    {batches.map(b => (
+                      <option key={String(b.id)} value={String(b.id)}>
+                        {String(b.name)} — R$ {String(b.price_per_member)} {b.status !== 'ativo' ? `(${b.status})` : '(vigente)'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!linkLote) { setMsg('linklote', 'err', 'Selecione o lote.'); return; }
+                    const url = `${window.location.origin}/v2?lote=${linkLote}`;
+                    navigator.clipboard?.writeText(url).catch(() => {});
+                    setLinkGerado(url);
+                  }}
+                  disabled={!linkLote}
+                  className={btnGold}
+                >
+                  Gerar link
+                </button>
+              </div>
+              {linkGerado && (
+                <div className="bg-black/40 border border-[#10B981]/40 rounded-xl p-3.5 space-y-1.5">
+                  <span className="font-mono text-[10px] text-[#10B981] uppercase tracking-widest font-black block">Link gerado (copiado para a área de transferência)</span>
+                  <span className="text-xs text-white font-mono break-all block">{linkGerado}</span>
+                  <span className="text-[10px] text-gray-500 font-mono block">Envie para a banda. Ela se inscreve com o preço do lote escolhido, mesmo que ele não esteja vigente.</span>
+                </div>
+              )}
+              {notice['linklote'] && <Notice kind={notice['linklote'].kind}>{notice['linklote'].msg}</Notice>}
+            </div>
+            );
+          })()}
+
           {tab === 'lotes' && (
             <div className="space-y-5 fade-up-800">
               <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 border-[#F0C265]/40 rounded-2xl p-5 space-y-4">
@@ -1394,6 +1445,25 @@ export default function SagradoPage() {
                 return (
                   <div className="space-y-4">
                     <button type="button" onClick={() => { setDetailId(null); setDetail(null); }} className={btnGhost}>← Voltar para a lista</button>
+                    {isDev && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!confirm(`EXCLUIR "${p.name}" permanentemente?\n\nTodos os integrantes, pagamentos e registros dessa banda serão apagados. Ação irreversível.`)) return;
+                          setBusy('del-' + p.id);
+                          const { error } = await supabase.rpc('dev_delete_band', { p_id: p.id });
+                          setBusy(null);
+                          if (error) { setMsg('del-' + p.id, 'err', 'Erro: ' + error.message); return; }
+                          setDetailId(null); setDetail(null);
+                          await loadProjects();
+                          setMsg('del', 'ok', 'Banda excluída e vagas restauradas.');
+                        }}
+                        disabled={busy === 'del-' + p.id}
+                        className="font-mono text-xs font-bold text-red-300 border border-red-500/40 px-4 py-2.5 rounded-lg uppercase hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+                      >
+                        {busy === 'del-' + p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '🗑 Excluir banda (dev)'}
+                      </button>
+                    )}
 
                     <button
                       type="button"
@@ -1489,7 +1559,7 @@ export default function SagradoPage() {
                               onClick={() => setPhotoView(String(proj.photo_url))}
                             />
                           ) : (
-                            <span className="text-xs font-mono text-gray-300 block">{proj.photo_url ? `✓ ${proj.photo_url} (arquivo local - enviado antes do armazenamento em nuvem)` : '-'}</span>
+                            <span className="text-xs text-gray-500 font-mono">Nenhuma foto foi enviada nesta inscrição.</span>
                           )}
                         </div>
                       </div>

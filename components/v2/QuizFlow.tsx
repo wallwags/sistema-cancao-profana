@@ -21,10 +21,11 @@ interface QuizFlowProps {
   waitlistMode?: boolean;
   origem?: 'home' | 'v2';
   sandboxPix?: boolean;
+  linkLoteId?: string | null;
 }
 
 
-export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false, origem = 'home', sandboxPix = false }: QuizFlowProps) {
+export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false, origem = 'home', sandboxPix = false, linkLoteId = null }: QuizFlowProps) {
   const [quizStep, setQuizStep] = useState(1);
 
   // Quiz form states
@@ -44,7 +45,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [respRoleOther, setRespRoleOther] = useState('');
 
   // Natural dynamic list of additional members (roster)
-  const [membersList, setMembersList] = useState<Array<{ name: string; cpf: string; birth: string; role: string }>>([]);
+  const [membersList, setMembersList] = useState<Array<{ name: string; cpf: string; birth: string; role: string; phone?: string; email?: string }>>([]);
   const [selectedMembers, setSelectedMembers] = useState(1);
   const [acceptRules, setAcceptRules] = useState(false);
 
@@ -55,6 +56,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [newMemberBirth, setNewMemberBirth] = useState('');
   const [newMemberRole, setNewMemberRole] = useState('');
   const [newMemberRoleOther, setNewMemberRoleOther] = useState('');
+  const [newMemberPhone, setNewMemberPhone] = useState('');
+  const [newMemberEmail, setNewMemberEmail] = useState('');
   const [memberErrors, setMemberErrors] = useState<Record<string, string>>({});
 
   // Inline validation errors (no native alerts)
@@ -466,6 +469,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     }
     if (!newMemberName.trim()) errs.newMemberName = 'Informe o nome completo.';
     if (!newMemberCpf) errs.newMemberCpf = 'Informe o CPF.';
+    if (!newMemberPhone || newMemberPhone.replace(/\D/g, '').length < 10) errs.newMemberPhone = 'Informe o WhatsApp com DDD.';
+    if (!newMemberEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newMemberEmail)) errs.newMemberEmail = 'Informe um e-mail válido.';
     else if (newMemberCpf.length < 14) errs.newMemberCpf = 'CPF incompleto.';
     else if (!isValidCPF(newMemberCpf)) errs.newMemberCpf = 'CPF inválido.';
     if (!newMemberBirth) errs.newMemberBirth = 'Informe a data de nascimento.';
@@ -476,11 +481,13 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     if (Object.keys(errs).length > 0) return;
 
     const copy = [...membersList];
-    copy.push({ name: newMemberName.trim(), cpf: newMemberCpf, birth: newMemberBirth, role: effRole });
+    copy.push({ name: newMemberName.trim(), cpf: newMemberCpf, birth: newMemberBirth, role: effRole, phone: newMemberPhone.trim(), email: newMemberEmail.trim() });
     setMembersList(copy);
     setNewMemberName('');
     setNewMemberCpf('');
     setNewMemberBirth('');
+    setNewMemberPhone('');
+    setNewMemberEmail('');
     setMemberErrors({});
     closeMemberForm();
     clearError('roster');
@@ -596,10 +603,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         } catch { /* segue sem foto */ }
       }
 
-      const membersPayload = membersList.map(m => ({ name: m.name, cpf: m.cpf, birth: m.birth, role: m.role }));
+      const membersPayload = membersList.map(m => ({ name: m.name, cpf: m.cpf, birth: m.birth, role: m.role, phone: m.phone || '', email: m.email || '' }));
 
       const { data, error } = await supabase.rpc('create_band_registration', {
         p_origem: origem === 'v2' ? 'v2' : 'home',
+        p_lote_id: linkLoteId || null,
         p_name: projectName,
         p_style: projectStyle,
         p_bio: projectBio,
@@ -653,6 +661,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     }
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
+    if (isCheckoutOpen || isCheckoutLoading) return; // anti double-click
 
     // Reset checkout state and launch instantly (save runs in background)
     webhookDoneRef.current = false;
@@ -1298,6 +1307,16 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                       <label className="block font-mono text-[10px] text-gray-400 uppercase">Nascimento (DD/MM/AAAA)</label>
                                       <input type="text" value={newMemberBirth} onChange={(newE) => { setNewMemberBirth(applyDateMask(newE.target.value)); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberBirth; return c; }); }} className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberBirth ? 'border-red-500/60' : 'border-white/10'}`} maxLength={10} />
                                       {memberErrors.newMemberBirth && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberBirth}</p>}
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">WhatsApp *</label>
+                                      <input type="tel" value={newMemberPhone} onChange={(newE) => { setNewMemberPhone(newE.target.value); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberPhone; return c; }); }} placeholder="(21) 99999-9999" className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberPhone ? 'border-red-500/60' : 'border-white/10'}`} maxLength={15} />
+                                      {memberErrors.newMemberPhone && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberPhone}</p>}
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">E-mail *</label>
+                                      <input type="email" value={newMemberEmail} onChange={(newE) => { setNewMemberEmail(newE.target.value); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberEmail; return c; }); }} placeholder="voce@email.com" className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberEmail ? 'border-red-500/60' : 'border-white/10'}`} autoComplete="email" />
+                                      {memberErrors.newMemberEmail && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberEmail}</p>}
                                     </div>
                                     <div className="space-y-1 sm:col-span-2">
                                       <label className="block font-mono text-[10px] text-gray-400 uppercase">Função na banda *</label>

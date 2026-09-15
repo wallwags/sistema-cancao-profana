@@ -73,8 +73,16 @@ export default function Page() {
   const [waitlistError, setWaitlistError] = useState('');
   const vipAnchorRef = useRef<HTMLAnchorElement | null>(null);
 
+  // Link por lote (?lote=<uuid>): inscricao forcada no lote escolhido pelo admin
+  useEffect(() => {
+    const l = new URLSearchParams(window.location.search).get('lote');
+    if (l) setLinkLote(l.replace(/[^a-f0-9-]/gi, '').slice(0, 40));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Sandbox /v2 (controle do dev no painel): testes sem afetar a home
   const [sandbox, setSandbox] = useState<{ ativo: boolean; preco: number | null; pixReal: boolean }>({ ativo: false, preco: null, pixReal: false });
+  const [linkLote, setLinkLote] = useState<string | null>(null); // lote forcado por link ?lote=
 
   // jsonb pode chegar como objeto (supabase-js) ou string: parse tolerante
   const parseV2Env = (raw: unknown): { ativo: boolean; preco: number | null; pixReal: boolean } => {
@@ -831,6 +839,7 @@ export default function Page() {
           onPaymentSuccess={handlePaymentSuccess}
           origem="v2"
           sandboxPix={sandbox.pixReal}
+          linkLoteId={linkLote}
         />
       )}
 
