@@ -390,9 +390,13 @@ export default function SagradoPage() {
     if (searchQ.trim()) query = query.ilike('name', `%${searchQ.trim()}%`);
     if (statusFilter) query = query.eq('status', statusFilter);
     // filtro por lote passou a ser feito client-side (batches ja carregados)
-    const { data, count } = await query
+    const { data, count, error } = await query
       .order('created_at', { ascending: false })
       .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+    if (error) {
+      console.error('loadProjects falhou:', error);
+      setMsg('lista', 'err', 'Erro ao carregar a lista: ' + error.message);
+    }
     if (data) setProjects(data as unknown as ProjectRow[]);
     setTotalCount(count ?? 0);
     const { count: paidTotal } = await supabase
@@ -1585,22 +1589,7 @@ export default function SagradoPage() {
                 );
               })() : (
                 <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
-                  <h3 className="font-display font-bold text-white uppercase border-b border-white/5 pb-3">Inscrições ({totalCount})</h3>
-
-                  {vipLeads.length > 0 && (
-                    <div className="bg-[#0B0F19]/40 border border-sky-500/20 rounded-xl p-4 space-y-2">
-                      <span className="font-mono text-[11px] text-sky-400 uppercase tracking-widest font-bold block">📋 Lista de espera ({vipLeads.length})</span>
-                      <p className="text-[11px] text-gray-500 leading-snug">Pessoas que deixaram o e-mail antes da abertura. Quando inscreverem com o mesmo e-mail, ganham a tag Pré-inscrição.</p>
-                      <div className="space-y-1.5">
-                        {vipLeads.map((l, i) => (
-                          <div key={String(l.id)} className="flex justify-between items-center bg-black/30 rounded-lg px-3 py-1.5">
-                            <span className="text-xs text-gray-200 font-bold">{String(l.name)}</span>
-                            <span className="font-mono text-[11px] text-gray-500">{String(l.email)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <h3 className="font-display font-bold text-white uppercase border-b border-white/5 pb-3">Bandas inscritas ({totalCount}) — clique para abrir a ficha completa</h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-[1fr_150px_150px] gap-3">
                     <input className={inputCls} placeholder="Buscar por nome da banda..." value={searchQ} onChange={(e) => { setSearchQ(e.target.value); setPage(0); }} />
