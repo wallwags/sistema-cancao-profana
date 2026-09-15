@@ -288,6 +288,17 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quizVisible]);
 
+  // Renderiza/re-tenta quando o usuario esta no passo 1 (onde o widget vive)
+  useEffect(() => {
+    if (isOpen && quizStep === 1) {
+      tryRenderTurnstile();
+      const t1 = setTimeout(tryRenderTurnstile, 600);
+      const t2 = setTimeout(tryRenderTurnstile, 2000);
+      return () => { clearTimeout(t1); clearTimeout(t2); };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, quizStep]);
+
   // Close quiz with exit animation, then unmount + notify parent
   const requestCloseQuiz = () => {
     if (quizClosingRef.current) return;
@@ -630,7 +641,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       return;
     }
     if (quizOpenedAt.current && Date.now() - quizOpenedAt.current < 4000) {
-      setErrors({ acceptRules: 'Revise com calma as informações antes de gerar o Pix.' });
+      setErrors({ acceptRules: 'Confirme a caixa "Sou humano" do Cloudflare no passo 1 antes de gerar o Pix. Se ela não apareceu, recarregue a página.' });
       return;
     }
     if (similarBands.length > 0 && similarChoice === 'none') {
@@ -1001,7 +1012,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       {isOpen && (
         <Script
           src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-          strategy="lazyOnload"
+          strategy="afterInteractive"
           onLoad={tryRenderTurnstile}
         />
       )}
