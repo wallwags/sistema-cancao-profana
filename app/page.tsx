@@ -317,7 +317,8 @@ export default function Page() {
     }
   };
 
-  const ctaText = waitlistMode ? 'ENTRAR NO GRUPO VIP' : (isLiveNow ? 'INSCREVER-SE · AO VIVO' : 'INSCREVER-SE');
+  // Ao vivo: inscricao tem prioridade sobre o popup VIP (label + comportamento)
+  const ctaText = isLiveNow ? 'INSCREVER-SE · AO VIVO' : (waitlistMode ? 'ENTRAR NO GRUPO VIP' : 'INSCREVER-SE');
 
   // Durante a transmissao ao vivo a inscricao abre direto (regra do periodo de live)
   const ctaAction = () => {
@@ -358,7 +359,7 @@ export default function Page() {
               <span>• GRAVAÇÃO INCLUÍDA</span>
             </div>
             <div className="fade-up-800 [animation-delay:260ms] flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3">
-              <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode} />
+              <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode && !isLiveNow} />
               <a
                 href="#premios"
                 className="border border-white/10 hover:border-white/35 text-white font-mono text-sm font-bold uppercase tracking-widest px-8 py-3.5 rounded-full transition-colors text-center w-full sm:w-auto outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B]"
@@ -500,7 +501,7 @@ export default function Page() {
 
           </div>
           <div className="text-center !mt-6">
-            <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode} />
+            <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode && !isLiveNow} />
           </div>
         </section>
 
@@ -551,7 +552,7 @@ export default function Page() {
           {/* Hero Premium Card - Rendered below items as requested */}
           <HeroCard />
           <div className="text-center !mt-6">
-            <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode} />
+            <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode && !isLiveNow} />
           </div>
         </section>
 
@@ -749,7 +750,7 @@ export default function Page() {
           </p>
 
           <div className="text-center !mt-6">
-            <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode} />
+            <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode && !isLiveNow} />
           </div>
         </section>
 
