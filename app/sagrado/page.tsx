@@ -386,7 +386,7 @@ export default function SagradoPage() {
     // SEM embedded joins: members/subscriptions negam SELECT e derrubam a query inteira (lista vazia)
     let query = supabase
       .from('projects')
-      .select('id, name, style, bio, instagram, video_link, photo_url, status, batch_id, pre_registrado, created_at', { count: 'exact' });
+      .select('id, name, style, bio, instagram, video_link, photo_url, status, batch_id, created_at', { count: 'exact' });
     if (searchQ.trim()) query = query.ilike('name', `%${searchQ.trim()}%`);
     if (statusFilter) query = query.eq('status', statusFilter);
     // filtro por lote passou a ser feito client-side (batches ja carregados)
@@ -1400,9 +1400,6 @@ export default function SagradoPage() {
                         <div>
                           <h3 className="font-display font-black text-xl text-white uppercase leading-tight">{p.name}</h3>
                           <span className="font-mono text-xs text-gray-400 uppercase block mt-1">{p.style || '-'} • cadastrada em {fmtDate(p.created_at)}</span>
-                          {p.pre_registrado && (
-                            <span className="font-mono text-[11px] font-bold text-sky-400 bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 rounded uppercase mt-1 inline-block">Pré-inscrição</span>
-                          )}
                         </div>
                         <span className={`text-[11px] font-bold px-2.5 py-1 rounded font-mono uppercase border shrink-0 ${st.cls}`}>{st.label}</span>
                       </div>
@@ -1636,7 +1633,12 @@ export default function SagradoPage() {
                             {p.status === 'awaiting_members' && !p.batch_id && (
                               <span className="text-[11px] font-bold px-2 py-0.5 rounded font-mono uppercase border bg-red-500/10 text-red-300 border-red-500/30">sem reserva</span>
                             )}
-                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded font-mono uppercase border ${st.cls}`}>{st.label}</span>
+                            {p.status === 'awaiting_members' && (
+                              <span className="text-[11px] font-black px-2 py-0.5 rounded font-mono uppercase border bg-amber-500/15 text-amber-300 border-amber-500/40">Não-pago</span>
+                            )}
+                            {p.status === 'paid' && (
+                              <span className="text-[11px] font-black px-2 py-0.5 rounded font-mono uppercase border bg-[#10B981]/15 text-[#10B981] border-[#10B981]/40">Pago ✓</span>
+                            )}
                             <span className="flex items-center gap-1 font-mono text-[11px] font-bold text-[#F0C265] uppercase"><Eye className="w-3 h-3" /> Ficha</span>
                           </div>
                         </button>
