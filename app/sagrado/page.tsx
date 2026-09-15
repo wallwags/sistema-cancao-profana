@@ -383,12 +383,13 @@ export default function SagradoPage() {
       setTotalCount(rows.length);
       return;
     }
+    // SEM embedded joins: members/subscriptions negam SELECT e derrubam a query inteira (lista vazia)
     let query = supabase
       .from('projects')
-      .select('id, name, style, bio, instagram, video_link, photo_url, status, batch_id, pre_registrado, created_at, members(count), subscriptions(status, amount_paid, batches(name))', { count: 'exact' });
+      .select('id, name, style, bio, instagram, video_link, photo_url, status, batch_id, pre_registrado, created_at', { count: 'exact' });
     if (searchQ.trim()) query = query.ilike('name', `%${searchQ.trim()}%`);
     if (statusFilter) query = query.eq('status', statusFilter);
-    if (loteFilter) query = query.eq('subscriptions.batch_id', loteFilter);
+    // filtro por lote passou a ser feito client-side (batches ja carregados)
     const { data, count } = await query
       .order('created_at', { ascending: false })
       .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
@@ -1627,9 +1628,8 @@ export default function SagradoPage() {
                   {projects.length === 0 && <p className="text-xs text-gray-400 font-mono">Nenhuma inscrição encontrada.</p>}
                   <div className="space-y-3">
                     {projects.map(p => {
-                      const sub = p.subscriptions?.[0];
-                      const count = p.members?.[0]?.count ?? 0;
                       const st = PROJECT_STATUS[p.status] || { label: p.status, cls: 'bg-white/5 text-gray-400 border-white/10' };
+                      const loteNome = p.batch_id ? (batches.find(b => b.id === p.batch_id)?.name as string || null) : null;
                       return (
                         <button
                           key={p.id}
@@ -1640,7 +1640,7 @@ export default function SagradoPage() {
                           <div className="space-y-0.5 min-w-0">
                             <span className="text-sm font-bold text-white block truncate">{p.name}</span>
                             <span className="font-mono text-xs text-gray-400 uppercase block">
-                              {p.style || '-'} • {count} integrante{count === 1 ? '' : 's'} • {fmtDate(p.created_at)} {sub?.batches?.name ? `• ${sub.batches.name}` : ''} {sub?.amount_paid ? `• R$ ${sub.amount_paid},00` : ''}
+                              {p.style || '-'} • {fmtDate(p.created_at)} {loteNome ? `• ${loteNome}` : ''}
                             </span>
                           </div>
                           <div className="flex items-center gap-2.5 shrink-0">
