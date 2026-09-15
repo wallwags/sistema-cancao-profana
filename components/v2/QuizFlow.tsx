@@ -640,17 +640,12 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       setErrors({ acceptRules: 'Não foi possível validar o envio. Recarregue a página e tente novamente.' });
       return;
     }
-    if (quizOpenedAt.current && Date.now() - quizOpenedAt.current < 4000) {
-      setErrors({ acceptRules: 'Confirme a caixa "Sou humano" do Cloudflare no passo 1 antes de gerar o Pix. Se ela não apareceu, recarregue a página.' });
-      return;
-    }
     if (similarBands.length > 0 && similarChoice === 'none') {
       errs.acceptRules = 'Confirme se sua banda é uma das bandas com nome parecido listadas acima.';
       return errs;
     }
     if (similarBands.length > 0 && similarChoice === 'mine' && (!mineResult || !mineResult.ok)) {
       errs.acceptRules = 'Localize sua banda pelo CPF ou declare que é outra banda.';
-      errs.acceptRules = 'Confirme se sua banda é uma das bandas com nome parecido listadas acima.';
     }
     // Turnstile desativado temporariamente (widget em ajuste) - rate limits por CPF continuam ativos no servidor
     if (false && !tsToken && !(demoRef.current && origem === 'v2')) {
