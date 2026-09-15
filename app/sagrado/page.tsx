@@ -228,6 +228,8 @@ export default function SagradoPage() {
   const [funnelDays, setFunnelDays] = useState(0);
   const [v2env, setV2env] = useState<{ ativo: boolean; preco: number | null; pix_real: boolean } | null>(null);
   const [v2preco, setV2preco] = useState('');
+  const [prePage, setPrePage] = useState(0);
+  const [preOpen, setPreOpen] = useState(false);
   const [slotMode, setSlotMode] = useState<'band' | 'integrante'>('band');
   const [cartDays, setCartDays] = useState({ lote1: '10', lote2: '10', lote3: '12' });
   const [homeMode, setHomeMode] = useState<'classic' | 'vip'>('classic');
@@ -652,7 +654,7 @@ export default function SagradoPage() {
     setDetailId(id);
     setDetail(null);
     const { data: prof, error } = await supabase.rpc('get_project_profile', { p_id: id });
-    if (error || !prof) { setDetail({ proj: null, members: [], sub: null, subsTotal: 0, scores: [], member_edits: [], invite_code: null, whatsapp_clicks: 0 }); return; }
+    if (error || !prof) { setDetail({ proj: null, members: [], sub: null, subsTotal: 0, scores: [], member_edits: [], invite_code: null, whatsapp_clicks: 0 }); setMsg(`st-${id}`, 'err', 'Não foi possível carregar a ficha: ' + (error?.message || 'vazia')); return; }
     setDetail({
       proj: (prof.project || null) as Record<string, unknown> | null,
       members: (prof.members || []) as unknown as MemberFull[],
@@ -1332,11 +1334,52 @@ export default function SagradoPage() {
           {/* INSCRIÇÕES */}
           {tab === 'inscritos' && (
             <div className="space-y-4 fade-up-800">
-              <div className="bg-[#F0C265]/10 border border-[#F0C265]/30 rounded-2xl px-4 py-3">
+              <div className="bg-[#F0C265]/10 border border-[#F0C265]/30 rounded-2xl px-4 py-3 flex flex-col sm:flex-row justify-between gap-2">
                 <span className="text-xs text-[#F0C265] leading-snug">
-                  <strong className="font-black uppercase tracking-wider">Pré-interessados (Grupo VIP)</strong> ficam na aba <strong>Grupo VIP</strong>. Esta aba lista apenas bandas inscritas de verdade ({totalCount} no total).
+                  <strong className="font-black uppercase tracking-wider">Como ler esta aba:</strong> <strong className="text-white">Pré-interessados</strong> = deixaram e-mail no Grupo VIP (sem pagar). <strong className="text-white">Bandas</strong> = inscritos reais — clique na banda para ver integrantes, pagamentos e contato.
                 </span>
+                <a href="/sagrado?tab=vip" className="font-mono text-[11px] font-bold text-[#F0C265] underline whitespace-nowrap self-start sm:self-center">Ver Grupo VIP →</a>
               </div>
+              {canVip && (() => {
+                const preSize = 8;
+                const prePages = Math.max(1, Math.ceil(vipLeads.length / preSize));
+                const rows = vipLeads.slice(prePage * preSize, prePage * preSize + preSize);
+                return (
+                <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => { setPreOpen(!preOpen); if (!vipLeads.length) loadVipLeads(); }}
+                    className="w-full flex justify-between items-center px-5 py-4 hover:bg-white/5 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+                      <span className="font-display font-bold text-white uppercase text-sm">Pré-interessados · Grupo VIP</span>
+                      <span className="font-mono text-[11px] text-sky-400 font-bold px-2 py-0.5 rounded-full border border-sky-500/30 bg-sky-500/10">{preOpen ? vipLeads.length : ''}</span>
+                    </div>
+                    <span className="font-mono text-[11px] text-gray-400">{preOpen ? 'fechar ▲' : 'abrir ▼'}</span>
+                  </button>
+                  {preOpen && (
+                    <div className="border-t border-white/5 px-5 py-4 space-y-2">
+                      {vipLeads.length === 0 && <p className="text-xs text-gray-500 font-mono">Nenhum pré-interessado ainda.</p>}
+                      {rows.map((l, i) => (
+                        <div key={i} className="flex flex-col sm:flex-row justify-between sm:items-center gap-1 bg-black/30 border border-white/5 rounded-xl px-3.5 py-2.5">
+                          <span className="text-xs text-white font-mono truncate">{String(l.email || '')}</span>
+                          <span className="font-mono text-[10px] text-gray-500 uppercase">{String(l.source || '')} • {String(l.created_at || '').slice(0, 10)}</span>
+                        </div>
+                      ))}
+                      {vipLeads.length > preSize && (
+                        <div className="flex justify-between items-center border-t border-white/5 pt-3">
+                          <button type="button" disabled={prePage === 0} onClick={() => setPrePage(x => Math.max(0, x - 1))} className={btnGhost}>← Anterior</button>
+                          <span className="font-mono text-xs text-gray-400 uppercase">Página {prePage + 1} de {prePages}</span>
+                          <button type="button" disabled={(prePage + 1) >= prePages} onClick={() => setPrePage(x => x + 1)} className={btnGhost}>Próxima →</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                );
+              })()}
+
               {detailId ? (() => {
                 const p = projects.find(x => x.id === detailId);
                 if (!p) return <Notice kind="err">Inscrição não encontrada.</Notice>;
