@@ -70,6 +70,7 @@ export default function MinhaInscricaoPage() {
   const [recoverMsg, setRecoverMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [avisoDismissed, setAvisoDismissed] = useState(false);
   const [avisoState, setAvisoState] = useState<string | null>(null);
+  const [bypassToken, setBypassToken] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Apply CPF Mask
@@ -130,6 +131,8 @@ export default function MinhaInscricaoPage() {
     const params = new URLSearchParams(window.location.search);
     // Codigo e case-insensitive: se o usuario copiar com maiusculas, normaliza
     const k = (params.get('k') || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12);
+    const t = params.get('t') || '';
+    if (t) setBypassToken(t.replace(/[^a-zA-Z0-9-]/g, '').slice(0, 40));
     if (!k) {
       router.replace('/v2');
       return;
@@ -147,6 +150,33 @@ export default function MinhaInscricaoPage() {
   }, []);
 
   // ---------- identificação por CPF ----------
+  const identifyByBypass = async (code: string, token: string) => {
+    setGateBusy(true);
+    setGateError('');
+    const { data: reg, error } = await supabase.rpc('get_registration_by_code', { p_code: code, p_cpf: null, p_token: token });
+    if (error || !reg || !reg.project || !reg.me_id) {
+      setGateBusy(false);
+      setGateError('Token de acesso inválido ou expirado. Gere um novo no painel.');
+      return;
+    }
+    const leaderM = (reg.members || []).find((m: any) => m.id === reg.me_id);
+    setMe({
+      id: reg.me_id,
+      name: leaderM?.name || 'Admin',
+      role_in_band: 'Admin',
+      isLeader: true
+    });
+    meCpfRef.current = 'admin-bypass';
+    applyRegistration(reg);
+    setGateBusy(false);
+  };
+
+  // Acesso direto com token de bypass (admin): pula o gate
+  useEffect(() => {
+    if (bypassToken && accessCode && !me && !gateBusy) identifyByBypass(accessCode, bypassToken);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bypassToken, accessCode]);
+
   const identifyByCpf = async (code: string, cpf: string) => {
     setGateBusy(true);
     setGateError('');

@@ -1395,6 +1395,24 @@ export default function SagradoPage() {
                   <div className="space-y-4">
                     <button type="button" onClick={() => { setDetailId(null); setDetail(null); }} className={btnGhost}>← Voltar para a lista</button>
 
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setBusy('portal-' + p.id);
+                        try {
+                          const { data: token, error } = await supabase.rpc('create_portal_bypass', { p_code: detail?.invite_code });
+                          setBusy(null);
+                          if (error || !token) { setMsg('portal-' + p.id, 'err', 'Erro: ' + (error?.message || 'sem token')); return; }
+                          window.open(`/minha-inscricao?k=${detail?.invite_code}&t=${token}`, '_blank');
+                        } catch { setBusy(null); setMsg('portal-' + p.id, 'err', 'Falha de conexão.'); }
+                      }}
+                      disabled={busy === 'portal-' + p.id || !detail?.invite_code}
+                      className={btnGold}
+                    >
+                      {busy === 'portal-' + p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Abrir portal da banda (sem CPF) ↗'}
+                    </button>
+                    {notice['portal-' + p.id] && <span className="font-mono text-[11px] text-red-300">{notice['portal-' + p.id].msg}</span>}
+
                     <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-5">
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/5 pb-4">
                         <div>
