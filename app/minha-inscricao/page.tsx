@@ -181,9 +181,16 @@ export default function MinhaInscricaoPage() {
     setGateBusy(true);
     setGateError('');
     const { data: reg, error } = await supabase.rpc('get_registration_by_code', { p_code: code, p_cpf: cpf });
-    if (error || !reg || !reg.project) {
+    if (error) {
       setGateBusy(false);
-      router.replace('/v2');
+      setGateError(error.message.includes('MUITAS_TENTATIVAS')
+        ? 'Muitas tentativas. Aguarde alguns minutos e tente de novo.'
+        : 'Erro ao verificar. Tente novamente.');
+      return;
+    }
+    if (!reg || !reg.project) {
+      setGateBusy(false);
+      setGateError('Banda não encontrada para este link. Confira o link com o líder.');
       return;
     }
     // O servidor valida o CPF e devolve me_id (os dados pessoais nunca saem do banco)

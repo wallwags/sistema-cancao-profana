@@ -106,8 +106,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       if (error || !data) { setMineResult({ ok: false, msg: 'Não foi possível verificar agora. Tente novamente.' }); return; }
       const r = (typeof data === 'string' ? JSON.parse(data) : data) as { status: string; msg?: string; link?: string };
       if (r.status === 'found' && r.link) {
-        setMineResult({ ok: true, msg: r.msg || 'Banda localizada!' });
-        setTimeout(() => { window.location.href = r.link as string; }, 900);
+        setMineResult({ ok: true, msg: (r.msg || 'Banda localizada!') + ' Abrindo seu portal...' });
+        setTimeout(() => { window.location.href = r.link as string; }, 1200);
       } else if (r.status === 'full') {
         setMineResult({ ok: false, msg: r.msg || 'Essa banda já está com as vagas de integrantes completas.' });
       } else if (r.status === 'not_member') {

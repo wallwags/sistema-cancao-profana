@@ -227,6 +227,8 @@ export default function SagradoPage() {
   const [funnel, setFunnel] = useState<Record<string, unknown> | null>(null);
   const [funnelDays, setFunnelDays] = useState(0);
   const [v2env, setV2env] = useState<{ ativo: boolean; preco: number | null; pix_real: boolean } | null>(null);
+  const [linkLote, setLinkLote] = useState('');
+  const [linkGerado, setLinkGerado] = useState<string | null>(null);
   const [v2preco, setV2preco] = useState('');
   const [prePage, setPrePage] = useState(0);
   const [preOpen, setPreOpen] = useState(false);
