@@ -1084,8 +1084,6 @@ export default function SagradoPage() {
           })()}
 
           {tab === 'lotes' && isDev && (() => {
-            const [linkLote, setLinkLote] = useState('');
-            const [linkGerado, setLinkGerado] = useState<string | null>(null);
             return (
             <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 rounded-2xl p-5 space-y-4 ${'border-sky-400/50'}">
               <div className="border-b border-white/5 pb-3">

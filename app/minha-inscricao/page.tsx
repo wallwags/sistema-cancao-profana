@@ -134,7 +134,7 @@ export default function MinhaInscricaoPage() {
     const t = params.get('t') || '';
     if (t) setBypassToken(t.replace(/[^a-zA-Z0-9-]/g, '').slice(0, 40));
     if (!k) {
-      router.replace('/v2');
+      router.replace('/');
       return;
     }
     setAccessCode(k);
@@ -308,7 +308,7 @@ export default function MinhaInscricaoPage() {
               </div>
             )}
           </form>
-          <Link href="/v2" className="inline-block text-[11px] font-mono text-gray-500 hover:text-white uppercase tracking-widest">← Voltar ao site</Link>
+          <Link href="/" className="inline-block text-[11px] font-mono text-gray-500 hover:text-white uppercase tracking-widest">← Voltar ao site</Link>
         </div>
       </div>
     );
@@ -359,7 +359,7 @@ export default function MinhaInscricaoPage() {
           
           <div className="flex gap-4 items-center">
             <button 
-              onClick={() => router.replace('/v2')} 
+              onClick={() => router.replace('/')} 
               className="font-mono text-[11px] text-gray-400 hover:text-red-400 transition-colors uppercase font-bold"
             >
               Sair

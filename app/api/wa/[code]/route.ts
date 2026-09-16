@@ -24,7 +24,7 @@ export async function GET(req: NextRequest, { params }: { params: { code: string
   });
 
   const origin = req.nextUrl.origin;
-  const link = `${origin}/v2?b=${code}`;
+  const link = `${origin}/?b=${code}`;
   const msg = `Convite do Concurso Cancao Profana! ${leader} inscreveu ${bandName} e voce foi escalado como integrante. Confirme sua participacao aqui: ${link}`;
   return NextResponse.redirect(`https://wa.me/?text=${encodeURIComponent(msg)}`, 302);
 }
