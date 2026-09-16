@@ -175,6 +175,17 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     }
   };
 
+  // Backexit: alerta nativo do navegador quando checkout Pix está aberto
+  useEffect(() => {
+    if (!isCheckoutOpen || checkoutExpired) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isCheckoutOpen, checkoutExpired]);
+
   // SSR-safe layout effect
   const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 

@@ -6,11 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { parseDbDate } from '../../lib/dates';
-import { 
-  Shield, Music, Users, CheckCircle, Clock, 
-  AlertTriangle, ArrowLeft, Phone,
-  XCircle, PauseCircle, RotateCcw, ClipboardList
-} from 'lucide-react';
+import { Shield, Music, Users, CheckCircle, Clock, AlertTriangle, ArrowLeft, Phone, XCircle, PauseCircle, RotateCcw, ClipboardList, Check, Loader2 } from 'lucide-react';;
 
 interface Member {
   id?: string;
@@ -86,6 +82,10 @@ export default function MinhaInscricaoPage() {
   const [avisoDismissed, setAvisoDismissed] = useState(false);
   const [avisoState, setAvisoState] = useState<string | null>(null);
   const [bypassToken, setBypassToken] = useState<string | null>(null);
+  const [portalPix, setPortalPix] = useState<{ qr: string | null; qrBase64: string | null; paymentId: string; amount: number } | null>(null);
+  const [portalPixBusy, setPortalPixBusy] = useState(false);
+  const [portalPixError, setPortalPixError] = useState<string | null>(null);
+  const [portalPixPaid, setPortalPixPaid] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Apply CPF Mask
@@ -224,6 +224,44 @@ export default function MinhaInscricaoPage() {
     });
     applyRegistration(reg);
     setGateBusy(false);
+  };
+
+  // ---------- PIX no portal: gerar/resgatar cobrança da banda pendente ----------
+  const gerarPortalPix = async () => {
+    if (!accessCode || !me?.isLeader) return;
+    setPortalPixBusy(true);
+    setPortalPixError(null);
+    try {
+      const res = await fetch('/api/pix/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: accessCode,
+          email: data?.leader?.email || '',
+          name: data?.leader?.name || data?.name || 'Líder',
+        })
+      });
+      const d = await res.json().catch(() => null);
+      if (!res.ok || !d?.ok || !d?.paymentId) {
+        setPortalPixError(d?.error === 'already_paid' ? 'Esta banda já está paga.' : d?.msg || 'Erro ao gerar o Pix.');
+        setPortalPixBusy(false);
+        return;
+      }
+      setPortalPix({ qr: d.qr || null, qrBase64: d.qrBase64 || null, paymentId: d.paymentId, amount: d.amount });
+      setPortalPixBusy(false);
+      // Poll status
+      const poll = setInterval(async () => {
+        if (portalPixPaid) { clearInterval(poll); return; }
+        try {
+          const sres = await fetch(`/api/pix/status?id=${d.paymentId}`);
+          const sd = await sres.json().catch(() => null);
+          if (sd?.paid) { setPortalPixPaid(true); clearInterval(poll); }
+        } catch { /* retry */ }
+      }, 5000);
+    } catch {
+      setPortalPixBusy(false);
+      setPortalPixError('Falha de conexão. Tente novamente.');
+    }
   };
 
   // ---------- GATE: confirmação de CPF ----------
@@ -608,6 +646,46 @@ export default function MinhaInscricaoPage() {
               </div>
             )}
           </div>
+
+          {/* PAGAMENTO PIX - Banda pendente */}
+          {data.status === 'awaiting_members' && me?.isLeader && (
+            <div className="bg-[#F0C265]/5 border-2 border-[#F0C265]/40 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span className="font-display font-black text-white uppercase text-sm">Pagamento da inscrição</span>
+              </div>
+              {portalPixPaid ? (
+                <div className="text-center space-y-2 py-4">
+                  <div className="w-14 h-14 mx-auto rounded-full bg-[#10B981]/10 text-[#10B981] border-2 border-[#10B981] flex items-center justify-center"><Check className="w-7 h-7" /></div>
+                  <p className="font-display font-black text-white uppercase">Pagamento confirmado!</p>
+                </div>
+              ) : !portalPix ? (
+                <div className="text-center space-y-3">
+                  <p className="text-sm text-gray-300 leading-relaxed">Sua banda está inscrita mas o pagamento ainda não foi feito. Gere o Pix abaixo para ativar a banda no concurso.</p>
+                  <button type="button" onClick={gerarPortalPix} disabled={portalPixBusy} className="w-full btn-gold-shimmer py-4 rounded-xl text-sm uppercase tracking-widest font-black text-black">
+                    {portalPixBusy ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Gerar Pix de inscrição'}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {portalPix.qrBase64 && (
+                    <div className="w-52 h-52 mx-auto bg-white p-3 rounded-xl flex items-center justify-center shadow-lg">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`data:image/png;base64,${portalPix.qrBase64}`} alt="QR Code Pix" className="w-full h-full object-contain" />
+                    </div>
+                  )}
+                  <p className="font-display font-black text-2xl text-[#F0C265] text-center">R$ {portalPix.amount},00</p>
+                  <button type="button" onClick={async () => { try { await navigator.clipboard.writeText(portalPix.qr || ''); } catch { /* */ } }} className="w-full font-mono text-xs font-bold text-white bg-white/5 border border-white/10 py-3 rounded-xl hover:bg-white/10 transition-colors uppercase">
+                    Copiar código Pix
+                  </button>
+                  <p className="text-[11px] text-gray-500 text-center font-mono">Confirmação automática em ~5 segundos após o pagamento.</p>
+                </div>
+              )}
+              {portalPixError && (
+                <div className="bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3 text-xs text-red-200">{portalPixError}</div>
+              )}
+            </div>
+          )}
 
           {/* RESPONSIBLE DETAILS */}
           {leader && (
