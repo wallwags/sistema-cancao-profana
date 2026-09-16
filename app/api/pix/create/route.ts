@@ -63,6 +63,50 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true, alreadyPaid: true });
       }
     }
+    // PIX UNICO: se a banda ja tem um Pix pendente ainda valido (nao vencido), reusa o MESMO QR.
+    // Quiz e portal compartilham a mesma cobranca; novo Pix so nasce se o anterior venceu.
+    const { data: pendentes } = await supabase
+      .from('subscriptions')
+      .select('charge_id, amount_paid, created_at')
+      .eq('project_id', project.id)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(3);
+    for (const subP of (pendentes || []) as Array<{ charge_id: string | null; amount_paid: number | string }>) {
+      const cid = String(subP.charge_id || '');
+      if (!/^[0-9]+$/.test(cid)) continue; // registro de trilha sem cobranca real no MP
+      const chkRes = await fetch(`https://api.mercadopago.com/v1/payments/${cid}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const chk = await chkRes.json().catch(() => null);
+      if (!chkRes.ok || !chk?.id) continue;
+      const stChk = String(chk.status || '');
+      if (stChk === 'approved') {
+        // Pagou sem o sistema saber: confirma e nao gera novo
+        const refC = String(chk.external_reference || '');
+        const [codeC, whoC] = refC.split(':');
+        if (codeC && whoC === 'L') await supabase.rpc('confirm_leader_payment', { p_code: codeC });
+        await supabase.from('subscriptions').update({ status: 'paid', paid_at: new Date().toISOString() }).eq('charge_id', cid);
+        return NextResponse.json({ ok: true, alreadyPaid: true });
+      }
+      if ((stChk === 'pending' || stChk === 'authorized')) {
+        const qrC = chk?.point_of_interaction?.transaction_data?.qr_code || null;
+        const qrB64C = chk?.point_of_interaction?.transaction_data?.qr_code_base64 || null;
+        if (qrC || qrB64C) {
+          return NextResponse.json({
+            ok: true,
+            paymentId: cid,
+            qr: qrC,
+            qrBase64: qrB64C,
+            amount: Number(subP.amount_paid) || amount,
+            reused: true,
+            expiresAt: chk.date_of_expiration || null,
+          });
+        }
+      }
+      // cancelled/expired/rejected: segue para gerar um novo abaixo
+    }
+
     const idempotencyKey = `${code}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
     const mpRes = await fetch('https://api.mercadopago.com/v1/payments', {
