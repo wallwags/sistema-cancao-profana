@@ -67,6 +67,24 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   // Draft Recovery
   const [draftToRestore, setDraftToRestore] = useState<any>(null);
 
+  // Cupom via link (?cupom=): valida ANTECIPADAMENTE so para EXIBIR o desconto na revisao.
+  // Nao altera nada fora do quiz; o desconto real e aplicado pelo servidor.
+  useEffect(() => {
+    if (!isOpen || !cupom) { setCupomInfo(null); return; }
+    let alive = true;
+    (async () => {
+      try {
+        const { data } = await supabase.rpc('validar_cupom_lote', { p_codigo: cupom });
+        if (!alive) return;
+        const r = (typeof data === 'string' ? JSON.parse(data) : data) as { valido?: boolean; preco?: number; lote_nome?: string } | null;
+        setCupomInfo(r && r.valido ? { valido: true, preco: Number(r.preco), loteNome: r.lote_nome } : { valido: false });
+      } catch {
+        if (alive) setCupomInfo({ valido: false });
+      }
+    })();
+    return () => { alive = false; };
+  }, [isOpen, cupom]);
+
   // Legal popups (also reachable from quiz step 5)
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
@@ -75,6 +93,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [entryPrice, setEntryPrice] = useState<number | null>(null); // preco unitario real retornado pelo servidor (cupom aplicado)
+  const [cupomInfo, setCupomInfo] = useState<{ valido: boolean; preco?: number; loteNome?: string } | null>(null); // validacao antecipada do cupom (revisao)
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [checkoutTimeLeft, setCheckoutTimeLeft] = useState(600);
   const [checkoutExpired, setCheckoutExpired] = useState(false);
@@ -148,11 +167,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [pixGatewayOn, setPixGatewayOn] = useState(false);
   const [paymentMode, setPaymentMode] = useState<'individual' | 'lider'>('individual');
   const [sandboxV2, setSandboxV2] = useState<{ ativo: boolean; pix_real: boolean }>({ ativo: false, pix_real: false });
-  const [pixData, setPixData] = useState<{ paymentId: string; qr: string | null; qrBase64: string | null; amount?: number } | null>(null);
-  const pixDataRef = useRef<{ paymentId: string; qr: string | null; qrBase64: string | null; amount?: number } | null>(null);
+  const [pixData, setPixData] = useState<{ paymentId: string; qr: string | null; qrBase64: string | null; amount?: number; expiresAt?: string | null } | null>(null);
+  const pixDataRef = useRef<{ paymentId: string; qr: string | null; qrBase64: string | null; amount?: number; expiresAt?: string | null } | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const applyPixData = (d: { paymentId: string; qr: string | null; qrBase64: string | null; amount?: number } | null) => {
+  const applyPixData = (d: { paymentId: string; qr: string | null; qrBase64: string | null; amount?: number; expiresAt?: string | null } | null) => {
     pixDataRef.current = d;
     setPixData(d);
   };
@@ -410,8 +429,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   }, [isOpen, quizStep, projectName, projectStyle, projectBio, projectPhotoName, projectInstagram, projectVideoLink, respName, respCpf, respBirth, respPhone, respEmail, membersList, draftToRestore]);
 
   const totalCost = selectedMembers * activePrice;
-  // Preco final do Pix: entry_price vem do servidor (RPC aplica o cupom); fallback = preco do lote ativo
-  const unitFinal = entryPrice != null ? entryPrice : activePrice;
+  // Preco final do Pix: entry_price vem do servidor (RPC aplica o cupom); fallback = preco antecipado do cupom ou lote ativo
+  const unitEstimado = cupomInfo?.valido && cupomInfo.preco != null ? cupomInfo.preco : activePrice;
+  const cupomDescUn = cupomInfo?.valido && cupomInfo.preco != null ? Math.max(activePrice - cupomInfo.preco, 0) : 0;
+  const unitFinal = entryPrice != null ? entryPrice : unitEstimado;
   const fullTotal = paymentMode === 'lider' ? totalCost : activePrice;
   const finalTotal = paymentMode === 'lider' ? selectedMembers * unitFinal : unitFinal;
   // Valor verdadeiro cobrado pelo gateway (quando o Pix ja foi gerado)
@@ -434,6 +455,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     }
     if (step === 2) {
       if (!projectBio.trim()) errs.projectBio = 'Escreva uma biografia para avaliação dos jurados.';
+      if (projectInstagram.replace(/@/g, '').trim().length < 2) errs.projectInstagram = 'Informe o @ do Instagram da banda.';
       if (!projectPhotoName) errs.projectPhotoName = 'Envie a foto oficial do projeto.';
       if (!projectVideoLink.trim() || !projectVideoLink.includes('youtube.com') && !projectVideoLink.includes('youtu.be')) errs.projectVideoLink = 'Cole o link do YouTube com a música da banda.';
     }
@@ -632,7 +654,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         p_style: projectStyle,
         p_bio: projectBio,
         p_photo_url: photoUrl,
-        p_instagram: projectInstagram || null,
+        p_instagram: projectInstagram ? projectInstagram.replace(/@/g, '') : null,
         p_video_link: projectVideoLink || null,
         p_leader: { name: respName, cpf: respCpf, birth: respBirth, phone: respPhone, email: respEmail, role: leaderRoleEffective },
         p_members: membersPayload
@@ -844,7 +866,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
           setShowManualConfirm(true);
           return;
         }
-        applyPixData({ paymentId: String(data.paymentId), qr: data.qr ? String(data.qr) : null, qrBase64: data.qrBase64 ? String(data.qrBase64) : null, amount: typeof data.amount === 'number' ? data.amount : undefined });
+        applyPixData({ paymentId: String(data.paymentId), qr: data.qr ? String(data.qr) : null, qrBase64: data.qrBase64 ? String(data.qrBase64) : null, amount: typeof data.amount === 'number' ? data.amount : undefined, expiresAt: data.expiresAt ? String(data.expiresAt) : null });
         setIsCheckoutLoading(false);
       } catch {
         if (!cancelled) {
@@ -963,6 +985,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     setPollingStep(0);
   };
 
+  const fmtValidade = (iso: string) => {
+    try {
+      return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }).format(new Date(iso));
+    } catch { return ''; }
+  };
   const formatCheckoutTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -1209,23 +1236,28 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1">
                                   <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Instagram *</label>
-                                  <input
-                                    type="text"
-                                    value={projectInstagram}
-                                    onChange={(e) => { const v = e.target.value; setProjectInstagram(v.startsWith('@') ? v : '@' + v.replace(/^@+/, '')); }}
-                                    placeholder="suabanda"
-                                    className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-xs outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors"
-                                  />
+                                  <div className={`flex items-stretch bg-[#05070B] border rounded-xl overflow-hidden transition-colors ${errors.projectInstagram ? 'border-red-500/60' : 'border-white/10 focus-within:border-[#E3B552]'}`}>
+                                    <span className="flex items-center pl-3.5 pr-0.5 font-mono text-sm text-gray-400 select-none pointer-events-none">@</span>
+                                    <input
+                                      type="text"
+                                      value={projectInstagram}
+                                      onChange={(e) => { setProjectInstagram(e.target.value.replace(/[^a-zA-Z0-9._]/g, '').slice(0, 30)); clearError('projectInstagram'); }}
+                                      placeholder="suabanda"
+                                      className="flex-1 min-w-0 bg-transparent px-1 py-3 text-white text-xs outline-none placeholder-gray-600"
+                                    />
+                                  </div>
+                                  {fieldError('projectInstagram')}
                                 </div>
                                 <div className="space-y-1">
                                   <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Link do Vídeo (YouTube) *</label>
                                   <input
                                     type="url"
                                     value={projectVideoLink}
-                                    onChange={(e) => setProjectVideoLink(e.target.value)}
+                                    onChange={(e) => { setProjectVideoLink(e.target.value); clearError('projectVideoLink'); }}
                                     placeholder="Ex: https://youtube.com/watch?v=..."
-                                    className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-xs outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors"
+                                    className={`w-full bg-[#05070B] border rounded-xl px-4 py-3 text-white text-xs outline-none placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 transition-colors ${errors.projectVideoLink ? 'border-red-500/60' : 'border-white/10 focus:border-[#E3B552]'}`}
                                   />
+                                  {fieldError('projectVideoLink')}
                                 </div>
                               </div>
                             </div>
@@ -1449,11 +1481,20 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                 </div>
 
                                 <div className="bg-[#F0C265]/10 border border-[#F0C265]/30 rounded-2xl p-4 text-center">
-                                  <span className="font-mono text-[13px] text-gray-200 uppercase tracking-widest font-bold block">Sua parte agora (líder)</span>
-                                  <span className="font-display font-black text-4xl text-[#F0C265] block leading-tight mt-0.5">R$ {activePrice},00</span>
+                                  <span className="font-mono text-[13px] text-gray-200 uppercase tracking-widest font-bold block">{paymentMode === 'lider' ? 'Pagamento único do líder' : 'Sua parte agora (líder)'}</span>
+                                  {cupomDescUn > 0 && (
+                                    <span className="font-mono text-xs text-gray-500 line-through block mt-0.5">R$ {(paymentMode === 'lider' ? selectedMembers * activePrice : activePrice).toFixed(0)},00</span>
+                                  )}
+                                  <span className="font-display font-black text-4xl text-[#F0C265] block leading-tight mt-0.5">R$ {(paymentMode === 'lider' ? selectedMembers * unitFinal : unitFinal).toFixed(0)},00</span>
+                                  {cupomDescUn > 0 && (
+                                    <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/30 px-2.5 py-1 rounded-full mt-1.5">Cupom {cupom} · -R$ {cupomDescUn.toFixed(0)},00 por integrante</span>
+                                  )}
                                   <span className="text-sm text-gray-300 block mt-1.5 leading-relaxed">
-                                    Cada integrante paga a própria parte pelo link exclusivo.<br />
-                                    Total da banda: <strong className="text-white">R$ {totalCost},00</strong> + {selectedMembers}kg de alimento
+                                    {paymentMode === 'lider'
+                                      ? <>Um único Pix cobre todos os {selectedMembers} integrantes.<br /></>
+                                      : <>Cada integrante paga a própria parte pelo link exclusivo.<br /></>
+                                    }
+                                    Total da banda: <strong className="text-white">R$ {(selectedMembers * unitFinal).toFixed(0)},00</strong> + {selectedMembers}kg de alimento
                                   </span>
                                 </div>
                               </div>
@@ -1617,6 +1658,9 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                     ) : (
                       <span className="font-mono text-[10px] text-gray-500 block uppercase font-bold">SUA PARTE (LÍDER)</span>
                     )}
+                    {pixData?.expiresAt && !checkoutExpired && (
+                      <span className="font-mono text-[10px] text-gray-400 block uppercase mt-1">QR Code válido até {fmtValidade(pixData.expiresAt)} (BRT)</span>
+                    )}
                   </div>
 
                   {/* Live polling status line (feedback while QR is on screen) */}
@@ -1648,7 +1692,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                 <div className="space-y-3">
                   <div className="bg-[#8B1E1E]/10 border border-[#8B1E1E]/40 rounded-xl p-4 text-center space-y-2">
                     <span className="font-mono text-xs text-[#FF4B2E] uppercase font-bold tracking-widest block">⏰ Reserva de oferta expirada</span>
-                    <p className="text-xs text-gray-300 leading-relaxed">Seus dados continuam salvos. Renove o prazo e gere o Pix novamente para garantir o valor do {activeLoteName}.</p>
+                    <p className="text-xs text-gray-300 leading-relaxed">Seus dados continuam salvos{pixData?.expiresAt ? <> e o QR Code permanece válido até {fmtValidade(pixData.expiresAt)} (BRT) — pode pagá-lo normalmente que a vaga confirma sozinha</> : ''}. Renove o prazo para manter a garantia do valor do {activeLoteName}.</p>
                   </div>
                   <button onClick={renewReservation} className="font-mono text-sm font-bold text-black btn-gold-shimmer py-3 rounded-xl w-full uppercase border-none">Renovar 10 minutos</button>
                   <button onClick={closeCheckout} className="font-mono text-xs font-bold text-gray-400 border border-white/10 py-2.5 rounded-xl w-full hover:bg-white/5 transition-colors uppercase">Fechar e continuar depois</button>

@@ -418,6 +418,9 @@ export default function SagradoPage() {
   }, []);
 
   const loadCupons = useCallback(async () => {
+    // RPC SECURITY DEFINER (permite manage_lotes); fallback: select direto
+    const { data: rpc } = await supabase.rpc('list_cupons_lote');
+    if (Array.isArray(rpc)) { setCupomLista(rpc as Array<Record<string, unknown>>); return; }
     const { data } = await supabase.from('lote_cupons').select('*').order('created_at', { ascending: false });
     setCupomLista((data || []) as Array<Record<string, unknown>>);
   }, []);
@@ -439,7 +442,8 @@ export default function SagradoPage() {
   });
 
   const toggleCupom = (id: string, ativo: boolean) => guarded('cupom-t', async () => {
-    await supabase.from('lote_cupons').update({ ativo: !ativo }).eq('id', id);
+    const { error: errRpc } = await supabase.rpc('toggle_cupom_lote', { p_id: id });
+    if (errRpc) await supabase.from('lote_cupons').update({ ativo: !ativo }).eq('id', id);
     await loadCupons();
     return 'ok';
   });
@@ -504,7 +508,7 @@ export default function SagradoPage() {
     if (authed && tab === 'funil') loadFunnel(funnelDays);
     if (authed && tab === 'vip') loadVipLeads();
     if (authed && tab === 'gateway') loadGateway();
-    if (authed && isDev && tab === 'lotes') { loadV2Env(); loadCupons(); }
+    if (authed && tab === 'lotes' && (isDev || canLotes)) { if (isDev) loadV2Env(); loadCupons(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authed, tab, funnelDays, isDev]);
 
@@ -1009,7 +1013,7 @@ export default function SagradoPage() {
 
           {/* LOTES */}
           {tab === 'lotes' && isDev && (
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 rounded-2xl p-5 space-y-4 fade-up-800 ${'border-amber-400/60' }">
+            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 rounded-2xl p-5 space-y-4 fade-up-800 mb-6 border-amber-400/60">
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-white/5 pb-3">
                 <div>
                   <h3 className="font-display font-bold text-white uppercase">🧪 Sandbox /v2</h3>
@@ -1081,7 +1085,7 @@ export default function SagradoPage() {
               return 'ok';
             });
             return (
-              <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 border-[#E3B552]/50 rounded-2xl p-5 space-y-4 fade-up-800">
+              <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 border-[#E3B552]/50 rounded-2xl p-5 space-y-4 fade-up-800 mb-6">
                 <div className="border-b border-white/5 pb-3">
                   <h3 className="font-display font-bold text-white uppercase">💳 Método de cobrança da inscrição</h3>
                   <p className="text-xs text-gray-400 leading-snug mt-1">
@@ -1114,9 +1118,9 @@ export default function SagradoPage() {
             );
           })()}
 
-          {tab === 'lotes' && isDev && (() => {
+          {tab === 'lotes' && (isDev || canLotes) && (() => {
             return (
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 border-sky-400/50 rounded-2xl p-5 space-y-4 fade-up-800">
+            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 border-sky-400/50 rounded-2xl p-5 space-y-4 fade-up-800 mb-6">
               <div className="border-b border-white/5 pb-3">
                 <h3 className="font-display font-bold text-white uppercase">🎟️ Cupom de inscrição por lote</h3>
                 <p className="text-xs text-gray-400 leading-snug mt-1">
@@ -1158,9 +1162,10 @@ export default function SagradoPage() {
               </div>
               {notice['cupom'] && <Notice kind={notice['cupom'].kind}>{notice['cupom'].msg}</Notice>}
 
-              {cupomLista.length > 0 && (
+              {(
                 <div className="border-t border-white/5 pt-3 space-y-2">
-                  <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold block">Cupons criados</span>
+                  <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold block">Cupons existentes ({cupomLista.length})</span>
+                  {cupomLista.length === 0 && <span className="font-mono text-xs text-gray-500 block">Nenhum cupom criado ainda. Use o formulário acima para criar o primeiro.</span>}
                   {cupomLista.map((c, i) => {
                     const ativo = !!c.ativo;
                     const esgotado = Number(c.usos) >= Number(c.max_usos);
@@ -1170,7 +1175,7 @@ export default function SagradoPage() {
                         <div className="min-w-0">
                           <span className={`font-mono text-sm font-black ${ativo && !esgotado ? 'text-[#10B981]' : 'text-gray-500 line-through'}`}>{String(c.codigo)}</span>
                           <span className="font-mono text-[10px] text-gray-500 uppercase block">
-                            {String(c.usos)}/{String(c.max_usos)} usos {esgotado ? '• esgotado' : ''}
+                            {String(c.usos)}/{String(c.max_usos)} usos{c.lote_nome ? ` • ${String(c.lote_nome)} · R$ ${String(c.preco)}` : ''} {esgotado ? '• esgotado' : ''}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0 flex-wrap">

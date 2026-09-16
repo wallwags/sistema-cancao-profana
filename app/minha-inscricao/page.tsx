@@ -82,7 +82,7 @@ export default function MinhaInscricaoPage() {
   const [avisoDismissed, setAvisoDismissed] = useState(false);
   const [avisoState, setAvisoState] = useState<string | null>(null);
   const [bypassToken, setBypassToken] = useState<string | null>(null);
-  const [portalPix, setPortalPix] = useState<{ qr: string | null; qrBase64: string | null; paymentId: string; amount: number } | null>(null);
+  const [portalPix, setPortalPix] = useState<{ qr: string | null; qrBase64: string | null; paymentId: string; amount: number; expiresAt?: string | null } | null>(null);
   const [portalPixBusy, setPortalPixBusy] = useState(false);
   const [portalPixError, setPortalPixError] = useState<string | null>(null);
   const [portalPixPaid, setPortalPixPaid] = useState(false);
@@ -247,7 +247,7 @@ export default function MinhaInscricaoPage() {
         setPortalPixBusy(false);
         return;
       }
-      setPortalPix({ qr: d.qr || null, qrBase64: d.qrBase64 || null, paymentId: d.paymentId, amount: d.amount });
+      setPortalPix({ qr: d.qr || null, qrBase64: d.qrBase64 || null, paymentId: d.paymentId, amount: d.amount, expiresAt: d.expiresAt || null });
       setPortalPixBusy(false);
       // Poll status
       const poll = setInterval(async () => {
@@ -675,10 +675,15 @@ export default function MinhaInscricaoPage() {
                     </div>
                   )}
                   <p className="font-display font-black text-2xl text-[#F0C265] text-center">R$ {portalPix.amount},00</p>
+                  {portalPix.expiresAt && (
+                    <p className="font-mono text-[11px] text-gray-400 text-center uppercase">
+                      QR válido até {new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }).format(new Date(portalPix.expiresAt))} (BRT)
+                    </p>
+                  )}
                   <button type="button" onClick={async () => { try { await navigator.clipboard.writeText(portalPix.qr || ''); } catch { /* */ } }} className="w-full font-mono text-xs font-bold text-white bg-white/5 border border-white/10 py-3 rounded-xl hover:bg-white/10 transition-colors uppercase">
                     Copiar código Pix
                   </button>
-                  <p className="text-[11px] text-gray-500 text-center font-mono">Confirmação automática em ~5 segundos após o pagamento.</p>
+                  <p className="text-[11px] text-gray-500 text-center font-mono">Confirmação automática em ~5 segundos após o pagamento.{portalPix.expiresAt ? ' Se o QR vencer, clique em "Gerar Pix de inscrição" novamente para um novo código.' : ''}</p>
                 </div>
               )}
               {portalPixError && (
