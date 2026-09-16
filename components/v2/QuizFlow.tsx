@@ -79,7 +79,9 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         const r = (typeof data === 'string' ? JSON.parse(data) : data) as { valido?: boolean; preco?: number; lote_nome?: string } | null;
         setCupomInfo(r && r.valido ? { valido: true, preco: Number(r.preco), loteNome: r.lote_nome } : { valido: false });
       } catch {
-        if (alive) setCupomInfo({ valido: false });
+        // Falha de rede/rate-limit = DESCONHECIDO (null): o servidor continua validando.
+        // Nunca marcamos invalido sem resposta definitiva do servidor.
+        if (alive) setCupomInfo(null);
       }
     })();
     return () => { alive = false; };
@@ -437,7 +439,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const finalTotal = paymentMode === 'lider' ? selectedMembers * unitFinal : unitFinal;
   // Valor verdadeiro cobrado pelo gateway (quando o Pix ja foi gerado)
   const displayTotal = pixData?.amount && pixData.amount > 0 ? pixData.amount : finalTotal;
-  const cupomDiscount = Math.max(fullTotal - displayTotal, 0);
+  const cupomValidado = cupomInfo?.valido === true;
+  const cupomDiscount = cupomValidado ? Math.max(fullTotal - displayTotal, 0) : 0;
 
   // ---------- Inline validation helpers ----------
   const clearError = (key: string) => setErrors(prev => {
@@ -649,7 +652,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       const { data, error } = await supabase.rpc('create_band_registration', {
         p_origem: origem === 'v2' ? 'v2' : 'home',
         p_lote_id: linkLoteId || null,
-        p_cupom: cupom || null,
+        p_cupom: cupomInfo && cupomInfo.valido === false ? null : (cupom || null),
         p_name: projectName,
         p_style: projectStyle,
         p_bio: projectBio,
@@ -1486,8 +1489,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                     <span className="font-mono text-xs text-gray-500 line-through block mt-0.5">R$ {(paymentMode === 'lider' ? selectedMembers * activePrice : activePrice).toFixed(0)},00</span>
                                   )}
                                   <span className="font-display font-black text-4xl text-[#F0C265] block leading-tight mt-0.5">R$ {(paymentMode === 'lider' ? selectedMembers * unitFinal : unitFinal).toFixed(0)},00</span>
-                                  {cupomDescUn > 0 && (
+                                  {cupomDescUn > 0 && cupomValidado && (
                                     <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/30 px-2.5 py-1 rounded-full mt-1.5">Cupom {cupom} · -R$ {cupomDescUn.toFixed(0)},00 por integrante</span>
+                                  )}
+                                  {cupom && cupomInfo && cupomInfo.valido === false && (
+                                    <span className="block font-mono text-[10px] text-gray-500 uppercase tracking-wider mt-1.5">Cupom {cupom} não está ativo · valor normal do lote aplicado</span>
                                   )}
                                   <span className="text-sm text-gray-300 block mt-1.5 leading-relaxed">
                                     {paymentMode === 'lider'
