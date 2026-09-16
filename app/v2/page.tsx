@@ -205,9 +205,11 @@ export default function Page() {
         }
 
         if (batches && batches.length >= 3) {
-          const b1 = batches[0];
-          const b2 = batches[1];
-          const b3 = batches[2];
+          // MAPEAMENTO POR NOME (nao posicional): exclui o lote "Live (lançamento)" da posicao de lote1/2/3
+          const allB = batches as Array<Record<string, any>>;
+          const lotesOnly = allB.filter(b => /^lote/i.test(String(b?.name || ''))).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+          const rows = lotesOnly.length >= 3 ? lotesOnly : allB.slice(-3);
+          const b1 = rows[0], b2 = rows[1], b3 = rows[2];
           setLoteDates({ lote1: b1.starts_at ?? null, lote1_end: b1.ends_at ?? null, lote2: b2.starts_at ?? null, lote2_end: b2.ends_at ?? null, lote3: b3.starts_at ?? null, lote3_end: b3.ends_at ?? null });
 
           setLotesConfig({

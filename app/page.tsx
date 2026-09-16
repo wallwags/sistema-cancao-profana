@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import gsap from 'gsap';
@@ -35,6 +35,17 @@ interface LotesConfig {
     status: 'em_breve' | 'ao_vivo' | 'encerrada';
   };
 }
+
+// useLayoutEffect no cliente / useEffect no servidor (evita warning de SSR)
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+const CFG_CACHE_KEY = 'cp_cfg_v1';
+const readCfgSnapshot = (): Record<string, any> | null => {
+  try {
+    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(CFG_CACHE_KEY) : null;
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch { return null; }
+};
 
 export default function Page() {
   const [lotesConfig, setLotesConfig] = useState<LotesConfig>({
@@ -137,6 +148,26 @@ export default function Page() {
     if (c) setCupom(c);
   }, []);
 
+  // HIDRATACAO INSTANTANEA: aplica o ultimo snapshot conhecido ANTES do primeiro paint.
+  // Elimina o flash de faixa/botao com estados padrao enquanto o Supabase responde.
+  useIsoLayoutEffect(() => {
+    const c = readCfgSnapshot();
+    if (!c) return;
+    if (c.lotes) setLotesConfig(c.lotes);
+    if (c.loteDates) setLoteDates(c.loteDates);
+    if (c.liveStatusBar) setLiveStatusBar(c.liveStatusBar);
+    if (c.countdownTarget) setCountdownTarget(c.countdownTarget);
+    if (c.liveLaunch) setLiveLaunch(c.liveLaunch);
+    if (c.cartOpen) setCartOpen(c.cartOpen);
+    if (c.liveUrl) setLiveUrl(c.liveUrl);
+    if (c.dia0Price && Number(c.dia0Price) > 0) setDia0Price(Number(c.dia0Price));
+    if (c.slotMode === 'integrante') setSlotMode('integrante');
+    if (c.homeCtaMode === 'waitlist') setWaitlistMode(true);
+    if (c.homeCtaMode === 'quiz') setWaitlistMode(false);
+    if (c.vipWaUrl) setVipWaUrl(c.vipWaUrl);
+    if (Array.isArray(c.faq) && c.faq.length > 0) setFaqList(c.faq);
+  }, []);
+
   // Sync pricing configurations from Supabase on mount
   useEffect(() => {
     const fetchSupabaseConfig = async () => {
@@ -181,17 +212,43 @@ export default function Page() {
         }
 
         if (batches && batches.length >= 3) {
-          const b1 = batches[0];
-          const b2 = batches[1];
-          const b3 = batches[2];
-          setLoteDates({ lote1: b1.starts_at ?? null, lote1_end: b1.ends_at ?? null, lote2: b2.starts_at ?? null, lote2_end: b2.ends_at ?? null, lote3: b3.starts_at ?? null, lote3_end: b3.ends_at ?? null });
-
-          setLotesConfig({
+          // MAPEAMENTO POR NOME (nao posicional): a tabela tambem contem o lote
+          // "Live (lançamento)" (sort_order 0), que NAO pode ocupar a posicao de lote1/2/3
+          const allB = batches as Array<Record<string, any>>;
+          const lotesOnly = allB.filter(b => /^lote/i.test(String(b?.name || ''))).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+          const rows = lotesOnly.length >= 3 ? lotesOnly : allB.slice(-3);
+          const b1 = rows[0], b2 = rows[1], b3 = rows[2];
+          const loteDatesNext = { lote1: b1.starts_at ?? null, lote1_end: b1.ends_at ?? null, lote2: b2.starts_at ?? null, lote2_end: b2.ends_at ?? null, lote3: b3.starts_at ?? null, lote3_end: b3.ends_at ?? null };
+          const lotesNext = {
             lote1: { status: b1.status, vagasRestantes: b1.vagas_restantes, total: Number(b1.vagas_total ?? 10), valor: Number(b1.price_per_member), desc: 'Primeiras inscrições. Menor oferta histórica.' },
             lote2: { status: b2.status, vagasRestantes: b2.vagas_restantes, total: Number(b2.vagas_total ?? 10), valor: Number(b2.price_per_member), desc: 'Disponível na fase intermediária.' },
             lote3: { status: b3.status, vagasRestantes: b3.vagas_restantes, total: Number(b3.vagas_total ?? 10), valor: Number(b3.price_per_member), desc: 'Reta final de inscrições regulamentares.' },
             live: { status: liveData ? liveData.status : 'em_breve' }
-          });
+          };
+          setLoteDates(loteDatesNext);
+          setLotesConfig(lotesNext);
+
+          // Snapshot para a proxima visita: faixa, CTA e precos corretos ja no primeiro paint
+          try {
+            const map0: Record<string, string> = {};
+            (settingsRes.data || []).forEach((r: { key: string; value: unknown }) => { map0[r.key] = typeof r.value === 'string' ? r.value : String(r.value ?? ''); });
+            const dp0 = Number(map0.dia0_price);
+            localStorage.setItem('cp_cfg_v1', JSON.stringify({
+              t: Date.now(),
+              lotes: lotesNext,
+              loteDates: loteDatesNext,
+              liveStatusBar: liveData?.status || 'em_breve',
+              countdownTarget: map0.countdown_target || null,
+              liveLaunch: map0.live_launch || null,
+              cartOpen: map0.cart_open_at || null,
+              liveUrl: map0.live_url || null,
+              dia0Price: !isNaN(dp0) && dp0 > 0 ? dp0 : null,
+              slotMode: map0.slot_mode || null,
+              homeCtaMode: map0.home_cta_mode || null,
+              vipWaUrl: map0.vip_whatsapp_url || null,
+              faq: (faqRes.data || []).slice(0, 14)
+            }));
+          } catch { /* storage cheio/bloqueado */ }
         }
       } catch (err) {
         console.error("Error fetching batches from Supabase:", err);
