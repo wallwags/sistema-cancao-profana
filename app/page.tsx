@@ -74,7 +74,8 @@ export default function Page() {
   const [countdownTarget, setCountdownTarget] = useState<string | null>(null);
   const [liveLaunch, setLiveLaunch] = useState<string | null>(null);
   const [cartOpen, setCartOpen] = useState<string | null>(null); // abertura real das inscricoes (fonte da faixa pre-live)
-  const [cupom, setCupom] = useState<string | null>(null); // cupom de lote (via ?cupom=) // abertura real das inscricoes (fonte da faixa pre-live)
+  const [cupom, setCupom] = useState<string | null>(null);
+  const [cfgReady, setCfgReady] = useState(false); // header/CTA so aparecem quando a config real chegou (ou snapshot do cache) // cupom de lote (via ?cupom=) // abertura real das inscricoes (fonte da faixa pre-live)
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
   const [dia0Price, setDia0Price] = useState<number>(25);
   const [liveStatusBar, setLiveStatusBar] = useState<'em_breve' | 'ao_vivo' | 'encerrada'>('em_breve');
@@ -103,6 +104,12 @@ export default function Page() {
   useEffect(() => {
     trackPre('page_view', new URLSearchParams(window.location.search).get('utm_campaign') || '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Seguranca: se a config demorar demais (rede lenta), revela o estado padrao apos 900ms
+  useEffect(() => {
+    const t = setTimeout(() => setCfgReady(true), 900);
+    return () => clearTimeout(t);
   }, []);
 
   // O botao e um link nativo do WhatsApp (nunca bloqueado como popup).
@@ -166,28 +173,23 @@ export default function Page() {
     if (c.homeCtaMode === 'quiz') setWaitlistMode(false);
     if (c.vipWaUrl) setVipWaUrl(c.vipWaUrl);
     if (Array.isArray(c.faq) && c.faq.length > 0) setFaqList(c.faq);
+    setCfgReady(true); // antes do primeiro paint: visita repetida nao pisca
   }, []);
 
   // Sync pricing configurations from Supabase on mount
   useEffect(() => {
     const fetchSupabaseConfig = async () => {
       try {
-        const { data: batches } = await supabase
-          .from('batches')
-          .select('*')
-          .order('sort_order', { ascending: true });
-
-        const { data: liveData } = await supabase
-          .from('live_broadcast')
-          .select('*')
-          .eq('id', 1)
-          .maybeSingle();
-        if (liveData?.status) setLiveStatusBar(liveData.status);
-
-        const [settingsRes, faqRes] = await Promise.all([
+        // TUDO em paralelo: 1 unico lote de rede (faixa/CTA corretos chegam mais rapido)
+        const [batchesRes, liveRes, settingsRes, faqRes] = await Promise.all([
+          supabase.from('batches').select('*').order('sort_order', { ascending: true }),
+          supabase.from('live_broadcast').select('*').eq('id', 1).maybeSingle(),
           supabase.from('site_settings').select('key,value'),
           supabase.from('faq_items').select('question,answer,sort_order').eq('active', true).order('sort_order', { ascending: true })
         ]);
+        const batches = batchesRes.data;
+        const liveData = liveRes.data;
+        if (liveData?.status) setLiveStatusBar(liveData.status);
 
         if (settingsRes.data) {
           const map: Record<string, string> = {};
@@ -252,6 +254,8 @@ export default function Page() {
         }
       } catch (err) {
         console.error("Error fetching batches from Supabase:", err);
+      } finally {
+        setCfgReady(true);
       }
     };
 
@@ -392,7 +396,7 @@ export default function Page() {
     <div className="bg-[#05070B] text-[#F0EAE0] min-h-screen relative font-sans antialiased">
 
       {/* UNIFIED FIXED CONTAINER FOR COUNTDOWN AND NAVBAR - retrátil ao rolar */}
-      <div ref={headerRef} className="fixed top-0 left-0 right-0 z-50 w-full bg-[#05070B]/95 backdrop-blur-md">
+      <div ref={headerRef} className="fixed top-0 left-0 right-0 z-50 w-full bg-[#05070B]/95 backdrop-blur-md" style={{ visibility: cfgReady ? 'visible' : 'hidden' }}>
         <CountdownBar
           targetDate={liveStatusBar === 'em_breve' && liveLaunchFuture ? (cartOpen || liveLaunch) : countdownTarget}
           liveStatus={liveStatusBar}
@@ -421,7 +425,7 @@ export default function Page() {
               <span>• GRAVAÇÃO INCLUÍDA</span>
             </div>
             <div className="fade-up-800 [animation-delay:260ms] flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3">
-              <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode && !inscricoesAbertas} />
+              <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode && !inscricoesAbertas} invisible={!cfgReady} />
               <a
                 href="#premios"
                 className="border border-white/10 hover:border-white/35 text-white font-mono text-sm font-bold uppercase tracking-widest px-8 py-3.5 rounded-full transition-colors text-center w-full sm:w-auto outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B]"
@@ -563,7 +567,7 @@ export default function Page() {
 
           </div>
           <div className="text-center !mt-6">
-            <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode && !inscricoesAbertas} />
+            <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode && !inscricoesAbertas} invisible={!cfgReady} />
           </div>
         </section>
 
@@ -614,7 +618,7 @@ export default function Page() {
           {/* Hero Premium Card - Rendered below items as requested */}
           <HeroCard />
           <div className="text-center !mt-6">
-            <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode && !inscricoesAbertas} />
+            <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode && !inscricoesAbertas} invisible={!cfgReady} />
           </div>
         </section>
 
@@ -812,7 +816,7 @@ export default function Page() {
           </p>
 
           <div className="text-center !mt-6">
-            <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode && !inscricoesAbertas} />
+            <GlobalCta onClick={ctaAction} onMouseEnter={preloadQuiz} label={ctaText} waitlistMode={waitlistMode && !inscricoesAbertas} invisible={!cfgReady} />
           </div>
         </section>
 

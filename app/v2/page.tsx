@@ -155,22 +155,15 @@ export default function Page() {
   useEffect(() => {
     const fetchSupabaseConfig = async () => {
       try {
-        const { data: batches } = await supabase
-          .from('batches')
-          .select('*')
-          .order('sort_order', { ascending: true });
-
-        const { data: liveData } = await supabase
-          .from('live_broadcast')
-          .select('*')
-          .eq('id', 1)
-          .maybeSingle();
-        if (liveData?.status) setLiveStatusBar(liveData.status);
-
-        const [settingsRes, faqRes] = await Promise.all([
+const [batchesRes, liveRes, settingsRes, faqRes] = await Promise.all([
+          supabase.from('batches').select('*').order('sort_order', { ascending: true }),
+          supabase.from('live_broadcast').select('*').eq('id', 1).maybeSingle(),
           supabase.from('site_settings').select('key,value'),
           supabase.from('faq_items').select('question,answer,sort_order').eq('active', true).order('sort_order', { ascending: true })
         ]);
+        const batches = batchesRes.data;
+        const liveData = liveRes.data;
+        if (liveData?.status) setLiveStatusBar(liveData.status);
 
         if (settingsRes.data) {
           const map: Record<string, string> = {};
