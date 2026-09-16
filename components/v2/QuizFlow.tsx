@@ -22,10 +22,11 @@ interface QuizFlowProps {
   origem?: 'home' | 'v2';
   sandboxPix?: boolean;
   linkLoteId?: string | null;
+  cupom?: string | null;
 }
 
 
-export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false, origem = 'home', sandboxPix = false, linkLoteId = null }: QuizFlowProps) {
+export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false, origem = 'home', sandboxPix = false, linkLoteId = null, cupom = null }: QuizFlowProps) {
   const [quizStep, setQuizStep] = useState(1);
 
   // Quiz form states
@@ -608,6 +609,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       const { data, error } = await supabase.rpc('create_band_registration', {
         p_origem: origem === 'v2' ? 'v2' : 'home',
         p_lote_id: linkLoteId || null,
+        p_cupom: cupom || null,
         p_name: projectName,
         p_style: projectStyle,
         p_bio: projectBio,

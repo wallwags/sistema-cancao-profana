@@ -229,6 +229,10 @@ export default function SagradoPage() {
   const [v2env, setV2env] = useState<{ ativo: boolean; preco: number | null; pix_real: boolean } | null>(null);
   const [linkLote, setLinkLote] = useState('');
   const [linkGerado, setLinkGerado] = useState<string | null>(null);
+  const [cupomCodigo, setCupomCodigo] = useState('');
+  const [cupomLote, setCupomLote] = useState('');
+  const [cupomMax, setCupomMax] = useState('1');
+  const [cupomLista, setCupomLista] = useState<Array<Record<string, unknown>>>([]);
   const [v2preco, setV2preco] = useState('');
   const [prePage, setPrePage] = useState(0);
   const [preOpen, setPreOpen] = useState(false);
@@ -413,6 +417,33 @@ export default function SagradoPage() {
     setAudit((data || []) as Array<Record<string, unknown>>);
   }, []);
 
+  const loadCupons = useCallback(async () => {
+    const { data } = await supabase.from('lote_cupons').select('*').order('created_at', { ascending: false });
+    setCupomLista((data || []) as Array<Record<string, unknown>>);
+  }, []);
+
+  const criarCupom = () => guarded('cupom', async () => {
+    const codigo = cupomCodigo.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
+    if (codigo.length < 4) return 'Código deve ter ao menos 4 caracteres (letras/números/hífen).';
+    if (!cupomLote) return 'Selecione o lote do cupom.';
+    const maxU = parseInt(cupomMax, 10);
+    if (isNaN(maxU) || maxU < 1) return 'Informe um limite de usos válido.';
+    const { data: res, error } = await supabase.rpc('dev_criar_cupom_lote', { p_codigo: codigo, p_lote_id: cupomLote, p_max_usos: maxU });
+    if (error) return 'Erro: ' + error.message;
+    if (res !== 'ok') return String(res);
+    setCupomCodigo('');
+    setCupomMax('1');
+    await loadCupons();
+    setMsg('cupom', 'ok', `Cupom ${codigo} criado. Link: ${window.location.origin}/?cupom=${codigo}`);
+    return 'ok';
+  });
+
+  const toggleCupom = (id: string, ativo: boolean) => guarded('cupom-t', async () => {
+    await supabase.from('lote_cupons').update({ ativo: !ativo }).eq('id', id);
+    await loadCupons();
+    return 'ok';
+  });
+
   const loadV2Env = useCallback(async () => {
     const { data, error } = await supabase.rpc('dev_get_v2_env');
     if (error || !data) { setV2env(null); return; }
@@ -473,7 +504,7 @@ export default function SagradoPage() {
     if (authed && tab === 'funil') loadFunnel(funnelDays);
     if (authed && tab === 'vip') loadVipLeads();
     if (authed && tab === 'gateway') loadGateway();
-    if (authed && isDev && tab === 'lotes') loadV2Env();
+    if (authed && isDev && tab === 'lotes') { loadV2Env(); loadCupons(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authed, tab, funnelDays, isDev]);
 
@@ -1085,49 +1116,85 @@ export default function SagradoPage() {
 
           {tab === 'lotes' && isDev && (() => {
             return (
-            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 rounded-2xl p-5 space-y-4 ${'border-sky-400/50'}">
+            <div className="bg-[#0B0F19]/60 backdrop-blur-xl border-2 border-sky-400/50 rounded-2xl p-5 space-y-4 fade-up-800">
               <div className="border-b border-white/5 pb-3">
-                <h3 className="font-display font-bold text-white uppercase">🔗 Link de inscrição por lote</h3>
+                <h3 className="font-display font-bold text-white uppercase">🎟️ Cupom de inscrição por lote</h3>
                 <p className="text-xs text-gray-400 leading-snug mt-1">
-                  Gera um link exclusivo que inscreve a banda <strong className="text-white">no lote escolhido</strong>,
-                  ignorando o lote vigente. Útil para convidar uma banda específica com a oferta de um lote que já fechou
-                  (ex.: reabrir a oferta da Live só para ela). O preço cobrado é o do lote escolhido.
+                  Crie um cupom com <strong className="text-white">código próprio</strong> e <strong className="text-white">limite de usos</strong>.
+                  O inscrito acessa <strong className="text-white">/?cupom=CODIGO</strong> e é inscrito no lote do cupom, com o preço dele,
+                  mesmo que o lote não esteja vigente. Cupom esgotado ou inválido é recusado no servidor.
                 </p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end">
+
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_100px_auto] gap-3 items-end">
                 <div className="space-y-1.5">
-                  <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">Lote do link</label>
-                  <select className={inputCls} value={linkLote} onChange={(e) => { setLinkLote(e.target.value); setLinkGerado(null); }}>
-                    <option value="">Selecione o lote...</option>
+                  <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">Código do cupom</label>
+                  <input
+                    className={inputCls}
+                    value={cupomCodigo}
+                    onChange={(e) => setCupomCodigo(e.target.value.toUpperCase())}
+                    placeholder="EX: LIVE2026"
+                    maxLength={24}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">Lote alvo</label>
+                  <select className={inputCls} value={cupomLote} onChange={(e) => setCupomLote(e.target.value)}>
+                    <option value="">Selecione...</option>
                     {batches.map(b => (
                       <option key={String(b.id)} value={String(b.id)}>
-                        {String(b.name)} — R$ {String(b.price_per_member)} {b.status !== 'ativo' ? `(${b.status})` : '(vigente)'}
+                        {String(b.name)} — R$ {String(b.price_per_member)}
                       </option>
                     ))}
                   </select>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!linkLote) { setMsg('linklote', 'err', 'Selecione o lote.'); return; }
-                    const url = `${window.location.origin}/v2?lote=${linkLote}`;
-                    navigator.clipboard?.writeText(url).catch(() => {});
-                    setLinkGerado(url);
-                  }}
-                  disabled={!linkLote}
-                  className={btnGold}
-                >
-                  Gerar link
+                <div className="space-y-1.5">
+                  <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">Usos</label>
+                  <input type="number" min={1} className={inputCls} value={cupomMax} onChange={(e) => setCupomMax(e.target.value)} />
+                </div>
+                <button type="button" onClick={criarCupom} disabled={busy === 'cupom'} className={btnGold}>
+                  {busy === 'cupom' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Criar'}
                 </button>
               </div>
-              {linkGerado && (
-                <div className="bg-black/40 border border-[#10B981]/40 rounded-xl p-3.5 space-y-1.5">
-                  <span className="font-mono text-[10px] text-[#10B981] uppercase tracking-widest font-black block">Link gerado (copiado para a área de transferência)</span>
-                  <span className="text-xs text-white font-mono break-all block">{linkGerado}</span>
-                  <span className="text-[10px] text-gray-500 font-mono block">Envie para a banda. Ela se inscreve com o preço do lote escolhido, mesmo que ele não esteja vigente.</span>
+              {notice['cupom'] && <Notice kind={notice['cupom'].kind}>{notice['cupom'].msg}</Notice>}
+
+              {cupomLista.length > 0 && (
+                <div className="border-t border-white/5 pt-3 space-y-2">
+                  <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold block">Cupons criados</span>
+                  {cupomLista.map((c, i) => {
+                    const ativo = !!c.ativo;
+                    const esgotado = Number(c.usos) >= Number(c.max_usos);
+                    const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/?cupom=${String(c.codigo)}`;
+                    return (
+                      <div key={String(c.id)} className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 bg-black/30 border border-white/5 rounded-xl px-3.5 py-2.5">
+                        <div className="min-w-0">
+                          <span className={`font-mono text-sm font-black ${ativo && !esgotado ? 'text-[#10B981]' : 'text-gray-500 line-through'}`}>{String(c.codigo)}</span>
+                          <span className="font-mono text-[10px] text-gray-500 uppercase block">
+                            {String(c.usos)}/{String(c.max_usos)} usos {esgotado ? '• esgotado' : ''}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={async () => { try { await navigator.clipboard.writeText(url); setMsg(`cupom-c-${i}`, 'ok', 'Link copiado: ' + url); } catch { setMsg(`cupom-c-${i}`, 'err', 'Não foi possível copiar.'); } }}
+                            className="font-mono text-[10px] font-bold text-white border border-white/15 px-2.5 py-1.5 rounded-lg uppercase hover:bg-white/5"
+                          >
+                            Copiar link
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleCupom(String(c.id), ativo)}
+                            disabled={busy === 'cupom-t'}
+                            className={`font-mono text-[10px] font-bold px-2.5 py-1.5 rounded-lg uppercase border ${ativo ? 'text-amber-300 border-amber-500/40 hover:bg-amber-500/10' : 'text-[#10B981] border-[#10B981]/40 hover:bg-[#10B981]/10'}`}
+                          >
+                            {ativo ? 'Desativar' : 'Ativar'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
-              {notice['linklote'] && <Notice kind={notice['linklote'].kind}>{notice['linklote'].msg}</Notice>}
             </div>
             );
           })()}

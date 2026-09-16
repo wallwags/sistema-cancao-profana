@@ -63,6 +63,7 @@ export default function Page() {
   const [countdownTarget, setCountdownTarget] = useState<string | null>(null);
   const [liveLaunch, setLiveLaunch] = useState<string | null>(null);
   const [cartOpen, setCartOpen] = useState<string | null>(null); // abertura real das inscricoes (fonte da faixa pre-live)
+  const [cupom, setCupom] = useState<string | null>(null); // cupom de lote (via ?cupom=) // abertura real das inscricoes (fonte da faixa pre-live)
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
   const [dia0Price, setDia0Price] = useState<number>(25);
   const [liveStatusBar, setLiveStatusBar] = useState<'em_breve' | 'ao_vivo' | 'encerrada'>('em_breve');
@@ -132,6 +133,8 @@ export default function Page() {
     const params = new URLSearchParams(window.location.search);
     const b = (params.get('b') || '').replace(/[^a-z0-9]/g, '').slice(0, 12);
     if (b) { setSheetCode(b); setSheetStart('confirm'); }
+    const c = (params.get('cupom') || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 24);
+    if (c) setCupom(c);
   }, []);
 
   // Sync pricing configurations from Supabase on mount
@@ -823,6 +826,7 @@ export default function Page() {
           activePrice={activePrice}
           activeLoteName={activeLoteName}
           onPaymentSuccess={handlePaymentSuccess}
+          cupom={cupom}
         />
       )}
 
