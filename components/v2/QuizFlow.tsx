@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { Trash2, Plus, X, Copy, Share2 } from 'lucide-react';
+import { Trash2, Plus, X, Copy, Share2, Ticket } from 'lucide-react';
 import Script from 'next/script';
 import { supabase } from '../../lib/supabase';
 import {
@@ -74,6 +74,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   // Checkout states
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+  const [entryPrice, setEntryPrice] = useState<number | null>(null); // preco unitario real retornado pelo servidor (cupom aplicado)
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [checkoutTimeLeft, setCheckoutTimeLeft] = useState(600);
   const [checkoutExpired, setCheckoutExpired] = useState(false);
@@ -147,11 +148,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [pixGatewayOn, setPixGatewayOn] = useState(false);
   const [paymentMode, setPaymentMode] = useState<'individual' | 'lider'>('individual');
   const [sandboxV2, setSandboxV2] = useState<{ ativo: boolean; pix_real: boolean }>({ ativo: false, pix_real: false });
-  const [pixData, setPixData] = useState<{ paymentId: string; qr: string | null; qrBase64: string | null } | null>(null);
-  const pixDataRef = useRef<{ paymentId: string; qr: string | null; qrBase64: string | null } | null>(null);
+  const [pixData, setPixData] = useState<{ paymentId: string; qr: string | null; qrBase64: string | null; amount?: number } | null>(null);
+  const pixDataRef = useRef<{ paymentId: string; qr: string | null; qrBase64: string | null; amount?: number } | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const applyPixData = (d: { paymentId: string; qr: string | null; qrBase64: string | null } | null) => {
+  const applyPixData = (d: { paymentId: string; qr: string | null; qrBase64: string | null; amount?: number } | null) => {
     pixDataRef.current = d;
     setPixData(d);
   };
@@ -409,8 +410,13 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   }, [isOpen, quizStep, projectName, projectStyle, projectBio, projectPhotoName, projectInstagram, projectVideoLink, respName, respCpf, respBirth, respPhone, respEmail, membersList, draftToRestore]);
 
   const totalCost = selectedMembers * activePrice;
-  // Modo lider: 1 unico Pix do valor total de todos os integrantes
-  const pixAmount = paymentMode === 'lider' ? totalCost : activePrice;
+  // Preco final do Pix: entry_price vem do servidor (RPC aplica o cupom); fallback = preco do lote ativo
+  const unitFinal = entryPrice != null ? entryPrice : activePrice;
+  const fullTotal = paymentMode === 'lider' ? totalCost : activePrice;
+  const finalTotal = paymentMode === 'lider' ? selectedMembers * unitFinal : unitFinal;
+  // Valor verdadeiro cobrado pelo gateway (quando o Pix ja foi gerado)
+  const displayTotal = pixData?.amount && pixData.amount > 0 ? pixData.amount : finalTotal;
+  const cupomDiscount = Math.max(fullTotal - displayTotal, 0);
 
   // ---------- Inline validation helpers ----------
   const clearError = (key: string) => setErrors(prev => {
@@ -636,6 +642,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
       setInviteCode(data.invite_code);
       inviteCodeRef.current = data.invite_code;
+      if (data.entry_price != null) setEntryPrice(Number(data.entry_price));
       if (Array.isArray(data.similar_bands) && data.similar_bands.length > 0) setSimilarBands(data.similar_bands.map(String));
       localStorage.removeItem('quiz_draft_v2');
       localStorage.removeItem('temp_compressed_photo');
@@ -687,6 +694,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     setCheckoutError(null);
     setShowManualConfirm(false);
     setPixCopied(false);
+    setEntryPrice(null);
     setIsCheckoutOpen(true);
     setCheckoutVisible(true);
     setIsCheckoutLoading(false);
@@ -836,7 +844,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
           setShowManualConfirm(true);
           return;
         }
-        applyPixData({ paymentId: String(data.paymentId), qr: data.qr ? String(data.qr) : null, qrBase64: data.qrBase64 ? String(data.qrBase64) : null });
+        applyPixData({ paymentId: String(data.paymentId), qr: data.qr ? String(data.qr) : null, qrBase64: data.qrBase64 ? String(data.qrBase64) : null, amount: typeof data.amount === 'number' ? data.amount : undefined });
         setIsCheckoutLoading(false);
       } catch {
         if (!cancelled) {
@@ -979,7 +987,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
   const copyPixCode = async () => {
     try {
-      await navigator.clipboard.writeText(pixData?.qr || `PIX CANCAO PROFANA | ${activeLoteName} | R$ ${pixAmount},00 | Estudio Pedra Profana`);
+      await navigator.clipboard.writeText(pixData?.qr || `PIX CANCAO PROFANA | ${activeLoteName} | R$ ${displayTotal},00 | Estudio Pedra Profana`);
       setPixCopied(true);
       setTimeout(() => setPixCopied(false), 2500);
     } catch { /* clipboard blocked */ }
@@ -1550,12 +1558,25 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   <span className="text-white font-bold font-mono">{projectName || 'Banda'}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs border-t border-white/5 pt-1.5">
-                  <span className="text-gray-400 font-mono uppercase tracking-wider">{selectedMembers} integrante{selectedMembers > 1 ? 's' : ''} · R$ {activePrice},00 cada</span>
+                  <span className="text-gray-400 font-mono uppercase tracking-wider">{selectedMembers} integrante{selectedMembers > 1 ? 's' : ''} · R$ {Number.isInteger(unitFinal) ? unitFinal : unitFinal.toFixed(2).replace('.', ',')},00 cada</span>
                   <span className="text-gray-300 font-mono">{selectedMembers}kg alimento</span>
                 </div>
+                {cupomDiscount > 0 && (
+                  <div className="flex justify-between items-center border-t border-[#F0C265]/20 pt-1.5">
+                    <span className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider font-bold text-[#F0C265]">
+                      <Ticket className="w-3.5 h-3.5 shrink-0" />Cupom {cupom}
+                    </span>
+                    <span className="font-mono text-xs font-bold text-[#F0C265]">-R$ {Number.isInteger(cupomDiscount) ? cupomDiscount : cupomDiscount.toFixed(2).replace('.', ',')},00</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center border-t border-white/5 pt-2">
                   <span className="font-mono text-[11px] text-gray-300 uppercase tracking-widest font-bold">{paymentMode === 'lider' ? 'Total único (líder)' : 'Sua parte'}</span>
-                  <span className="font-display font-black text-xl text-[#F0C265]">R$ {(pixActive || sandboxSimulacao) ? (paymentMode === 'lider' ? pixAmount : activePrice) : activePrice},00</span>
+                  <span className="font-display font-black text-xl text-[#F0C265]">
+                    {cupomDiscount > 0 && (
+                      <span className="font-mono text-xs text-gray-500 line-through mr-1.5 font-bold">R$ {Number.isInteger(displayTotal + cupomDiscount) ? displayTotal + cupomDiscount : (displayTotal + cupomDiscount).toFixed(2).replace('.', ',')},00</span>
+                    )}
+                    R$ {Number.isInteger(displayTotal) ? displayTotal : displayTotal.toFixed(2).replace('.', ',')},00
+                  </span>
                 </div>
               </div>
 
