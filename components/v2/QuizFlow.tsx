@@ -418,6 +418,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     if (step === 2) {
       if (!projectBio.trim()) errs.projectBio = 'Escreva uma biografia para avaliação dos jurados.';
       if (!projectPhotoName) errs.projectPhotoName = 'Envie a foto oficial do projeto.';
+      if (!projectVideoLink.trim() || !projectVideoLink.includes('youtube.com') && !projectVideoLink.includes('youtu.be')) errs.projectVideoLink = 'Cole o link do YouTube com a música da banda.';
     }
     if (step === 3) {
       if (!respName.trim()) errs.respName = 'Informe o nome completo do responsável.';
@@ -1188,17 +1189,17 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                  <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Instagram (Opcional)</label>
+                                  <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Instagram *</label>
                                   <input
                                     type="text"
                                     value={projectInstagram}
-                                    onChange={(e) => setProjectInstagram(e.target.value)}
-                                    placeholder="Ex: @suabanda"
+                                    onChange={(e) => { const v = e.target.value; setProjectInstagram(v.startsWith('@') ? v : '@' + v.replace(/^@+/, '')); }}
+                                    placeholder="suabanda"
                                     className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-xs outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors"
                                   />
                                 </div>
                                 <div className="space-y-1">
-                                  <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Link do Vídeo (Opcional)</label>
+                                  <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Link do Vídeo (YouTube) *</label>
                                   <input
                                     type="url"
                                     value={projectVideoLink}

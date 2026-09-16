@@ -49,6 +49,21 @@ interface RegistrationData {
   batch_name?: string;
 }
 
+
+function BioCollapsible({ bio }: { bio: string }) {
+  const [open, setOpen] = React.useState(false);
+  if (!bio || !bio.trim() || bio === '(em recuperação de dados)') return null;
+  return (
+    <div>
+      <button type="button" onClick={() => setOpen(!open)} className="w-full flex justify-between items-center font-mono text-xs text-gray-400 uppercase font-bold hover:text-white transition-colors py-1">
+        BIOGRAFIA OFICIAL
+        <span className="text-[#F0C265]">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && <p className="text-sm text-[#A89880] leading-relaxed font-normal mt-2">{bio}</p>}
+    </div>
+  );
+}
+
 export default function MinhaInscricaoPage() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -572,13 +587,12 @@ export default function MinhaInscricaoPage() {
               <span className="text-white font-bold text-base block">{data.style}</span>
             </div>
             <div className="col-span-1 md:col-span-2 space-y-1">
-              <span className="font-mono text-xs text-gray-400 uppercase font-bold block">BIOGRAFIA OFICIAL:</span>
-              <p className="text-sm text-[#A89880] leading-relaxed font-normal">{data.bio}</p>
+              <BioCollapsible bio={data.bio} />
             </div>
             {data.instagram && (
               <div className="space-y-1">
                 <span className="font-mono text-xs text-gray-400 uppercase font-bold block">INSTAGRAM:</span>
-                <span className="text-[#F0C265] font-bold text-xs block font-mono">{data.instagram}</span>
+                <span className="text-[#F0C265] font-bold text-xs block font-mono">{data.instagram.startsWith('@') ? data.instagram : '@' + data.instagram}</span>
               </div>
             )}
             {data.video_link && (
@@ -604,7 +618,7 @@ export default function MinhaInscricaoPage() {
               </div>
               <div className="space-y-1">
                 <span className="font-mono text-xs text-gray-400 uppercase font-bold block">WHATSAPP:</span>
-                <span className="text-white font-bold text-xs block font-mono">{leader.phone || '-'}</span>
+                <span className="text-white font-bold text-xs block font-mono">{leader.phone ? leader.phone.slice(0, 5) + '*****' + leader.phone.slice(-4) : '-'}</span>
               </div>
               <div className="space-y-1">
                 <span className="font-mono text-xs text-gray-400 uppercase font-bold block">CPF LÍDER:</span>
@@ -613,7 +627,7 @@ export default function MinhaInscricaoPage() {
               {leader.email && (
                 <div className="space-y-1">
                   <span className="font-mono text-xs text-gray-400 uppercase font-bold block">E-MAIL:</span>
-                  <span className="text-white font-bold text-xs block font-mono truncate">{leader.email}</span>
+                  <span className="text-white font-bold text-xs block font-mono truncate">{leader.email ? leader.email.slice(0, 3) + '***' + leader.email.slice(leader.email.indexOf('@')) : '-'}</span>
                 </div>
               )}
               {data.amount_paid !== undefined && (
