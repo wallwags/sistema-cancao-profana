@@ -322,7 +322,7 @@ export default function Page() {
 
   // Ao vivo: inscricao tem prioridade sobre o popup VIP (label + comportamento)
   // Inscricoes abertas = live no ar OU algum lote ativo. Waitlist so quando nada aberto.
-  const inscricoesAbertas = isLiveNow || !!cupom || ['lote1', 'lote2', 'lote3'].some(k => lotesConfig[k as 'lote1' | 'lote2' | 'lote3'].status === 'ativo');
+  const inscricoesAbertas = isLiveNow || ['lote1', 'lote2', 'lote3'].some(k => lotesConfig[k as 'lote1' | 'lote2' | 'lote3'].status === 'ativo');
   const ctaText = isLiveNow ? 'INSCREVER-SE · AO VIVO' : (inscricoesAbertas ? `INSCREVER-SE · ${activeLoteName}` : (waitlistMode ? 'ENTRAR NO GRUPO VIP' : 'INSCREVER-SE'));
 
   // Durante a transmissao ao vivo a inscricao abre direto (regra do periodo de live)
