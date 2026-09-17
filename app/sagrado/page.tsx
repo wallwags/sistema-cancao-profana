@@ -418,11 +418,15 @@ export default function SagradoPage() {
   }, []);
 
   const loadCupons = useCallback(async () => {
-    // RPC SECURITY DEFINER (permite manage_lotes); fallback: select direto
-    const { data: rpc } = await supabase.rpc('list_cupons_lote');
-    if (Array.isArray(rpc)) { setCupomLista(rpc as Array<Record<string, unknown>>); return; }
-    const { data } = await supabase.from('lote_cupons').select('*').order('created_at', { ascending: false });
-    setCupomLista((data || []) as Array<Record<string, unknown>>);
+    // RPC SECURITY DEFINER (permite manage_lotes); fallback: select direto.
+    // Se ambos falharem, EXIBE o erro na tela — lista de cupons nunca fica vazia em silencio.
+    const { data: rpc, error: errRpc } = await supabase.rpc('list_cupons_lote');
+    if (Array.isArray(rpc)) { setCupomLista(rpc as Array<Record<string, unknown>>); setNotice(p => ({ ...p, 'cupom-lista': { kind: 'info', msg: '' } })); return; }
+    const { data, error: errSel } = await supabase.from('lote_cupons').select('*').order('created_at', { ascending: false });
+    if (Array.isArray(data)) { setCupomLista(data as Array<Record<string, unknown>>); return; }
+    setCupomLista([]);
+    setMsg('cupom-lista', 'err', `Não foi possível carregar os cupons: ${(errRpc?.message || errSel?.message || 'sem permissão').slice(0, 120)}`);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const criarCupom = () => guarded('cupom', async () => {
@@ -1165,7 +1169,8 @@ export default function SagradoPage() {
               {(
                 <div className="border-t border-white/5 pt-3 space-y-2">
                   <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold block">Cupons existentes ({cupomLista.length})</span>
-                  {cupomLista.length === 0 && <span className="font-mono text-xs text-gray-500 block">Nenhum cupom criado ainda. Use o formulário acima para criar o primeiro.</span>}
+                  {notice['cupom-lista']?.msg && <Notice kind="err">{notice['cupom-lista'].msg}</Notice>}
+                  {cupomLista.length === 0 && !notice['cupom-lista']?.msg && <span className="font-mono text-xs text-gray-500 block">Nenhum cupom criado ainda. Use o formulário acima para criar o primeiro.</span>}
                   {cupomLista.map((c, i) => {
                     const ativo = !!c.ativo;
                     const esgotado = Number(c.usos) >= Number(c.max_usos);
