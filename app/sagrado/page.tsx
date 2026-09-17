@@ -233,6 +233,7 @@ export default function SagradoPage() {
   const [cupomLote, setCupomLote] = useState('');
   const [cupomMax, setCupomMax] = useState('1');
   const [cupomLista, setCupomLista] = useState<Array<Record<string, unknown>>>([]);
+  const [cupomExcluir, setCupomExcluir] = useState(''); // codigo aguardando 2o clique de confirmacao (somente dev)
   const [v2preco, setV2preco] = useState('');
   const [prePage, setPrePage] = useState(0);
   const [preOpen, setPreOpen] = useState(false);
@@ -442,6 +443,17 @@ export default function SagradoPage() {
     setCupomMax('1');
     await loadCupons();
     setMsg('cupom', 'ok', `Cupom ${codigo} criado. Link: ${window.location.origin}/?cupom=${codigo}`);
+    return 'ok';
+  });
+
+  const excluirCupom = (codigo: string) => guarded('cupom-del', async () => {
+    // Exclusao TOTAL do banco (hard delete), restrita ao dev na funcao SQL
+    const { data, error } = await supabase.rpc('dev_delete_cupom_lote', { p_codigo: codigo });
+    if (error) return 'Erro: ' + error.message;
+    setCupomExcluir('');
+    await loadCupons();
+    const r = (typeof data === 'object' && data ? data : {}) as { usos_perdidos?: number };
+    setMsg('cupom', 'ok', `Cupom ${codigo} excluído definitivamente do banco.${r.usos_perdidos ? ` (${r.usos_perdidos} uso(s) removido(s) junto)` : ''}`);
     return 'ok';
   });
 
@@ -1168,7 +1180,7 @@ export default function SagradoPage() {
 
               {(
                 <div className="border-t border-white/5 pt-3 space-y-2">
-                  <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold block">Cupons existentes ({cupomLista.length})</span>
+                  <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold block">Cupons existentes ({cupomLista.length}){isDev && <span className="font-mono text-[9px] text-gray-600 normal-case tracking-normal"> · exclusão definitiva disponível apenas para dev</span>}</span>
                   {notice['cupom-lista']?.msg && <Notice kind="err">{notice['cupom-lista'].msg}</Notice>}
                   {cupomLista.length === 0 && !notice['cupom-lista']?.msg && <span className="font-mono text-xs text-gray-500 block">Nenhum cupom criado ainda. Use o formulário acima para criar o primeiro.</span>}
                   {cupomLista.map((c, i) => {
@@ -1199,6 +1211,21 @@ export default function SagradoPage() {
                           >
                             {ativo ? 'Desativar' : 'Ativar'}
                           </button>
+                          {isDev && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const cod = String(c.codigo);
+                                if (cupomExcluir === cod) { excluirCupom(cod); return; }
+                                setCupomExcluir(cod);
+                                setTimeout(() => setCupomExcluir(e => (e === cod ? '' : e)), 4000);
+                              }}
+                              disabled={busy === 'cupom-del'}
+                              className={`font-mono text-[10px] font-bold px-2.5 py-1.5 rounded-lg uppercase border ${cupomExcluir === String(c.codigo) ? 'text-white border-red-500 bg-red-600/80' : 'text-red-400 border-red-500/40 hover:bg-red-500/10'}`}
+                            >
+                              {busy === 'cupom-del' ? <Loader2 className="w-3 h-3 animate-spin" /> : (cupomExcluir === String(c.codigo) ? 'Confirmar?' : 'Excluir')}
+                            </button>
+                          )}
                         </div>
                       </div>
                     );

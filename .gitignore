@@ -39,3 +39,9 @@ node_modules/
 
 # Type/build artifacts
 *.tsbuildinfo
+
+# Build artifacts
+tsconfig.tsbuildinfo
+
+# Site antigo (backup local, fora do repo)
+legacy/
