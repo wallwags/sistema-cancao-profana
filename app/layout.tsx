@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { Inter, Space_Grotesk } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 
 // Self-hosted via next/font - same families as before (variable axis covers every weight used),
@@ -61,6 +62,7 @@ export default function RootLayout({
         <div className="bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#E3B552]/15 via-[#05070B]/80 to-[#05070B] min-h-screen">
           {children}
         </div>
+        <Analytics />
       </body>
     </html>
   );
