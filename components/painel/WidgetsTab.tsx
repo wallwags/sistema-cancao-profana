@@ -22,7 +22,7 @@ const CHAVES: Array<{ key: string; label: string; kind: 'bool' | 'text' | 'url' 
   { key: 'widget_bandas_max', label: 'Bandas · máximo', kind: 'number', dica: 'Padrão 4.' },
   { key: 'widget_visitantes_min', label: 'Visitantes agora · mínimo', kind: 'number', dica: 'Padrão 25.' },
   { key: 'widget_visitantes_max', label: 'Visitantes agora · máximo', kind: 'number', dica: 'Padrão 78.' },
-  { key: 'home_pix_fake', label: 'Pix fantoche (quiz da home)', kind: 'bool', dica: 'ON: checkout da HOME usa Pix de teste que se auto-paga. OFF: Pix real em todas as instancias.' },
+  { key: 'modo_teste', label: 'Modo teste (marcar meus eventos como teste)', kind: 'bool', dica: 'ON: eventos deste navegador vao marcados como TESTE e saem dos totais de visitantes reais no painel.' },
   { key: 'social_vagas_pct', label: 'Selo "X% das vagas já preenchidas"', kind: 'number', dica: 'Número fictício exibido acima da tabela de lotes. Padrao 40. 0 = oculta o selo.' },
 ];
 
@@ -32,7 +32,15 @@ export default function WidgetsTab({ settings, loadSettings, supabase, Field, No
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
 
   const val = (k: string) => drafts[k] ?? settings[k] ?? '';
-  const setVal = (k: string, v: string) => setDrafts(p => ({ ...p, [k]: v }));
+  const setVal = (k: string, v: string) => {
+    setDrafts(p => ({ ...p, [k]: v }));
+    if (k === 'modo_teste' && typeof window !== 'undefined') {
+      try {
+        if (v === 'true') window.localStorage.setItem('cp_modo_teste', '1');
+        else window.localStorage.removeItem('cp_modo_teste');
+      } catch { /* storage bloqueado */ }
+    }
+  };
 
   const salvarTudo = async () => {
     setBusy(true); setMsg(null);

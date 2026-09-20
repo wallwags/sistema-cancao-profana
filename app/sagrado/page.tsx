@@ -1018,7 +1018,7 @@ export default function SagradoPage() {
                 </span>
                 <a href="/sagrado?tab=vip" className="font-mono text-[11px] font-bold text-[#F0C265] underline whitespace-nowrap self-start sm:self-center">Ver Grupo VIP →</a>
               </div>
-              <AbandonosCard supabase={supabase} fmtDate={fmtDate} />
+              <AbandonosCard supabase={supabase} fmtDate={fmtDate} isDev={isDev} />
               {canVip && (() => {
                 const preSize = 8;
                 const prePages = Math.max(1, Math.ceil(vipLeads.length / preSize));

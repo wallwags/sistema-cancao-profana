@@ -33,6 +33,9 @@ const FUNCOES = ['Vocalista', 'MC', 'Beatmaker', 'Guitarrista', 'Baixista', 'Bat
 
 export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false, origem = 'home', sandboxPix = false, linkLoteId = null, cupom = null, suporteWa = null, homeFakePix = false }: QuizFlowProps) {
   const [fakePixLive, setFakePixLive] = useState(false);
+  const [modoMembro, setModoMembro] = useState(false);
+  const [membroSlotId, setMembroSlotId] = useState<string | null>(null);
+  const [membroNome, setMembroNome] = useState('');
   const [quizStep, setQuizStep] = useState(1);
 
   // Quiz form states
@@ -121,6 +124,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [mineCpf, setMineCpf] = useState('');
   const [mineChecking, setMineChecking] = useState(false);
   const [mineResult, setMineResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const similarRefCode = useRef('');
+  const similarLeader = useRef('');
 
   // Fluxo "essa banda e minha": prova por CPF (servidor responde sim/nao + destino; nunca expoe codigos)
   const handleMineCheck = async () => {
@@ -240,10 +245,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         sessionStorage.setItem('cp_funnel_session', sessionRef.current);
       }
     }
+    const modoTeste = typeof window !== 'undefined' && window.localStorage.getItem('cp_modo_teste') === '1';
     fetch('/api/track', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ref: sessionRef.current, event, step }),
+      body: JSON.stringify({ ref: sessionRef.current, event, step, is_test: modoTeste }),
       keepalive: true
     }).then(() => funnelLogged.current.add(key)).catch(() => {});
   };
@@ -263,6 +269,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     try {
       const { data } = await supabase.rpc('find_similar_bands', { p_name: projectName.trim() });
       setSimilarBands((data || []).map(String));
+      const primeiro = (data || [])[0];
+      if (primeiro && typeof primeiro === 'object') {
+        similarRefCode.current = String((primeiro as { invite_code?: string }).invite_code || '');
+        similarLeader.current = String((primeiro as { leader_first?: string }).leader_first || '');
+      }
     } catch { /* silencioso */ }
   };
 
@@ -477,10 +488,15 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       if (!projectName.trim() || projectName.trim().length < 2) errs.projectName = 'Informe o nome da banda / dupla.';
       if (projectInstagram.replace(/@/g, '').trim().length < 2) errs.projectInstagram = 'Informe o @ do Instagram da banda.';
     }
-    if (step === 3) {
+    if (step === 3 && modoMembro) {
+      if (!respCpf) errs.respCpf = 'Informe o CPF.';
+      else if (respCpf.length < 14) errs.respCpf = 'CPF incompleto.';
+      else if (!isValidCPF(respCpf)) errs.respCpf = 'CPF inválido. Confira os dígitos.';
+    }
+    if (step === 3 && !modoMembro) {
       if (!projectStyle.trim()) errs.projectStyle = 'Selecione o estilo (ou marque Outro).';
     }
-    if (step === 4) {
+    if (step === 4 && !modoMembro) {
       if (!respName.trim()) errs.respName = 'Informe o nome completo do responsável.';
     }
     if (step === 5) {
@@ -506,17 +522,61 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     return errs;
   };
 
+  // MODO MEMBRO: casa o nome digitado com uma vaga livre da banda parecida
+  const irCpfMembro = async () => {
+    setErrors({});
+    if (membroNome.trim().length < 3) return;
+    try {
+      const { data: slotsData, error } = await supabase.rpc('get_invite', { p_code: similarRefCode.current });
+      if (error || !slotsData) { setMineResult({ ok: false, msg: 'Não foi possível verificar a banda agora. Tente novamente.' }); return; }
+      const livres = ((slotsData as { slots?: Array<{ id: string; name: string; claimed: boolean }> }).slots || []).filter(sl => !sl.claimed);
+      if (!livres.length) { setMineResult({ ok: false, msg: 'Todas as vagas desta banda já foram confirmadas.' }); return; }
+      const norm = (t: string) => (t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const partes = norm(membroNome).split(/\s+/).filter(Boolean);
+      let melhor: { id: string; name: string } | null = null;
+      let melhorScore = 0;
+      for (const sl of livres) {
+        const alvo = norm(sl.name).split(/\s+/).filter(Boolean);
+        let hit = 0;
+        partes.forEach(t => { if (alvo.some(u => u.startsWith(t) || t.startsWith(u))) hit += 1; });
+        const sc = hit / Math.max(partes.length, alvo.length);
+        if (sc > melhorScore) { melhorScore = sc; melhor = sl; }
+      }
+      if (!melhor || melhorScore < 0.34) {
+        setMineResult({ ok: false, msg: `Seu nome não está na lista escalada por ${similarLeader.current || 'o líder'}. Confira a grafia com ele.` });
+        return;
+      }
+      setMembroSlotId(melhor.id);
+      setMineResult({ ok: true, msg: 'Vaga localizada! Confirme seu CPF para continuar.' });
+      setSlideDirection('next');
+      setQuizStep(3);
+    } catch {
+      setMineResult({ ok: false, msg: 'Falha de conexão. Tente novamente.' });
+    }
+  };
+
   const handleQuizNext = () => {
     const errs = validateStep(quizStep);
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
+    const limite = modoMembro ? 4 : selectedMembers + 7; // modo membro: 3 (CPF) -> revisao
+    if (modoMembro && quizStep === 3) {
+      setSlideDirection('next');
+      setQuizStep(4);
+      return;
+    }
     setSlideDirection('next');
-    setQuizStep(Math.min(quizStep + 1, selectedMembers + 7));
+    setQuizStep(Math.min(quizStep + 1, limite));
   };
 
   const handleQuizPrev = () => {
     setErrors({});
+    if (modoMembro && quizStep === 4) {
+      setSlideDirection('prev');
+      setQuizStep(3);
+      return;
+    }
     if (quizStep > 1) {
       setSlideDirection('prev');
       setQuizStep(quizStep - 1);
@@ -648,6 +708,41 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     try {
       // Foto e bio saem do fluxo de matricula: sao convidadas na tela de sucesso (via WhatsApp do estudio)
       const membersPayload = membersList.map(m => ({ name: m.name, cpf: '', birth: '', role: m.role, phone: '', email: '' }));
+
+      // MODO MEMBRO: nao cria banda nova. Vincula o nome/CPF do integrante a uma vaga ja criada pelo lider.
+      if (modoMembro) {
+        if (!similarRefCode.current || !membroSlotId) {
+          setCheckoutError('Banda do convite não localizada. Toque em "Verificar novamente".');
+          setShowManualConfirm(true);
+          setIsCheckoutLoading(false);
+          return '';
+        }
+        const { error: claimErr } = await supabase.rpc('claim_member_slot', {
+          p_code: similarRefCode.current,
+          p_member_id: membroSlotId,
+          p_name: membroNome,
+          p_cpf: respCpf,
+          p_birth: '',
+          p_phone: '',
+          p_email: ''
+        });
+        if (claimErr) {
+          const m2 = claimErr.message || '';
+          setCheckoutError(
+            m2.includes('VAGA_JA_RECLAMADA') ? 'Essa vaga acabou de ser confirmada por outra pessoa. Fale com o líder.' :
+            m2.includes('MUITAS_TENTATIVAS') ? 'Muitas tentativas. Aguarde alguns minutos.' :
+            'Não foi possível confirmar sua vaga. Toque em "Verificar novamente".'
+          );
+          setShowManualConfirm(true);
+          setIsCheckoutLoading(false);
+          return '';
+        }
+        const codeNow = similarRefCode.current;
+        setInviteCode(codeNow);
+        inviteCodeRef.current = codeNow;
+        localStorage.removeItem('quiz_draft_v2');
+        return `membro:${membroSlotId}`;
+      }
 
       const { data, error } = await supabase.rpc('create_band_registration', {
         p_origem: origem === 'v2' ? 'v2' : 'home',
@@ -853,10 +948,13 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         const codeNow = inviteCodeRef.current;
         if (cancelled) return;
         if (!id || !codeNow) { setShowManualConfirm(true); return; }
+        const ehMembro = id.startsWith('membro:');
         const res = await fetch('/api/pix/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code: codeNow, email: respEmail, name: respName })
+          body: JSON.stringify(ehMembro
+            ? { code: codeNow, email: `membro.${id.slice(7, 13)}@pedraprofana.com`, name: membroNome, memberId: id.slice(7) }
+            : { code: codeNow, email: respEmail, name: respName })
         });
         const data = await res.json().catch(() => null);
         if (cancelled) return;
@@ -929,7 +1027,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         return;
       }
 
-      const { data: payRes, error: payErr } = await supabase.rpc('confirm_leader_payment', { p_code: codeNow });
+      const ehMembro = id.startsWith('membro:');
+      const payRes = ehMembro
+        ? (await supabase.rpc('confirm_member_payment', { p_code: codeNow, p_member_id: id.slice(7) })).data
+        : (await supabase.rpc('confirm_leader_payment', { p_code: codeNow })).data;
+      const payErr = null;
       if (payErr || !payRes) {
         webhookDoneRef.current = false;
         setIsCheckoutLoading(false);
@@ -1132,12 +1234,12 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                         {quizStep === 1 && (
                           <div className="space-y-4">
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Seu WhatsApp</h3>
-                            <p className="text-base text-gray-100 leading-relaxed">Antes de tudo: um contato direto seu para garantir e recuperar sua vaga quando precisar.</p>
                             <div className="space-y-1 pt-1">
                               <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">WhatsApp <span className="text-red-400">*</span></label>
                               <input type="tel" inputMode="numeric" value={respPhone} onChange={(e) => { setRespPhone(applyPhoneMask(e.target.value)); clearError('respPhone'); }} placeholder="(21) 99999-9999" autoComplete="tel" className={`w-full bg-[#2F3A54] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-300 transition-colors ${errors.respPhone ? 'border-red-500/60' : 'border-white/30 focus:border-[#E3B552]'}`} />
                               {fieldError('respPhone')}
                             </div>
+                            <p className="pt-1 text-base text-gray-100 leading-relaxed">Antes de tudo: um contato direto seu para garantir e recuperar sua vaga quando precisar.</p>
                           </div>
                         )}
 
@@ -1173,17 +1275,18 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                 </p>
                                 {similarChoice !== 'mine' ? (
                                   <div className="grid grid-cols-2 gap-2.5">
-                                    <button type="button" onClick={() => setSimilarChoice('mine')} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-[#10B981]/25 active:scale-[0.98] transition-transform">Sou da banda</button>
+                                    <button type="button" onClick={() => { setSimilarChoice('mine'); setModoMembro(true); }} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-[#10B981]/25 active:scale-[0.98] transition-transform">Sou da banda</button>
                                     <button type="button" onClick={() => setSimilarChoice('other')} className="font-mono text-sm font-black text-white bg-gradient-to-b from-red-500 to-red-700 px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-red-900/30 active:scale-[0.98] transition-transform">É outra</button>
                                   </div>
                                 ) : (
                                   <div className="space-y-2.5">
-                                    <label className="block font-mono text-[11px] text-gray-200 font-bold uppercase tracking-wider">CPF do líder desta banda</label>
+                                    <label className="block font-mono text-[11px] text-gray-200 font-bold uppercase tracking-wider">Seu nome (como o líder escalou você)</label>
                                     <input
-                                      inputMode="numeric"
-                                      value={mineCpf}
-                                      onChange={(e) => { setMineCpf(e.target.value.replace(/\D/g, '').slice(0, 11)); setMineResult(null); }}
-                                      placeholder="000.000.000-00"
+                                      type="text"
+                                      value={membroNome}
+                                      onChange={(e) => { setMembroNome(e.target.value); setMineResult(null); }}
+                                      placeholder="Nome completo"
+                                      autoComplete="name"
                                       className="w-full bg-[#2F3A54] border border-white/25 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10B981] placeholder-gray-300"
                                     />
                                     {mineResult && (
@@ -1192,10 +1295,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                       </div>
                                     )}
                                     <div className="grid grid-cols-2 gap-2.5">
-                                      <button type="button" onClick={handleMineCheck} disabled={mineChecking || mineCpf.length !== 11} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider disabled:opacity-50 active:scale-[0.98] transition-transform">
-                                        {mineChecking ? 'Verificando...' : 'Localizar banda'}
+                                      <button type="button" onClick={() => { irCpfMembro(); }} disabled={membroNome.trim().length < 3} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider disabled:opacity-50 active:scale-[0.98] transition-transform">
+                                        {membroNome.trim().length >= 3 ? 'Continuar' : 'Digite seu nome'}
                                       </button>
-                                      <button type="button" onClick={() => { setSimilarChoice('none'); setMineCpf(''); setMineResult(null); }} className="font-mono text-sm font-bold text-gray-300 border border-white/25 px-3 py-3 rounded-xl uppercase hover:text-white transition-colors">Voltar</button>
+                                      <button type="button" onClick={() => { setSimilarChoice('none'); setMineResult(null); setModoMembro(false); }} className="font-mono text-sm font-bold text-gray-300 border border-white/25 px-3 py-3 rounded-xl uppercase hover:text-white transition-colors">Voltar</button>
                                     </div>
                                   </div>
                                 )}
@@ -1204,10 +1307,26 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                           </div>
                         )}
 
-                        {quizStep === 3 && (
+                        {quizStep === 3 && modoMembro && (
+                          <div className="space-y-4">
+                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Seu CPF</h3>
+                            <p className="pt-1 text-base text-gray-100 leading-relaxed">Identifica sua vaga e registra sua parte na banda {projectName || ''}.</p>
+                            <div className="space-y-1">
+                              <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">CPF <span className="text-red-400">*</span></label>
+                              <input type="text" inputMode="numeric" enterKeyHint="next" value={respCpf} onChange={(e) => { setRespCpf(applyCpfMask(e.target.value)); clearError('respCpf'); }} placeholder="000.000.000-00" autoComplete="off" className={`w-full bg-[#2F3A54] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-300 transition-colors ${errors.respCpf ? 'border-red-500/60' : 'border-white/30 focus:border-[#E3B552]'}`} />
+                              {fieldError('respCpf')}
+                            </div>
+                            {mineResult && (
+                              <div className={`rounded-xl px-4 py-3 text-xs leading-snug ${mineResult.ok ? 'bg-[#10B981]/10 border border-[#10B981]/40 text-[#10B981]' : 'bg-red-500/10 border border-red-500/40 text-red-200'}`}>
+                                {mineResult.ok ? '✓ ' : '⚠ '}{mineResult.msg}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {quizStep === 3 && !modoMembro && (
                           <div className="space-y-4">
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Qual é o estilo?</h3>
-                            <p className="text-base text-gray-100 leading-relaxed">Escolha o que mais representa o som de vocês.</p>
                             <div className="flex flex-wrap gap-2 pt-1">
                               {ESTILOS.map(es => (
                                 <button key={es} type="button" onClick={() => { setProjectStyle(projectStyle === es ? '' : es); clearError('projectStyle'); }} className={`font-mono text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-full border transition-colors ${projectStyle === es ? 'bg-[#F0C265] text-black border-black' : 'text-gray-100 border-white/[0.28] bg-white/10 hover:border-[#F0C265]/50 hover:text-white'}`}>
@@ -1219,49 +1338,78 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                               <input type="text" value={projectStyle} onChange={(e) => setProjectStyle(e.target.value)} placeholder="Descreva o estilo" className="w-full bg-[#2F3A54] border border-white/30 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-300" />
                             )}
                             {fieldError('projectStyle')}
+                                <p className="pt-1 text-base text-gray-100 leading-relaxed">Escolha o que mais representa o som de vocês.</p>
+                              </div>
+                        )}
+
+                        {quizStep === 4 && modoMembro && (
+                          <div className="space-y-4">
+                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Revise e confirme</h3>
+                            <div className="bg-white/[0.08] border border-white/30 rounded-2xl p-4 flex items-center gap-3.5">
+                              <div className="w-12 h-12 rounded-2xl bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black font-display font-black text-lg flex items-center justify-center shadow-lg shrink-0">
+                                {iniciais(projectName)}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <span className="font-display font-black text-white text-base block truncate">{projectName || 'Banda'}</span>
+                                <span className="flex items-center gap-2 flex-wrap mt-1">
+                                  {projectStyle && <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/30 px-2 py-0.5 rounded-full">{projectStyle}</span>}
+                                  {projectInstagram && <span className="font-mono text-[10px] text-gray-100">@{projectInstagram}</span>}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="bg-white/[0.08] border border-white/30 rounded-2xl p-4 space-y-1.5">
+                              <span className="font-mono text-[10px] text-gray-200 uppercase tracking-widest font-bold block">Você</span>
+                              <p className="text-base font-bold text-white">{membroNome}</p>
+                              <p className="font-mono text-xs text-gray-200">{respCpf}</p>
+                              <button type="button" onClick={() => { setSlideDirection('prev'); setQuizStep(3); }} className="text-xs text-[#F0C265] underline uppercase font-bold mt-1">Editar</button>
+                            </div>
+                            {mineResult && (
+                              <div className={`rounded-xl px-4 py-3 text-xs leading-snug ${mineResult.ok ? 'bg-[#10B981]/10 border border-[#10B981]/40 text-[#10B981]' : 'bg-red-500/10 border border-red-500/40 text-red-200'}`}>
+                                {mineResult.ok ? '✓ ' : '⚠ '}{mineResult.msg}
+                              </div>
+                            )}
                           </div>
                         )}
 
-                        {quizStep === 4 && (
+                        {quizStep === 4 && !modoMembro && (
                           <div className="space-y-4">
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Como você se chama?</h3>
-                            <p className="text-base text-gray-100 leading-relaxed">Você será o líder responsável pela inscrição.</p>
                             <div className="space-y-1 pt-1">
                               <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome completo <span className="text-red-400">*</span></label>
                               <input type="text" value={respName} onChange={(e) => { setRespName(e.target.value); clearError('respName'); }} placeholder="Nome completo" autoComplete="name" className={`w-full bg-[#2F3A54] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-300 transition-colors ${errors.respName ? 'border-red-500/60' : 'border-white/30 focus:border-[#E3B552]'}`} />
                               {fieldError('respName')}
                             </div>
-                          </div>
+                                <p className="pt-1 text-base text-gray-100 leading-relaxed">Você será o líder responsável pela inscrição.</p>
+                              </div>
                         )}
 
                         {quizStep === 5 && (
                           <div className="space-y-4">
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Seu melhor e-mail</h3>
-                            <p className="text-base text-gray-100 leading-relaxed">Usado para confirmar a matrícula e comunicados oficiais do concurso.</p>
                             <div className="space-y-1 pt-1">
                               <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">E-mail <span className="text-red-400">*</span></label>
                               <input type="email" inputMode="email" value={respEmail} onChange={(e) => { setRespEmail(e.target.value); clearError('respEmail'); }} placeholder="voce@email.com" autoComplete="email" className={`w-full bg-[#2F3A54] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-300 transition-colors ${errors.respEmail ? 'border-red-500/60' : 'border-white/30 focus:border-[#E3B552]'}`} />
                               {fieldError('respEmail')}
                             </div>
-                          </div>
+                                <p className="pt-1 text-base text-gray-100 leading-relaxed">Usado para confirmar a matrícula e comunicados oficiais do concurso.</p>
+                              </div>
                         )}
 
                         {quizStep === 6 && (
                           <div className="space-y-4">
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Seu CPF</h3>
-                            <p className="text-base text-gray-100 leading-relaxed">Serve para recuperar seu acesso à inscrição a qualquer momento.</p>
                             <div className="space-y-1 pt-1">
                               <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">CPF <span className="text-red-400">*</span></label>
                               <input type="text" inputMode="numeric" value={respCpf} onChange={(e) => { setRespCpf(applyCpfMask(e.target.value)); clearError('respCpf'); }} placeholder="000.000.000-00" autoComplete="off" className={`w-full bg-[#2F3A54] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-300 transition-colors ${errors.respCpf ? 'border-red-500/60' : 'border-white/30 focus:border-[#E3B552]'}`} />
                               {fieldError('respCpf')}
                             </div>
-                          </div>
+                                <p className="pt-1 text-base text-gray-100 leading-relaxed">Serve para recuperar seu acesso à inscrição a qualquer momento.</p>
+                              </div>
                         )}
 
                         {quizStep === 7 && (
                           <div className="space-y-4">
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Quantas pessoas na banda?</h3>
-                            <p className="text-base text-gray-100 leading-relaxed">Contando com você. Mínimo 2, máximo 7 (regulamento).</p>
                             <div className="flex flex-wrap gap-2 pt-1">
                               {[2, 3, 4, 5, 6, 7].map(n => (
                                 <button key={n} type="button" onClick={() => setTamanhoBanda(n)} className={`w-12 h-12 rounded-full font-display font-black text-lg transition-colors ${selectedMembers === n ? 'bg-[#F0C265] text-black border border-black' : 'text-gray-100 border border-white/[0.28] bg-white/10 hover:border-[#F0C265]/50 hover:text-white'}`}>
@@ -1271,7 +1419,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                             </div>
                             {fieldError('tamanho')}
                             <p className="text-[11px] text-gray-100 font-mono">A seguir, só o nome de cada integrante · cada um confirma os próprios dados depois pelo link do convite.</p>
-                          </div>
+                                <p className="pt-1 text-base text-gray-100 leading-relaxed">Contando com você. Mínimo 2, máximo 7 (regulamento).</p>
+                              </div>
                         )}
 
                         {quizStep > 7 && quizStep < selectedMembers + 7 && (() => {
@@ -1283,7 +1432,6 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                           return (
                             <div className="space-y-4">
                               <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Integrante {mi + 2} de {selectedMembers}</h3>
-                              <p className="text-base text-gray-100 leading-relaxed">Só o nome por enquanto · cada integrante confirma os próprios dados pelo link do convite.</p>
                               <div className="space-y-1 pt-1">
                                 <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome <span className="text-red-400">*</span></label>
                                 <input type="text" enterKeyHint="next" value={m.name} onChange={(e) => { const v = e.target.value; setMembersList(l => l.map((x, i2) => i2 === mi ? { ...x, name: v } : x)); if (errors[mKey]) clearError(mKey); }} placeholder="Nome completo" autoComplete="off" className={`w-full bg-[#2F3A54] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-300 transition-colors ${errors[mKey] ? 'border-red-500/60' : 'border-white/30 focus:border-[#E3B552]'}`} />
@@ -1473,7 +1621,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                 </div>
                               )}
                             </div>
-                          </div>
+                                <p className="pt-1 text-base text-gray-100 leading-relaxed">Só o nome por enquanto · cada integrante confirma os próprios dados pelo link do convite.</p>
+                              </div>
                         )}
                     </div>
 
@@ -1487,7 +1636,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                     {/* CONTROLS */}
                     <div className="border-t border-white/30 pt-4 space-y-3 shrink-0">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-[#F0EAE0] font-bold font-mono">{quizStep}/{selectedMembers + 7}</span>
+                        <span className="text-sm text-[#F0EAE0] font-bold font-mono">{modoMembro ? (quizStep === 4 ? '3/3' : `${quizStep}/3`) : `${quizStep}/${selectedMembers + 7}`}</span>
                         {origem === 'v2' && (
                           <button type="button" onClick={fillDemoData} className="font-mono text-[11px] font-bold text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/20 px-3 py-1.5 rounded-lg uppercase hover:bg-[#F0C265] hover:text-black transition-colors">🧪 Testar Demo</button>
                         )}
@@ -1497,7 +1646,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                         {quizStep > 1 && (
                           <button type="button" onClick={handleQuizPrev} className="font-mono text-xs font-bold text-white border border-white/30 bg-white/10 px-5 py-3 rounded-xl uppercase flex-1 sm:flex-none">Voltar</button>
                         )}
-                        {quizStep < selectedMembers + 7 ? (
+                        {quizStep < (modoMembro ? 4 : selectedMembers + 7) ? (
                           <button type="button" onClick={handleQuizNext} className="btn-gold-shimmer px-7 py-3 rounded uppercase border-none text-black flex-1 sm:flex-none">Continuar</button>
                         ) : (
                           <button type="button" onClick={handleLaunchCheckout} className="font-display font-black text-sm sm:text-base text-black bg-lime px-7 py-4 rounded-2xl uppercase border-none flex-1 tracking-wide shadow-[0_0_30px_rgba(163,230,53,0.35)] active:scale-[0.98] transition-transform">
@@ -1817,9 +1966,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   <div className="space-y-3.5 bg-[#2B3550] border border-[#F0C265]/25 rounded-2xl p-5 text-left">
                     <span className="font-mono text-xs text-[#F0C265] uppercase tracking-widest font-black block">🔗 Link exclusivo da banda</span>
                     <p className="text-sm text-gray-100 leading-relaxed">
-                      {paymentMode === 'lider'
-                        ? 'Envie o link para os integrantes confirmarem os próprios dados no roster. As partes deles já estão cobertas pelo seu Pix.'
-                        : 'Envie o link para os integrantes confirmarem os próprios dados e pagarem a parte deles.'}
+                      {modoMembro
+                        ? 'Envie este link para os demais integrantes confirmarem os próprios dados e pagarem as partes deles.'
+                        : paymentMode === 'lider'
+                          ? 'Envie o link para os integrantes confirmarem os próprios dados no roster. As partes deles já estão cobertas pelo seu Pix.'
+                          : 'Envie o link para os integrantes confirmarem os próprios dados e pagarem a parte deles.'}
                     </p>
                     <div>
                       <div className="flex justify-between items-baseline mb-1.5">

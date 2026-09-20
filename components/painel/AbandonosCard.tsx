@@ -14,6 +14,7 @@ interface SessaoFunil {
   ultima: string;
   ip: string;
   ua: string;
+  is_test: boolean;
 }
 
 type Filtro = 'todos' | 'quiz' | 'pix' | 'travou';
@@ -28,11 +29,13 @@ const resumoNavegador = (ua: string) => {
   return 'Outro';
 };
 
-export default function AbandonosCard({ supabase, fmtDate }: { supabase: SupabaseClient; fmtDate: (v: string | null | undefined) => string }) {
+export default function AbandonosCard({ supabase, fmtDate, isDev = false }: { supabase: SupabaseClient; fmtDate: (v: string | null | undefined) => string; isDev?: boolean }) {
   const [lista, setLista] = useState<SessaoFunil[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [filtro, setFiltro] = useState<Filtro>('todos');
+  const [excluirRef, setExcluirRef] = useState('');
+  const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -42,6 +45,15 @@ export default function AbandonosCard({ supabase, fmtDate }: { supabase: Supabas
       setCarregando(false);
     })();
   }, [supabase]);
+
+  const excluirSessao = async (ref: string) => {
+    setMsg(null);
+    const { data, error } = await supabase.rpc('staff_delete_funnel_session', { p_ref: ref });
+    if (error) { setMsg({ kind: 'err', text: 'Erro: ' + error.message }); return; }
+    setLista(l => l.filter(x => x.ref !== ref));
+    setExcluirRef('');
+    setMsg({ kind: 'ok', text: `Sessão removida (${Number(data) || 0} eventos).` });
+  };
 
   const filtrada = lista.filter(s =>
     filtro === 'quiz' ? !s.abriu_pix && !s.travou_pix
@@ -78,6 +90,7 @@ export default function AbandonosCard({ supabase, fmtDate }: { supabase: Supabas
       {carregando && <p className="text-xs text-gray-500 font-mono">Carregando sessões...</p>}
       {erro && <p className="text-xs text-red-400 font-mono">{erro}</p>}
       {!carregando && !erro && filtrada.length === 0 && <p className="text-xs text-gray-500 font-mono">Nenhuma sessão neste filtro.</p>}
+      {msg && <p className={`text-xs font-mono ${msg.kind === 'ok' ? 'text-[#10B981]' : 'text-red-400'}`}>{msg.text}</p>}
       <div className="space-y-1.5 max-h-[320px] overflow-y-auto pr-1">
         {filtrada.map(s => (
           <div key={s.ref} className="bg-black/30 border border-white/5 rounded-xl px-3.5 py-2.5 flex flex-col sm:flex-row justify-between sm:items-center gap-1.5">
@@ -88,9 +101,25 @@ export default function AbandonosCard({ supabase, fmtDate }: { supabase: Supabas
               {s.travou_pix && <span className="font-mono text-[10px] font-black px-2 py-0.5 rounded-full border border-red-500/40 bg-red-500/10 text-red-300 uppercase">Travou no Pix</span>}
               {!s.travou_pix && s.abriu_pix && <span className="font-mono text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-300 uppercase">Abriu o Pix</span>}
               {!s.abriu_pix && !s.travou_pix && <span className="font-mono text-[10px] font-black px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-gray-400 uppercase">Sumiu no quiz</span>}
+                      {s.is_test && <span className="font-mono text-[10px] font-black px-2 py-0.5 rounded-full border border-sky-400/40 bg-sky-400/10 text-sky-300 uppercase">teste</span>}
               <span className="font-mono text-[10px] text-gray-500 truncate">ref {String(s.ref).slice(0, 8)}… · {s.ip || 'ip oculto'} · {resumoNavegador(String(s.ua || ''))}</span>
             </div>
-            <span className="font-mono text-[10px] text-gray-500 shrink-0">{fmtDate(s.ultima)}</span>
+            <span className="flex items-center gap-2 shrink-0">
+              {isDev && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (excluirRef === s.ref) { excluirSessao(s.ref); return; }
+                    setExcluirRef(s.ref);
+                    setTimeout(() => setExcluirRef(e => (e === s.ref ? '' : e)), 4000);
+                  }}
+                  className={`font-mono text-[10px] font-bold px-2 py-1 rounded-lg uppercase border ${excluirRef === s.ref ? 'text-white border-red-500 bg-red-600/80' : 'text-red-400/80 border-red-500/30 hover:bg-red-500/10'}`}
+                >
+                  {excluirRef === s.ref ? 'Confirmar?' : 'Excluir'}
+                </button>
+              )}
+              <span className="font-mono text-[10px] text-gray-500">{fmtDate(s.ultima)}</span>
+            </span>
           </div>
         ))}
       </div>
