@@ -486,7 +486,6 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     }
     if (step === 2) {
       if (!projectName.trim() || projectName.trim().length < 2) errs.projectName = 'Informe o nome da banda / dupla.';
-      if (projectInstagram.replace(/@/g, '').trim().length < 2) errs.projectInstagram = 'Informe o @ do Instagram da banda.';
     }
     if (step === 3 && modoMembro) {
       if (!respCpf) errs.respCpf = 'Informe o CPF.';
@@ -1252,7 +1251,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                               {fieldError('projectName')}
                             </div>
                             <div className="space-y-1 pt-2">
-                              <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Instagram <span className="text-red-400">*</span></label>
+                              <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Instagram <span className="text-[10px] text-gray-300 font-normal normal-case tracking-normal">(opcional)</span></label>
                               <div className={`flex items-stretch bg-[#2F3A54] border rounded-xl overflow-hidden transition-colors ${errors.projectInstagram ? 'border-red-500/60' : 'border-white/30 focus-within:border-[#E3B552]'}`}>
                                 <span className="flex items-center pl-3.5 pr-0.5 font-mono text-sm text-gray-100 select-none pointer-events-none">@</span>
                                 <input
