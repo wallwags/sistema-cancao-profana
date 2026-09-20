@@ -125,7 +125,7 @@ export default function Page() {
     if (waitlistBusy) { e?.preventDefault(); return; }
     trackPre('vip_wa_click');
     setWaitlistBusy(true);
-    supabase.from('vip_leads').insert({ name: 'Interessado (pré-inscrição)', email, source: 'pre_inscricao_home' })
+    fetch('/api/vip-lead', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Interessado (pré-inscrição)', email, source: 'pre_inscricao_home' }) })
       .then(() => setWaitlistBusy(false), () => setWaitlistBusy(false));
     setWaitlistDone(true);
     setTimeout(() => { setWaitlistOpen(false); setWaitlistDone(false); setWaitlistEmail(''); }, 3000);

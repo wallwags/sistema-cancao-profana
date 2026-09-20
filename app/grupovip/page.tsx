@@ -60,12 +60,16 @@ export default function GrupoVipPage() {
     const waLink = content.vip_whatsapp_url || WHATSAPP_LINK;
     // Abre dentro do gesto do clique: navegadores (Safari/iOS) bloqueiam popups apos espera de rede
     window.open(waLink, '_blank');
-    const { error: err } = await supabase
-      .from('vip_leads')
-      .insert({ name: name.trim(), email: email.trim().toLowerCase(), source: 'grupovip' });
+    let err: { message?: string } | null = null;
+    let duplicado = false;
+    try {
+      const res = await fetch('/api/vip-lead', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name.trim(), email: email.trim().toLowerCase(), source: 'grupovip' }) });
+      const d = await res.json().catch(() => null);
+      duplicado = !!d?.duplicado;
+      if (!res.ok && d?.error !== 'email_invalido') err = { message: d?.error || 'erro' };
+    } catch { err = { message: 'falha_conexao' }; }
     setBusy(false);
     // E-mail ja cadastrado nao e erro: a pessoa ja esta na lista, segue para o grupo
-    const duplicado = !!err && (err.code === '23505' || /duplicate|vip_leads_email/i.test(err.message));
     if (err && !duplicado) {
       setError('Não conseguimos registrar seu e-mail agora. Se o WhatsApp não abriu, toque em "Ir para o WhatsApp" de novo.');
       return;
