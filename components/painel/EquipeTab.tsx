@@ -16,12 +16,16 @@ export interface StaffRow {
 }
 
 export const PERM_KEYS: Array<{ key: string; label: string }> = [
-  { key: 'manage_lotes', label: 'Gerenciar lotes & live' },
-  { key: 'manage_content', label: 'Gerenciar conteúdo do site' },
-  { key: 'manage_subscriptions', label: 'Gerenciar inscrições' },
-  { key: 'view_sensitive', label: 'Ver dados pessoais' },
-  { key: 'manage_team', label: 'Gerenciar equipe' },
-  { key: 'view_audit', label: 'Ver auditoria' },
+  { key: 'manage_lotes', label: 'Gerenciar lotes, ofertas e live' },
+  { key: 'manage_content', label: 'Gerenciar conteúdo do site (datas, link, oferta da live, FAQ)' },
+  { key: 'manage_subscriptions', label: 'Gerenciar inscrições, pagamentos e notas' },
+  { key: 'view_sensitive_data', label: 'Visualizar dados pessoais dos inscritos (CPF, contato)' },
+  { key: 'manage_team', label: 'Gerenciar acessos da equipe' },
+  { key: 'manage_vip', label: 'Gerenciar Grupo VIP e interessados' },
+  { key: 'manage_gateway', label: 'Gerenciar integração de pagamentos' },
+  { key: 'view_audit', label: 'Visualizar o histórico de auditoria' },
+  { key: 'ver_metodo_cobranca', label: 'Ver alternador de método de cobrança (aba Lotes)' },
+  { key: 'toggle_pix_fake', label: 'Ligar/desligar Pix fantoche da home (aba Widgets)' },
 ];
 
 function DisableStaffButton({ onDisable, busy }: { onDisable: () => void; busy: boolean }) {

@@ -59,6 +59,7 @@ export default async function Page() {
         homeCtaMode: map.home_cta_mode === 'quiz' ? 'quiz' : (map.home_cta_mode === 'waitlist' ? 'waitlist' : null),
         vipWaUrl: map.vip_whatsapp_url || null,
         suporteWa: map.suporte_whatsapp_url || map.vip_whatsapp_url || null,
+        homeFakePix: map.home_pix_fake === 'true',
         socialVagasPct: map.social_vagas_pct === '0' ? 0 : (Number(map.social_vagas_pct) || 40),
         widget: {
           ativo: map.widget_ativo !== 'false',

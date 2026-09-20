@@ -1006,7 +1006,7 @@ export default function SagradoPage() {
 
           {/* WIDGETS - componente extraido */}
           {tab === 'widgets' && canContent && (
-            <WidgetsTab settings={settings} loadSettings={loadSettings} supabase={supabase} Field={Field} Notice={Notice} />
+            <WidgetsTab settings={settings} loadSettings={loadSettings} supabase={supabase} Field={Field} Notice={Notice} devOnly={isDev} />
           )}
 
           {/* INSCRIÇÕES */}

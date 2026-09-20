@@ -22,10 +22,11 @@ const CHAVES: Array<{ key: string; label: string; kind: 'bool' | 'text' | 'url' 
   { key: 'widget_bandas_max', label: 'Bandas · máximo', kind: 'number', dica: 'Padrão 4.' },
   { key: 'widget_visitantes_min', label: 'Visitantes agora · mínimo', kind: 'number', dica: 'Padrão 25.' },
   { key: 'widget_visitantes_max', label: 'Visitantes agora · máximo', kind: 'number', dica: 'Padrão 78.' },
+  { key: 'home_pix_fake', label: 'Pix fantoche (quiz da home)', kind: 'bool', dica: 'ON: checkout da HOME usa Pix de teste que se auto-paga. OFF: Pix real em todas as instancias.' },
   { key: 'social_vagas_pct', label: 'Selo "X% das vagas já preenchidas"', kind: 'number', dica: 'Número fictício exibido acima da tabela de lotes. Padrao 40. 0 = oculta o selo.' },
 ];
 
-export default function WidgetsTab({ settings, loadSettings, supabase, Field, Notice }: WidgetsTabProps) {
+export default function WidgetsTab({ settings, loadSettings, supabase, Field, Notice, devOnly = false }: WidgetsTabProps & { devOnly?: boolean }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
@@ -64,7 +65,9 @@ export default function WidgetsTab({ settings, loadSettings, supabase, Field, No
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {CHAVES.map(c => (
             <div key={c.key} className="space-y-1.5">
-              {c.kind === 'bool' ? (
+              {c.key === 'home_pix_fake' && !devOnly ? (
+                <div className="flex items-center h-[42px] font-mono text-[11px] text-gray-400 uppercase">somente dev</div>
+              ) : c.kind === 'bool' ? (
                 <Field label={c.label}>
                   <button
                     type="button"

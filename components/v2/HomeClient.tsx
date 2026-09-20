@@ -55,6 +55,7 @@ export interface HomeCfg {
   suporteWa?: string | null;
   socialVagasPct?: number;
   widget?: { ativo: boolean; imagem: string; bMin: number; bMax: number; vMin: number; vMax: number };
+  homeFakePix?: boolean;
 }
 
 export default function HomeClient({ cfg }: { cfg: HomeCfg | null }) {
@@ -856,6 +857,7 @@ export default function HomeClient({ cfg }: { cfg: HomeCfg | null }) {
           onPaymentSuccess={handlePaymentSuccess}
           cupom={cupom}
           suporteWa={cfg?.suporteWa}
+          homeFakePix={cfg?.homeFakePix}
         />
       )}
 

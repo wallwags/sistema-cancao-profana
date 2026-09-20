@@ -24,13 +24,14 @@ interface QuizFlowProps {
   linkLoteId?: string | null;
   cupom?: string | null;
   suporteWa?: string | null;
+  homeFakePix?: boolean;
 }
 
 
 const ESTILOS = ['Rap', 'Trap', 'Funk', 'Rock', 'MPB', 'Pop', 'Sertanejo', 'Outro'];
 const FUNCOES = ['Vocalista', 'MC', 'Beatmaker', 'Guitarrista', 'Baixista', 'Baterista', 'Tecladista', 'DJ'];
 
-export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false, origem = 'home', sandboxPix = false, linkLoteId = null, cupom = null, suporteWa = null }: QuizFlowProps) {
+export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false, origem = 'home', sandboxPix = false, linkLoteId = null, cupom = null, suporteWa = null, homeFakePix = false }: QuizFlowProps) {
   const [quizStep, setQuizStep] = useState(1);
 
   // Quiz form states
@@ -812,9 +813,9 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     handleSimulateWebhook(true);
   };
 
-  const pixActive = origem === 'v2' ? (pixGatewayOn && sandboxPix) : pixGatewayOn;
+  const pixActive = origem === 'v2' ? (pixGatewayOn && sandboxPix && !homeFakePix) : (pixGatewayOn && !homeFakePix);
   // Na /v2 com sandbox ativo e Pix real desligado: checkout de SIMULACAO com layout real
-  const sandboxSimulacao = origem === 'v2' && sandboxV2.ativo && !pixActive;
+  const sandboxSimulacao = homeFakePix || (origem === 'v2' && sandboxV2.ativo && !pixActive);
 
   // Confirmacao de pagamento: Pix real (gateway) ou simulacao local (fallback pre-chaves)
   useEffect(() => {
@@ -1018,8 +1019,9 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   };
 
   const copyPixCode = async () => {
+    if (!pixData?.qr) return; // sem QR real gerado nada e copiado (nunca texto generico)
     try {
-      await navigator.clipboard.writeText(pixData?.qr || `PIX CANCAO PROFANA | ${activeLoteName} | R$ ${displayTotal},00 | Estudio Pedra Profana`);
+      await navigator.clipboard.writeText(pixData.qr);
       setPixCopied(true);
       setTimeout(() => setPixCopied(false), 2500);
     } catch { /* clipboard blocked */ }
