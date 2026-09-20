@@ -27,6 +27,9 @@ interface QuizFlowProps {
 }
 
 
+const ESTILOS = ['Rap', 'Trap', 'Funk', 'Rock', 'MPB', 'Pop', 'Sertanejo', 'Outro'];
+const FUNCOES = ['Vocalista', 'MC', 'Beatmaker', 'Guitarrista', 'Baixista', 'Baterista', 'Tecladista', 'DJ'];
+
 export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false, origem = 'home', sandboxPix = false, linkLoteId = null, cupom = null, suporteWa = null }: QuizFlowProps) {
   const [quizStep, setQuizStep] = useState(1);
 
@@ -245,7 +248,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
   // checa nomes de banda parecidos AO DIGITAR (passo 1): aviso imediato, no lugar certo
   useEffect(() => {
-    if (quizStep !== 1) return;
+    if (quizStep !== 2) return;
     if (!projectName.trim() || projectName.trim().length < 3) { setSimilarBands([]); setSimilarChoice('none'); setMineResult(null); return; }
     const t = setTimeout(() => { checkSimilarBands(); }, 500);
     return () => clearTimeout(t);
@@ -440,6 +443,18 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   // Valor verdadeiro cobrado pelo gateway (quando o Pix ja foi gerado)
   const displayTotal = pixData?.amount && pixData.amount > 0 ? pixData.amount : finalTotal;
   const cupomValidado = cupomInfo?.valido === true;
+  // progresso por tela do fluxo
+  const totalTelas = selectedMembers + 7;
+  const pct = Math.min(97, Math.round(4 + Math.pow(Math.max(quizStep - 1, 0) / (totalTelas - 1), 0.6) * 93));
+  const setTamanhoBanda = (n: number) => {
+    setSelectedMembers(n);
+    setMembersList(prev => {
+      const list = [...prev];
+      while (list.length < n - 1) list.push({ name: '', cpf: '', birth: '', role: '', phone: '', email: '' });
+      if (list.length > n - 1) list.length = n - 1;
+      return list;
+    });
+  };
   const cupomDiscount = cupomValidado ? Math.max(fullTotal - displayTotal, 0) : 0;
 
   // ---------- Inline validation helpers ----------
@@ -453,33 +468,37 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const validateStep = (step: number): Record<string, string> => {
     const errs: Record<string, string> = {};
     if (step === 1) {
-      if (!projectName.trim()) errs.projectName = 'Informe o nome da banda / dupla.';
-      if (!projectStyle.trim()) errs.projectStyle = 'Informe o estilo musical.';
+      if (!respPhone) errs.respPhone = 'Informe o WhatsApp.';
+      else if (!isValidWhatsApp(respPhone)) errs.respPhone = 'Informe um celular válido com DDD.';
     }
     if (step === 2) {
-      if (!projectBio.trim()) errs.projectBio = 'Escreva uma biografia para avaliação dos jurados.';
+      if (!projectName.trim() || projectName.trim().length < 2) errs.projectName = 'Informe o nome da banda / dupla.';
       if (projectInstagram.replace(/@/g, '').trim().length < 2) errs.projectInstagram = 'Informe o @ do Instagram da banda.';
-      if (projectVideoLink.trim() && !projectVideoLink.includes('youtube.com') && !projectVideoLink.includes('youtu.be')) errs.projectVideoLink = 'Cole um link do YouTube válido (ou deixe vazio).';
     }
     if (step === 3) {
+      if (!projectStyle.trim()) errs.projectStyle = 'Selecione o estilo (ou marque Outro).';
+    }
+    if (step === 4) {
       if (!respName.trim()) errs.respName = 'Informe o nome completo do responsável.';
+    }
+    if (step === 5) {
+      if (!respEmail.trim()) errs.respEmail = 'Informe o e-mail.';
+      else if (!isValidEmail(respEmail)) errs.respEmail = 'Informe um e-mail válido.';
+    }
+    if (step === 6) {
       if (!respCpf) errs.respCpf = 'Informe o CPF.';
       else if (respCpf.length < 14) errs.respCpf = 'CPF incompleto.';
       else if (!isValidCPF(respCpf)) errs.respCpf = 'CPF inválido. Confira os dígitos.';
-      if (!respBirth) errs.respBirth = 'Informe a data de nascimento.';
-      else if (!isValidBirthDate(respBirth)) errs.respBirth = 'Data inválida (entre 1920 e 2016).';
-      if (!respPhone) errs.respPhone = 'Informe o WhatsApp.';
-      else if (!isValidWhatsApp(respPhone)) errs.respPhone = 'Informe um celular válido com DDD.';
-      if (!respEmail.trim()) errs.respEmail = 'Informe o e-mail.';
-      else if (!isValidEmail(respEmail)) errs.respEmail = 'Informe um e-mail válido.';
-      if (!respRole.trim()) errs.respRole = 'Selecione sua função na banda.';
-      else if (respRole === 'Outro' && !respRoleOther.trim()) errs.respRole = 'Descreva a função.';
     }
-    if (step === 4) {
-      if (isAddingMemberInline) errs.roster = 'Confirme ou descarte o integrante em preenchimento antes de avançar.';
-      else if (membersList.length < 1) errs.roster = 'O regulamento exige no mínimo 2 participantes (líder + 1 integrante). Use "+ Escalar Integrante".';
+    if (step === 7) {
+      if (selectedMembers < 2 || selectedMembers > 7) errs.tamanho = 'Escolha o tamanho da banda (2 a 7).';
     }
-    if (step === 5) {
+    if (step > 7 && step < selectedMembers + 7) {
+      const mi = step - 8;
+      const m = membersList[mi];
+      if (!m || m.name.trim().length < 2) errs['memb' + mi] = 'Informe o nome completo do integrante.';
+    }
+    if (step === selectedMembers + 7) {
       if (!acceptRules) errs.acceptRules = 'É obrigatório declarar ciência das regras para gerar o Pix.';
     }
     return errs;
@@ -491,7 +510,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     if (Object.keys(errs).length > 0) return;
 
     setSlideDirection('next');
-    setQuizStep(quizStep + 1);
+    setQuizStep(Math.min(quizStep + 1, selectedMembers + 7));
   };
 
   const handleQuizPrev = () => {
@@ -595,7 +614,9 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       setRespPhone(draftToRestore.respPhone || '');
       setRespEmail(draftToRestore.respEmail || '');
       setMembersList(draftToRestore.membersList || []);
-      setQuizStep(draftToRestore.step || 1);
+      const dv = Number(draftToRestore.step) || 1;
+      const mapaAntigo: Record<number, number> = { 1: 2, 2: 2, 3: 4, 4: 8, 5: 10 };
+      setQuizStep(dv <= 5 ? (mapaAntigo[dv] ?? 1) : dv);
       setDraftToRestore(null);
     }
   };
@@ -623,25 +644,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   // Registro da banda: gravação atômica no servidor (projeto + líder + integrantes + lote + convite)
   const saveRegistrationToSupabase = async (): Promise<string> => {
     try {
-      let photoUrl: string | null = null;
-      const dataUrl = typeof window !== 'undefined' ? localStorage.getItem('temp_compressed_photo') : null;
-      if (dataUrl && dataUrl.startsWith('data:image')) {
-        try {
-          const blobResult = await fetch(dataUrl);
-          const blob = await blobResult.blob();
-          const baseName = (projectPhotoName || 'foto').split('.')[0].replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 30) || 'foto';
-          const path = `${Date.now()}-${baseName}.jpg`;
-          const { error: upErr } = await supabase.storage
-            .from('project-photos')
-            .upload(path, blob, { contentType: 'image/jpeg', cacheControl: '3600' });
-          if (!upErr) {
-            const { data: pub } = supabase.storage.from('project-photos').getPublicUrl(path);
-            photoUrl = pub?.publicUrl || null;
-          }
-        } catch { /* segue sem foto */ }
-      }
-
-      const membersPayload = membersList.map(m => ({ name: m.name, cpf: '', birth: m.birth, role: m.role, phone: m.phone || '', email: m.email || '' }));
+      // Foto e bio saem do fluxo de matricula: sao convidadas na tela de sucesso (via WhatsApp do estudio)
+      const membersPayload = membersList.map(m => ({ name: m.name, cpf: '', birth: '', role: m.role, phone: '', email: '' }));
 
       const { data, error } = await supabase.rpc('create_band_registration', {
         p_origem: origem === 'v2' ? 'v2' : 'home',
@@ -649,11 +653,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         p_cupom: cupomInfo && cupomInfo.valido === false ? null : (cupom || null),
         p_name: projectName,
         p_style: projectStyle,
-        p_bio: projectBio,
-        p_photo_url: photoUrl,
+        p_bio: '',
+        p_photo_url: null,
         p_instagram: projectInstagram ? projectInstagram.replace(/@/g, '') : null,
         p_video_link: projectVideoLink || null,
-        p_leader: { name: respName, cpf: respCpf, birth: respBirth, phone: respPhone, email: respEmail, role: leaderRoleEffective },
+        p_leader: { name: respName, cpf: respCpf, birth: '', phone: respPhone, email: respEmail, role: 'Líder' },
         p_members: membersPayload
       });
 
@@ -683,7 +687,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
   // ---------- Checkout flow ----------
   const handleLaunchCheckout = () => {
-    const errs = validateStep(5);
+    const errs = validateStep(selectedMembers + 7);
     if (honey.trim()) {
       setErrors({ acceptRules: 'Não foi possível validar o envio. Recarregue a página e tente novamente.' });
       return;
@@ -1020,33 +1024,21 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   // ---------- Demo filler (production-safe: fills valid data, validations stay on) ----------
   const fillDemoData = () => {
     demoRef.current = true;
-    if (quizStep === 1) {
-      setProjectName("[DEMO] Os Profanos do Ritmo");
-      setProjectStyle("Rock Autoral");
-      clearError('projectName'); clearError('projectStyle');
-    } else if (quizStep === 2) {
-      setProjectBio("Formada em 2025 nas garagens da serra, a banda une timbres clássicos de fuzz a letras densas e poéticas em português. Nosso objetivo é o palco principal do festival Pedra Profana Sessions 2026.");
-      setProjectPhotoName("foto_backstage.jpg (Simulada)");
-      setProjectInstagram("@osprofanos");
-      setProjectVideoLink("https://youtube.com/watch?v=demo-profana");
-      clearError('projectBio'); clearError('projectPhotoName');
-    } else if (quizStep === 3) {
-      setRespName("Emily Bryan");
-      setRespRole("Vocalista");
-      setRespCpf("123.456.789-09"); // 100% mathematically valid CPF
-      setRespBirth("12/10/1998");
-      setRespPhone("(21) 98765-4321");
-      setRespEmail("contato@osprofanos.com.br");
-      clearError('respName'); clearError('respCpf'); clearError('respBirth'); clearError('respPhone'); clearError('respEmail');
-    } else if (quizStep === 4) {
-      setNewMemberName("John Bryan");
-      setNewMemberBirth("24/05/2000");
-      setNewMemberRole("Guitarrista");
-      openMemberForm();
-    } else if (quizStep === 5) {
-      setAcceptRules(true);
-      clearError('acceptRules');
-    }
+    setRespPhone('(21) 99999-0000');
+    setProjectName('Banda Demo');
+    setProjectInstagram('bandademo');
+    setProjectStyle('Rock');
+    setRespName('Líder Demo');
+    setRespEmail('demo@teste.com');
+    setRespCpf('529.982.247-28');
+    setSelectedMembers(3);
+    setMembersList([
+      { name: 'Integrante Dois', cpf: '', birth: '', role: 'Guitarrista', phone: '', email: '' },
+      { name: 'Integrante Três', cpf: '', birth: '', role: 'Baterista', phone: '', email: '' },
+    ]);
+    setAcceptRules(true);
+    setErrors({});
+    setQuizStep(10);
   };
 
   const leaderRoleEffective = respRole === 'Outro' ? respRoleOther.trim() : respRole;
@@ -1096,7 +1088,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   <div className="space-y-2">
                     <h3 className="font-display font-black text-xl text-white uppercase tracking-tight">Rascunho de Inscrição Ativo</h3>
                     <p className="text-xs text-gray-300 max-w-sm mx-auto leading-relaxed">
-                      Encontramos um progresso de matrícula salvo localmente para a banda/dupla <strong className="text-[#F0C265]">&quot;{draftToRestore.projectName}&quot;</strong> no Passo <strong className="text-[#F0C265]">0{draftToRestore.step}/05</strong>. Deseja retomar?
+                      Encontramos um progresso de matrícula salvo localmente para a banda/dupla <strong className="text-[#F0C265]">&quot;{draftToRestore.projectName}&quot;</strong>. Deseja retomar de onde parou?
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs pt-2">
@@ -1106,18 +1098,13 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                 </div>
               ) : (
                 <>
-                  {/* STATUS PROGRESS BAR */}
+                  {/* PROGRESSO */}
                   <div className="space-y-2 shrink-0">
-                    <div className="flex justify-between items-baseline">
-                      <span className="font-mono text-sm md:text-base text-[#F0C265] font-black uppercase tracking-widest">
-                        Passo {quizStep} de 5
-                      </span>
-                      <span className="font-mono text-sm md:text-base text-gray-400 font-bold">
-                        Progresso: {quizStep * 20}%
-                      </span>
+                    <div className="flex justify-end items-baseline">
+                      <span className="font-mono text-sm md:text-base text-[#F0C265] font-black">{pct}%</span>
                     </div>
                     <div className="w-full h-2 bg-black rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-[#FFF2D4] via-[#F0C265] to-[#B88A28] transition-all duration-300" style={{ width: `${quizStep * 20}%` }}></div>
+                      <div className="h-full bg-gradient-to-r from-[#FFF2D4] via-[#F0C265] to-[#B88A28] transition-all duration-300" style={{ width: `${pct}%` }}></div>
                     </div>
                   </div>
 
@@ -1127,319 +1114,150 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                     <div ref={stepRef} className="space-y-6">
                         {quizStep === 1 && (
                           <div className="space-y-4">
-                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Dados do Projeto</h3>
-                            <p className="text-sm text-gray-300">Insira as informações gerais da banda/artista.</p>
-                            <div className="space-y-4 pt-2">
-                              <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome da Banda / Dupla de Rap <span className="text-red-400">*</span></label>
-                                <input
-                                  type="text"
-                                  value={projectName}
-                                  onChange={(e) => { setProjectName(e.target.value); clearError('projectName'); if (joinState !== 'idle') setJoinState('idle'); }}
-                                  placeholder="Ex: The Jackson Five"
-                                  className={inputClass('projectName', "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors")}
-                                  required
-                                />
-                                {fieldError('projectName')}
-                            {similarBands.length > 0 && (similarChoice === 'none' || similarChoice === 'mine') && joinState !== 'declined' && (
-                              <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl p-4 space-y-3">
-                            <span className="font-mono text-xs text-amber-400 uppercase tracking-widest font-black block">⚠ Atenção: nome parecido</span>
-                            <p className="text-sm text-amber-100/90 leading-relaxed">
-                              Já existe{similarBands.length > 1 ? 'm' : ''} banda{similarBands.length > 1 ? 's' : ''} com nome parecido inscrita{similarBands.length > 1 ? 's' : ''}: <strong className="text-white">{similarBands.join(', ')}</strong>.
-                              Sua banda é uma delas ou é outra banda mesmo?
-                            </p>
-                            {similarChoice !== 'mine' ? (
-                              <div className="grid grid-cols-2 gap-2.5">
-                                <button type="button" onClick={() => setSimilarChoice('mine')} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-[#10B981]/25 active:scale-[0.98] transition-transform">Sim, é minha</button>
-                                <button type="button" onClick={() => setSimilarChoice('other')} className="font-mono text-sm font-black text-white bg-gradient-to-b from-red-500 to-red-700 px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-red-900/30 active:scale-[0.98] transition-transform">Não, é outra</button>
-                              </div>
-                            ) : (
-                              <div className="space-y-2.5">
-                                <label className="block font-mono text-[11px] text-gray-300 font-bold uppercase tracking-wider">Seu CPF para localizar sua vaga</label>
-                                <input
-                                  inputMode="numeric"
-                                  value={mineCpf}
-                                  onChange={(e) => { setMineCpf(e.target.value.replace(/\D/g, '').slice(0, 11)); setMineResult(null); }}
-                                  placeholder="000.000.000-00"
-                                  className="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10B981] placeholder-gray-600"
-                                />
-                                {mineResult && (
-                                  <div className={`rounded-xl px-4 py-3 text-xs leading-snug ${mineResult.ok ? 'bg-[#10B981]/10 border border-[#10B981]/40 text-[#10B981]' : 'bg-red-500/10 border border-red-500/40 text-red-200'}`}>
-                                    {mineResult.ok ? '✓ ' : '⚠ '}{mineResult.msg}
-                                  </div>
-                                )}
-                                <div className="grid grid-cols-2 gap-2.5">
-                                  <button type="button" onClick={handleMineCheck} disabled={mineChecking || mineCpf.length !== 11} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider disabled:opacity-50 active:scale-[0.98] transition-transform">
-                                    {mineChecking ? 'Verificando...' : 'Localizar'}
-                                  </button>
-                                  <button type="button" onClick={() => { setSimilarChoice('none'); setMineCpf(''); setMineResult(null); }} className="font-mono text-sm font-bold text-gray-400 border border-white/10 px-3 py-3 rounded-xl uppercase hover:text-white transition-colors">Voltar</button>
-                                </div>
-                              </div>
-                            )}
-                              </div>
-                            )}
-
-                              </div>
-                              <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Estilo / Gênero <span className="text-red-400">*</span></label>
-                                <input
-                                  type="text"
-                                  value={projectStyle}
-                                  onChange={(e) => { setProjectStyle(e.target.value); clearError('projectStyle'); }}
-                                  placeholder="Ex: R&B"
-                                  className={inputClass('projectStyle', "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors")}
-                                  required
-                                />
-                                {fieldError('projectStyle')}
-                              </div>
+                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Seu WhatsApp</h3>
+                            <p className="text-sm text-gray-300 leading-relaxed">Antes de tudo: um contato direto seu para garantir e recuperar sua vaga quando precisar.</p>
+                            <div className="space-y-1 pt-1">
+                              <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">WhatsApp <span className="text-red-400">*</span></label>
+                              <input type="tel" inputMode="numeric" value={respPhone} onChange={(e) => { setRespPhone(applyPhoneMask(e.target.value)); clearError('respPhone'); }} placeholder="(21) 99999-9999" autoComplete="tel" className={`w-full bg-[#05070B] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-600 transition-colors ${errors.respPhone ? 'border-red-500/60' : 'border-white/10 focus:border-[#E3B552]'}`} />
+                              {fieldError('respPhone')}
                             </div>
                           </div>
                         )}
 
                         {quizStep === 2 && (
                           <div className="space-y-4">
-                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Biografia & Mídia</h3>
-                            <p className="text-sm text-gray-300">Estas informações serão avaliadas pelo corpo de jurados técnicos.</p>
-                            <div className="space-y-4 pt-2">
-                              <div className="space-y-1">
-                                <div className="flex justify-between items-baseline">
-                                  <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Biografia <span className="text-red-400">*</span></label>
-
-                                  {/* Dynamic Profile Strength Meter */}
-                                  <span className="font-mono text-[9px] uppercase tracking-wider font-bold">
-                                    {projectBio.length <= 80 && <span className="text-red-500">Fraca 🔴 (Adicione mais detalhes)</span>}
-                                    {projectBio.length > 80 && projectBio.length <= 220 && <span className="text-yellow-500">Boa 🟡 (Fale de influências e objetivos)</span>}
-                                    {projectBio.length > 220 && <span className="text-emerald-500">Excelente! 🟢 (Lineup qualificado)</span>}
-                                  </span>
-                                </div>
-                                <textarea
-                                  value={projectBio}
-                                  onChange={(e) => { setProjectBio(e.target.value.slice(0, 400)); clearError('projectBio'); }}
-                                  rows={3}
-                                  maxLength={400}
-                                  className={inputClass('projectBio', "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] resize-none focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors")}
-                                  required
+                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Qual o nome da banda?</h3>
+                            <div className="space-y-1">
+                              <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome da Banda / Dupla de Rap <span className="text-red-400">*</span></label>
+                              <input type="text" value={projectName} onChange={(e) => { setProjectName(e.target.value.slice(0, 60)); clearError('projectName'); }} placeholder="Ex: Tempestade de Aço" autoComplete="organization" className={`w-full bg-[#05070B] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-600 transition-colors ${errors.projectName ? 'border-red-500/60' : 'border-white/10 focus:border-[#E3B552]'}`} />
+                              {fieldError('projectName')}
+                            </div>
+                            <div className="space-y-1 pt-2">
+                              <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Instagram <span className="text-red-400">*</span></label>
+                              <div className={`flex items-stretch bg-[#05070B] border rounded-xl overflow-hidden transition-colors ${errors.projectInstagram ? 'border-red-500/60' : 'border-white/10 focus-within:border-[#E3B552]'}`}>
+                                <span className="flex items-center pl-3.5 pr-0.5 font-mono text-sm text-gray-400 select-none pointer-events-none">@</span>
+                                <input
+                                  type="text"
+                                  value={projectInstagram}
+                                  onChange={(e) => { setProjectInstagram(e.target.value.replace(/[^a-zA-Z0-9._]/g, '').slice(0, 30)); clearError('projectInstagram'); }}
+                                  placeholder="suabanda"
+                                  autoComplete="off"
+                                  className="flex-1 min-w-0 bg-transparent px-1 py-3.5 text-white text-base outline-none placeholder-gray-600"
                                 />
-                                {fieldError('projectBio')}
-                                <span className="text-xs text-gray-500 font-mono block text-right mt-1 font-bold">{projectBio.length}/400 caracteres</span>
                               </div>
-                              <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Foto Oficial <span className="text-[10px] text-gray-500 font-normal normal-case tracking-normal">(opcional)</span></label>
-
-                                {/* Real-time browser canvas compression upload */}
-                                <div className={`border border-dashed rounded-xl p-5 text-center cursor-pointer bg-black/40 relative ${errors.projectPhotoName ? 'border-red-500/60' : 'border-white/10 hover:border-[#E3B552]'}`}>
-                                  <input type="file" onChange={handleImageCompression} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" />
-                                  {projectPhotoName ? (
-                                    <span className="text-sm text-[#10B981] font-bold">✓ Foto Selecionada: {projectPhotoName}</span>
-                                  ) : (
-                                    <span className="text-sm text-gray-400">Arraste ou clique para carregar foto</span>
-                                  )}
-                                </div>
-                                {fieldError('projectPhotoName')}
-                                <span className="text-[10px] text-gray-500 font-mono block mt-1">Formatos: JPEG, PNG, WEBP. Max: 5MB. Compressor client-side ativo (peso reduzido a &lt; 250KB).</span>
-                              </div>
-
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                  <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Instagram <span className="text-red-400">*</span></label>
-                                  <div className={`flex items-stretch bg-[#05070B] border rounded-xl overflow-hidden transition-colors ${errors.projectInstagram ? 'border-red-500/60' : 'border-white/10 focus-within:border-[#E3B552]'}`}>
-                                    <span className="flex items-center pl-3.5 pr-0.5 font-mono text-sm text-gray-400 select-none pointer-events-none">@</span>
-                                    <input
-                                      type="text"
-                                      value={projectInstagram}
-                                      onChange={(e) => { setProjectInstagram(e.target.value.replace(/[^a-zA-Z0-9._]/g, '').slice(0, 30)); clearError('projectInstagram'); }}
-                                      placeholder="suabanda"
-                                      className="flex-1 min-w-0 bg-transparent px-1 py-3 text-white text-xs outline-none placeholder-gray-600"
-                                    />
-                                  </div>
-                                  {fieldError('projectInstagram')}
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Link do Vídeo (YouTube) <span className="text-[10px] text-gray-500 font-normal normal-case tracking-normal">(opcional)</span></label>
-                                  <input
-                                    type="url"
-                                    value={projectVideoLink}
-                                    onChange={(e) => { setProjectVideoLink(e.target.value); clearError('projectVideoLink'); }}
-                                    placeholder="Ex: https://youtube.com/watch?v=..."
-                                    className={`w-full bg-[#05070B] border rounded-xl px-4 py-3 text-white text-xs outline-none placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 transition-colors ${errors.projectVideoLink ? 'border-red-500/60' : 'border-white/10 focus:border-[#E3B552]'}`}
-                                  />
-                                  {fieldError('projectVideoLink')}
-                                </div>
-                              </div>
+                              {fieldError('projectInstagram')}
                             </div>
                           </div>
                         )}
 
                         {quizStep === 3 && (
                           <div className="space-y-4">
-                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Líder Responsável</h3>
-                            <p className="text-sm text-gray-300">Preencha as credenciais do integrante responsável legal da banda / dupla.</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                              <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome Completo <span className="text-red-400">*</span></label>
-                                <input type="text" value={respName} onChange={(e) => { setRespName(e.target.value); clearError('respName'); }} className={inputClass('respName', "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors")} required />
-                                {fieldError('respName')}
-                              </div>
-                              <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">CPF <span className="text-red-400">*</span></label>
-                                <input type="text" value={respCpf} onChange={(e) => { setRespCpf(applyCpfMask(e.target.value)); clearError('respCpf'); }} className={inputClass('respCpf', "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors")} maxLength={14} required />
-                                {fieldError('respCpf')}
-                              </div>
-                              <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nascimento <span className="text-red-400">*</span></label>
-                                <input type="text" value={respBirth} onChange={(e) => { setRespBirth(applyDateMask(e.target.value)); clearError('respBirth'); }} className={inputClass('respBirth', "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors")} maxLength={10} required />
-                                {fieldError('respBirth')}
-                              </div>
-                              <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">WhatsApp <span className="text-red-400">*</span></label>
-                                <input type="tel" value={respPhone} onChange={(e) => { setRespPhone(applyPhoneMask(e.target.value)); clearError('respPhone'); }} className={inputClass('respPhone', "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors")} maxLength={15} required />
-                                {fieldError('respPhone')}
-                              </div>
-                              <div className="space-y-1">
-                                <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Sua função na banda <span className="text-red-400">*</span></label>
-                                <select
-                                  value={respRole}
-                                  onChange={(e) => { setRespRole(e.target.value); if (e.target.value !== 'Outro') setRespRoleOther(''); }}
-                                  className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] transition-colors"
-                                >
-                                  <option value="">Selecione...</option>
-                                  {['Vocalista', 'MC', 'Beatmaker', 'Guitarrista', 'Baixista', 'Baterista', 'Tecladista', 'DJ', 'Outro'].map(r => (
-                                    <option key={r} value={r}>{r}</option>
-                                  ))}
-                                </select>
-                                {respRole === 'Outro' && (
-                                  <input
-                                    type="text"
-                                    value={respRoleOther}
-                                    onChange={(e) => setRespRoleOther(e.target.value)}
-                                    placeholder="Descreva a função (ex: Percussionista)"
-                                    className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600 mt-2"
-                                  />
-                                )}
-                              </div>
-                              <div className="space-y-1 md:col-span-2">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">E-mail <span className="text-red-400">*</span></label>
-                                <input type="email" inputMode="email" value={respEmail} onChange={(e) => { setRespEmail(e.target.value); clearError('respEmail'); }} placeholder="Ex: contato@suabanda.com" className={inputClass('respEmail', "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors")} required />
-                                {fieldError('respEmail')}
-                                <span className="text-[10px] text-gray-500 font-mono block">Usado para confirmar a matrícula e comunicados oficiais do concurso.</span>
-                              </div>
+                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Qual é o estilo?</h3>
+                            <p className="text-sm text-gray-300">Escolha o que mais representa o som de vocês.</p>
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              {ESTILOS.map(es => (
+                                <button key={es} type="button" onClick={() => { setProjectStyle(projectStyle === es ? '' : es); clearError('projectStyle'); }} className={`font-mono text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-full border transition-colors ${projectStyle === es ? 'bg-[#F0C265] text-black border-black' : 'text-gray-300 border-white/15 bg-white/5 hover:border-[#F0C265]/50 hover:text-white'}`}>
+                                  {es}
+                                </button>
+                              ))}
                             </div>
+                            {projectStyle !== '' && !ESTILOS.includes(projectStyle) && (
+                              <input type="text" value={projectStyle} onChange={(e) => setProjectStyle(e.target.value)} placeholder="Descreva o estilo" className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600" />
+                            )}
+                            {fieldError('projectStyle')}
                           </div>
                         )}
 
                         {quizStep === 4 && (
                           <div className="space-y-4">
-                            <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                              <div>
-                                <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Lineup da Banda</h3>
-                                <p className="text-xs text-gray-300">Preencha o roster oficial de integrantes (Mínimo 2, Máximo 7).</p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={openMemberForm}
-                                className="flex items-center gap-1.5 font-mono text-xs font-bold text-black bg-[#F0C265] px-3.5 py-2.5 rounded-full hover:bg-[#FFF2D4] active:scale-95 transition-all outline-none focus-visible:ring-2 focus-visible:ring-[#F0C265]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B]"
-                              >
-                                <Plus className="w-4 h-4" /> Escalar Integrante
-                              </button>
+                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Como você se chama?</h3>
+                            <p className="text-sm text-gray-300">Você será o líder responsável pela inscrição.</p>
+                            <div className="space-y-1 pt-1">
+                              <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome completo <span className="text-red-400">*</span></label>
+                              <input type="text" value={respName} onChange={(e) => { setRespName(e.target.value); clearError('respName'); }} placeholder="Nome completo" autoComplete="name" className={`w-full bg-[#05070B] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-600 transition-colors ${errors.respName ? 'border-red-500/60' : 'border-white/10 focus:border-[#E3B552]'}`} />
+                              {fieldError('respName')}
                             </div>
-
-                            {/* Interactive dynamic inline member insert form - whole block expands together (GSAP height auto) */}
-                            {memberFormRendered && (
-                              <div ref={collapseRef} className="overflow-hidden">
-                                <div className="bg-black/50 p-4 border border-[#E3B552]/30 rounded-2xl space-y-4">
-                                  <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                                    <span className="font-mono text-xs text-[#F0C265] font-bold uppercase tracking-wider">Novo Integrante Roster</span>
-                                    <button type="button" onClick={closeMemberForm} className="text-gray-400 hover:text-white"><X className="w-4 h-4" /></button>
-                                  </div>
-
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">Nome Completo <span className="text-red-400">*</span></label>
-                                      <input type="text" value={newMemberName} onChange={(newE) => { setNewMemberName(newE.target.value); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberName; return c; }); }} className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberName ? 'border-red-500/60' : 'border-white/10'}`} />
-                                      {memberErrors.newMemberName && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberName}</p>}
-                                    </div>
-                                    <div className="space-y-1">
-                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">Nascimento (DD/MM/AAAA) <span className="text-[10px] text-gray-500 font-normal normal-case tracking-normal">(opcional)</span></label>
-                                      <input type="text" value={newMemberBirth} onChange={(newE) => { setNewMemberBirth(applyDateMask(newE.target.value)); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberBirth; return c; }); }} className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberBirth ? 'border-red-500/60' : 'border-white/10'}`} maxLength={10} />
-                                      {memberErrors.newMemberBirth && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberBirth}</p>}
-                                    </div>
-                                    <div className="space-y-1">
-                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">WhatsApp <span className="text-red-400">*</span></label>
-                                      <input type="tel" value={newMemberPhone} onChange={(newE) => { setNewMemberPhone(newE.target.value); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberPhone; return c; }); }} placeholder="(21) 99999-9999" className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberPhone ? 'border-red-500/60' : 'border-white/10'}`} maxLength={15} />
-                                      {memberErrors.newMemberPhone && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberPhone}</p>}
-                                    </div>
-                                    <div className="space-y-1">
-                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">E-mail <span className="text-red-400">*</span></label>
-                                      <input type="email" value={newMemberEmail} onChange={(newE) => { setNewMemberEmail(newE.target.value); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberEmail; return c; }); }} placeholder="voce@email.com" className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberEmail ? 'border-red-500/60' : 'border-white/10'}`} autoComplete="email" />
-                                      {memberErrors.newMemberEmail && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberEmail}</p>}
-                                    </div>
-                                    <div className="space-y-1 sm:col-span-2">
-                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">Função na banda <span className="text-red-400">*</span></label>
-                                      <select
-                                        value={newMemberRole}
-                                        onChange={(newE) => { setNewMemberRole(newE.target.value); if (newE.target.value !== 'Outro') setNewMemberRoleOther(''); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberRole; return c; }); }}
-                                        className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberRole ? 'border-red-500/60' : 'border-white/10'}`}
-                                      >
-                                        <option value="">Selecione...</option>
-                                        {['Vocalista', 'MC', 'Beatmaker', 'Guitarrista', 'Baixista', 'Baterista', 'Tecladista', 'DJ', 'Outro'].map(r => (
-                                          <option key={r} value={r}>{r}</option>
-                                        ))}
-                                      </select>
-                                      {newMemberRole === 'Outro' && (
-                                        <input
-                                          type="text"
-                                          value={newMemberRoleOther}
-                                          onChange={(e) => setNewMemberRoleOther(e.target.value)}
-                                          placeholder="Descreva a função (ex: Percussionista)"
-                                          className="w-full bg-[#05070B] border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] placeholder-gray-600 mt-1.5"
-                                        />
-                                      )}
-                                      {memberErrors.newMemberRole && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberRole}</p>}
-                                    </div>
-                                  </div>
-
-                                  <div className="flex justify-end gap-2.5 pt-2">
-                                    <button type="button" onClick={closeMemberForm} className="font-mono text-xs font-bold text-gray-400 px-4 py-2 border border-white/10 rounded-full">Descartar</button>
-                                    <button type="button" onClick={saveMemberInline} className="font-mono text-xs font-bold text-black bg-[#10B981] px-4 py-2 rounded-full">Confirmar</button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            <div className="space-y-3 overflow-y-auto max-h-[220px] pr-1">
-                              <div className="bg-[#05070B] p-4 flex justify-between items-center border border-white/5 rounded-2xl shadow">
-                                <div className="flex items-center gap-3">
-                                  <span className="w-8 h-8 rounded-full bg-[#F0C265]/10 text-[#F0C265] flex items-center justify-center font-mono text-xs font-bold border border-[#F0C265]/20">1</span>
-                                  <div>
-                                    <span className="text-xs sm:text-sm font-bold text-white block">{respName || 'Nome do Líder'}</span>
-                                    <span className="font-mono text-[10px] text-gray-400 uppercase block mt-0.5">Integrante 1 • Líder Responsável (CPF: {respCpf || '---'})</span>
-                                  </div>
-                                </div>
-                                <span className="font-mono text-[9px] text-[#F0C265] bg-[#F0C265]/10 px-2.5 py-1 rounded border border-[#F0C265]/20 uppercase font-bold tracking-wider">Fixo</span>
-                              </div>
-
-                              {membersList.map((m, index) => (
-                                <div key={index} className="bg-[#05070B] p-4 flex justify-between items-center border border-white/5 rounded-2xl shadow hover:border-white/10 transition-colors">
-                                  <div className="flex items-center gap-3">
-                                    <span className="w-8 h-8 rounded-full bg-[#E3B552]/10 text-[#F0C265] flex items-center justify-center font-mono text-xs font-bold border border-[#E3B552]/20">{index + 2}</span>
-                                    <div>
-                                      <span className="text-xs sm:text-sm font-bold text-white block">{m.name || `Integrante ${index + 2}`}</span>
-                                      <span className="font-mono text-[10px] text-gray-400 uppercase block mt-0.5">Integrante {index + 2} • {m.role || 'não informado'} • Nascimento: {m.birth || '---'}</span>
-                                    </div>
-                                  </div>
-                                  <button type="button" onClick={() => removeQuizMember(index)} className="text-xs text-red-500 hover:text-red-400 font-bold uppercase font-mono tracking-wider flex items-center gap-1">
-                                    <Trash2 className="w-3.5 h-3.5" /> Remover
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                            {fieldError('roster')}
                           </div>
                         )}
 
                         {quizStep === 5 && (
                           <div className="space-y-4">
-                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Revisar Matrícula</h3>
+                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Seu melhor e-mail</h3>
+                            <p className="text-sm text-gray-300">Usado para confirmar a matrícula e comunicados oficiais do concurso.</p>
+                            <div className="space-y-1 pt-1">
+                              <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">E-mail <span className="text-red-400">*</span></label>
+                              <input type="email" inputMode="email" value={respEmail} onChange={(e) => { setRespEmail(e.target.value); clearError('respEmail'); }} placeholder="voce@email.com" autoComplete="email" className={`w-full bg-[#05070B] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-600 transition-colors ${errors.respEmail ? 'border-red-500/60' : 'border-white/10 focus:border-[#E3B552]'}`} />
+                              {fieldError('respEmail')}
+                            </div>
+                          </div>
+                        )}
+
+                        {quizStep === 6 && (
+                          <div className="space-y-4">
+                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Seu CPF</h3>
+                            <p className="text-sm text-gray-300">Serve para recuperar seu acesso à inscrição a qualquer momento.</p>
+                            <div className="space-y-1 pt-1">
+                              <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">CPF <span className="text-red-400">*</span></label>
+                              <input type="text" inputMode="numeric" value={respCpf} onChange={(e) => { setRespCpf(applyCpfMask(e.target.value)); clearError('respCpf'); }} placeholder="000.000.000-00" autoComplete="off" className={`w-full bg-[#05070B] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-600 transition-colors ${errors.respCpf ? 'border-red-500/60' : 'border-white/10 focus:border-[#E3B552]'}`} />
+                              {fieldError('respCpf')}
+                            </div>
+                          </div>
+                        )}
+
+                        {quizStep === 7 && (
+                          <div className="space-y-4">
+                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Quantas pessoas na banda?</h3>
+                            <p className="text-sm text-gray-300">Contando com você. Mínimo 2, máximo 7 (regulamento).</p>
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              {[2, 3, 4, 5, 6, 7].map(n => (
+                                <button key={n} type="button" onClick={() => setTamanhoBanda(n)} className={`w-12 h-12 rounded-full font-display font-black text-lg transition-colors ${selectedMembers === n ? 'bg-[#F0C265] text-black border border-black' : 'text-gray-300 border border-white/15 bg-white/5 hover:border-[#F0C265]/50 hover:text-white'}`}>
+                                  {n}
+                                </button>
+                              ))}
+                            </div>
+                            {fieldError('tamanho')}
+                            <p className="text-[11px] text-gray-500 font-mono">A seguir, só o nome de cada integrante — cada um confirma os próprios dados depois pelo link do convite.</p>
+                          </div>
+                        )}
+
+                        {quizStep > 7 && quizStep < selectedMembers + 7 && (() => {
+                          const mi = quizStep - 8;
+                          const m = membersList[mi];
+                          if (!m) return null;
+                          const mKey = 'memb' + mi;
+                          const roleEhOutro = !!m.role && !FUNCOES.includes(m.role);
+                          return (
+                            <div className="space-y-4">
+                              <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Integrante {mi + 2} de {selectedMembers}</h3>
+                              <p className="text-sm text-gray-300">Só o nome por enquanto — cada integrante confirma os próprios dados pelo link do convite.</p>
+                              <div className="space-y-1 pt-1">
+                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome <span className="text-red-400">*</span></label>
+                                <input type="text" value={m.name} onChange={(e) => { const v = e.target.value; setMembersList(l => l.map((x, i2) => i2 === mi ? { ...x, name: v } : x)); if (errors[mKey]) clearError(mKey); }} placeholder="Nome completo" autoComplete="off" className={`w-full bg-[#05070B] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-600 transition-colors ${errors[mKey] ? 'border-red-500/60' : 'border-white/10 focus:border-[#E3B552]'}`} />
+                                {errors[mKey] && <p className="text-xs text-red-400 font-mono">{errors[mKey]}</p>}
+                              </div>
+                              <div className="space-y-2 pt-2">
+                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Função <span className="text-[10px] text-gray-500 font-normal normal-case tracking-normal">(opcional)</span></label>
+                                <div className="flex flex-wrap gap-2">
+                                  {FUNCOES.map(f => (
+                                    <button key={f} type="button" onClick={() => setMembersList(l => l.map((x, i2) => i2 === mi ? { ...x, role: x.role === f ? '' : f } : x))} className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-full border transition-colors ${m.role === f ? 'bg-[#F0C265] text-black border-black' : 'text-gray-300 border-white/15 bg-white/5 hover:border-[#F0C265]/50 hover:text-white'}`}>
+                                      {f}
+                                    </button>
+                                  ))}
+                                  <button type="button" onClick={() => setMembersList(l => l.map((x, i2) => i2 === mi ? { ...x, role: roleEhOutro ? '' : 'Outro' } : x))} className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-full border transition-colors ${roleEhOutro ? 'bg-[#F0C265] text-black border-black' : 'text-gray-300 border-white/15 bg-white/5 hover:border-[#F0C265]/50 hover:text-white'}`}>
+                                    Outro
+                                  </button>
+                                </div>
+                                {roleEhOutro && (
+                                  <input type="text" value={m.role === 'Outro' ? '' : m.role} onChange={(e) => setMembersList(l => l.map((x, i2) => i2 === mi ? { ...x, role: e.target.value } : x))} placeholder="Descreva a função (ex: Percussionista)" className="w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600" />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {quizStep === selectedMembers + 7 && (
+                          <div className="space-y-4">
+                            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Revise e gere o Pix</h3>
                             <p className="text-sm text-gray-300">Confirme os dados consolidados do sinal.</p>
 
                             <div className="bg-black/50 p-4 md:p-6 rounded-2xl border border-white/5 space-y-4 md:space-y-5 text-sm font-mono">
@@ -1530,10 +1348,34 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                               {similarBands.length > 0 && (similarChoice === 'none' || (similarChoice === 'mine' && (!mineResult || !mineResult.ok))) && (
                                 <div className="bg-amber-500/10 border border-amber-500/40 rounded-xl px-4 py-3 space-y-2.5">
                                   <span className="text-xs text-amber-300 font-bold uppercase tracking-wide block">Nome parecido pendente: {similarBands.join(', ')}</span>
-                                  <div className="flex flex-col sm:flex-row gap-2">
-                                    <button type="button" onClick={() => { setSimilarChoice('mine'); setQuizStep(1); setSlideDirection('prev'); }} className="font-mono text-[11px] font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-2.5 rounded-xl uppercase flex-1">É minha banda (verificar CPF)</button>
-                                    <button type="button" onClick={() => setSimilarChoice('other')} className="font-mono text-[11px] font-black text-white bg-gradient-to-b from-red-500 to-red-700 px-3 py-2.5 rounded-xl uppercase flex-1">É outra banda</button>
-                                  </div>
+                                  {similarChoice !== 'mine' ? (
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                      <button type="button" onClick={() => { setSimilarChoice('mine'); }} className="font-mono text-[11px] font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-2.5 rounded-xl uppercase flex-1">É minha banda (verificar CPF)</button>
+                                      <button type="button" onClick={() => setSimilarChoice('other')} className="font-mono text-[11px] font-black text-white bg-gradient-to-b from-red-500 to-red-700 px-3 py-2.5 rounded-xl uppercase flex-1">É outra banda</button>
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-2.5">
+                                      <label className="block font-mono text-[11px] text-gray-300 font-bold uppercase tracking-wider">Seu CPF para localizar sua vaga</label>
+                                      <input
+                                        inputMode="numeric"
+                                        value={mineCpf}
+                                        onChange={(e) => { setMineCpf(e.target.value.replace(/\D/g, '').slice(0, 11)); setMineResult(null); }}
+                                        placeholder="000.000.000-00"
+                                        className="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10B981] placeholder-gray-600"
+                                      />
+                                      {mineResult && (
+                                        <div className={`rounded-xl px-4 py-3 text-xs leading-snug ${mineResult.ok ? 'bg-[#10B981]/10 border border-[#10B981]/40 text-[#10B981]' : 'bg-red-500/10 border border-red-500/40 text-red-200'}`}>
+                                          {mineResult.ok ? '✓ ' : '⚠ '}{mineResult.msg}
+                                        </div>
+                                      )}
+                                      <div className="grid grid-cols-2 gap-2.5">
+                                        <button type="button" onClick={handleMineCheck} disabled={mineChecking || mineCpf.length !== 11} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider disabled:opacity-50 active:scale-[0.98] transition-transform">
+                                          {mineChecking ? 'Verificando...' : 'Localizar'}
+                                        </button>
+                                        <button type="button" onClick={() => { setSimilarChoice('none'); setMineCpf(''); setMineResult(null); }} className="font-mono text-sm font-bold text-gray-400 border border-white/10 px-3 py-3 rounded-xl uppercase hover:text-white transition-colors">Voltar</button>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -1551,7 +1393,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                     {/* CONTROLS */}
                     <div className="border-t border-[#2C2C2C] pt-4 space-y-3 shrink-0">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-[#F0EAE0] font-bold font-mono">0{quizStep}/05</span>
+                        <span className="text-sm text-[#F0EAE0] font-bold font-mono">{quizStep}/{selectedMembers + 7}</span>
                         {origem === 'v2' && (
                           <button type="button" onClick={fillDemoData} className="font-mono text-[11px] font-bold text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/20 px-3 py-1.5 rounded-lg uppercase hover:bg-[#F0C265] hover:text-black transition-colors">🧪 Testar Demo</button>
                         )}
@@ -1561,7 +1403,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                         {quizStep > 1 && (
                           <button type="button" onClick={handleQuizPrev} className="font-mono text-xs font-bold text-white border border-white/10 bg-white/5 px-5 py-3 rounded-xl uppercase flex-1 sm:flex-none">Voltar</button>
                         )}
-                        {quizStep < 5 ? (
+                        {quizStep < selectedMembers + 7 ? (
                           <button type="button" onClick={handleQuizNext} className="btn-gold-shimmer px-7 py-3 rounded uppercase border-none text-black flex-1 sm:flex-none">Continuar</button>
                         ) : (
                           <button type="button" onClick={handleLaunchCheckout} className="font-mono text-xs font-bold text-black bg-lime px-7 py-3 rounded-xl uppercase border-none flex-1 sm:flex-none">
@@ -1846,6 +1688,22 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   </div>
                   <span className="font-mono text-[8px] text-gray-500 uppercase tracking-widest block">Pedra Profana Backstage Access</span>
                 </div>
+
+                {/* Complemento pos-matricula: bio + foto via WhatsApp do estudio */}
+                {suporteWa && (
+                  <div className="space-y-2.5 bg-black/40 border border-white/10 rounded-2xl p-4 text-left">
+                    <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Falta pouco para o dossiê completo</span>
+                    <p className="text-xs text-gray-300 leading-relaxed">Envie pelo WhatsApp do estúdio a <strong className="text-white">história da banda</strong> (bio) e a <strong className="text-white">foto oficial</strong> para os jurados. Leva 2 minutos.</p>
+                    <a
+                      href={suporteWa}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-1.5 font-mono text-xs font-bold text-black bg-[#10B981] px-3 py-3 rounded-xl uppercase tracking-wide"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" /> Enviar bio e foto pelo WhatsApp
+                    </a>
+                  </div>
+                )}
 
                 {/* Convite da banda */}
                 {inviteCode && (

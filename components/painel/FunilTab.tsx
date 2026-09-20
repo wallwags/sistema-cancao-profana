@@ -28,7 +28,7 @@ export default function FunilTab({ funnel, funnelDays, setFunnelDays, loadFunnel
   const detalhe = (real.detalhe || []) as Array<{ nome: string; status: string; valor: string | number; pago_em: string | null; criado_em: string | null }>;
   const stepMap: Record<string, number> = {};
   steps.forEach(x => { stepMap[x.step] = Number(x.n); });
-  const stepLabels: Record<string, string> = { '1': 'Dados da banda', '2': 'Foto, bio e vídeo', '3': 'Responsável', '4': 'Integrantes', '5': 'Revisão e regras' };
+  const stepLabels: Record<string, string> = { '1': 'WhatsApp', '2': 'Banda e Instagram', '3': 'Estilo', '4': 'Nome do líder', '5': 'E-mail', '6': 'CPF', '7': 'Tamanho da banda', '8': 'Integrante 2', '9': 'Integrante 3', '10': 'Revisão' };
   const maxDia = Math.max(1, ...porDia.map(d => Number(d.n)));
   const totalLeads = Number(leads.total || 0);
   const pageviews = Number(trafego.pageviews || 0);
