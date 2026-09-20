@@ -58,6 +58,16 @@ export default async function Page() {
         slotMode: map.slot_mode === 'integrante' ? 'integrante' : 'band',
         homeCtaMode: map.home_cta_mode === 'quiz' ? 'quiz' : (map.home_cta_mode === 'waitlist' ? 'waitlist' : null),
         vipWaUrl: map.vip_whatsapp_url || null,
+        suporteWa: map.suporte_whatsapp_url || map.vip_whatsapp_url || null,
+        socialVagasPct: map.social_vagas_pct === '0' ? 0 : (Number(map.social_vagas_pct) || 40),
+        widget: {
+          ativo: map.widget_ativo !== 'false',
+          imagem: map.widget_imagem || '/widgets/mosaic.png',
+          bMin: Number(map.widget_bandas_min) || 2,
+          bMax: Number(map.widget_bandas_max) || 4,
+          vMin: Number(map.widget_visitantes_min) || 25,
+          vMax: Number(map.widget_visitantes_max) || 78
+        },
         faq: ((faqRes.data || []) as Array<Record<string, string>>).map((f) => ({ q: f.question, a: f.answer }))
       };
     }

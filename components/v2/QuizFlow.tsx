@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { Trash2, Plus, X, Copy, Share2, Ticket } from 'lucide-react';
+import { Trash2, Plus, X, Copy, Share2, Ticket, MessageCircle } from 'lucide-react';
 import Script from 'next/script';
 import { supabase } from '../../lib/supabase';
 import {
@@ -23,10 +23,11 @@ interface QuizFlowProps {
   sandboxPix?: boolean;
   linkLoteId?: string | null;
   cupom?: string | null;
+  suporteWa?: string | null;
 }
 
 
-export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false, origem = 'home', sandboxPix = false, linkLoteId = null, cupom = null }: QuizFlowProps) {
+export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false, origem = 'home', sandboxPix = false, linkLoteId = null, cupom = null, suporteWa = null }: QuizFlowProps) {
   const [quizStep, setQuizStep] = useState(1);
 
   // Quiz form states
@@ -1059,6 +1060,16 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
   return (
     <>
+      {isOpen && suporteWa && (
+        <a
+          href={suporteWa}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed left-3 bottom-3 z-40 flex items-center gap-1.5 bg-[#0B0F19]/90 backdrop-blur-sm border border-[#F0C265]/30 text-[#F0C265] font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2.5 rounded-full shadow-lg hover:border-[#F0C265]/70 transition-colors"
+        >
+          <MessageCircle className="w-3.5 h-3.5" /> Tenho dúvidas <span className="text-gray-500">›</span>
+        </a>
+      )}
       {isOpen && (
         <Script
           src="https://challenges.cloudflare.com/turnstile/v0/api.js"

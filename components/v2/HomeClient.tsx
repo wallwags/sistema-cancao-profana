@@ -11,6 +11,7 @@ import HeroCard from '../../components/v2/HeroCard';
 import FeatureGrid from '../../components/v2/FeatureGrid';
 import GlobalCta from '../../components/v2/GlobalCta';
 import CountdownBar from '../../components/v2/CountdownBar';
+import SocialProofWidget from './SocialProofWidget';
 import { parseDbDate } from '../../lib/dates';
 import { TermsModal, PrivacyModal } from '../../components/v2/LegalModals';
 import { supabase } from '../../lib/supabase';
@@ -51,6 +52,9 @@ export interface HomeCfg {
   homeCtaMode?: 'waitlist' | 'quiz' | null;
   vipWaUrl?: string | null;
   faq?: Array<{ q: string; a: string }>;
+  suporteWa?: string | null;
+  socialVagasPct?: number;
+  widget?: { ativo: boolean; imagem: string; bMin: number; bMax: number; vMin: number; vMax: number };
 }
 
 export default function HomeClient({ cfg }: { cfg: HomeCfg | null }) {
@@ -605,6 +609,15 @@ export default function HomeClient({ cfg }: { cfg: HomeCfg | null }) {
           </div>
         </div>
 
+        {(cfg?.socialVagasPct ?? 0) > 0 && (
+          <div className="flex justify-center -mt-4 mb-2">
+            <span className="inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-widest text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/30 px-4 py-1.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+              {cfg?.socialVagasPct}% das vagas já preenchidas
+            </span>
+          </div>
+        )}
+
         {/* D. LOTES TABLE WITH CONFIG STATES */}
         <section id="lotes" className="space-y-12">
           <div data-reveal className="reveal-hidden space-y-4 border-b border-white/5 pb-4">
@@ -842,6 +855,7 @@ export default function HomeClient({ cfg }: { cfg: HomeCfg | null }) {
           activeLoteName={activeLoteName}
           onPaymentSuccess={handlePaymentSuccess}
           cupom={cupom}
+          suporteWa={cfg?.suporteWa}
         />
       )}
 
@@ -920,6 +934,16 @@ export default function HomeClient({ cfg }: { cfg: HomeCfg | null }) {
           </div>
         </div>
       )}
+
+      {/* PROVA SOCIAL: mini-card pulsante (config da aba Widgets) */}
+      <SocialProofWidget
+        ativo={cfg?.widget?.ativo ?? false}
+        imagem={cfg?.widget?.imagem || '/widgets/mosaic.png'}
+        bMin={cfg?.widget?.bMin ?? 2}
+        bMax={cfg?.widget?.bMax ?? 4}
+        vMin={cfg?.widget?.vMin ?? 25}
+        vMax={cfg?.widget?.vMax ?? 78}
+      />
 
       {/* Legal popups (footer) - CSS-animated, zero JS cost when closed */}
       <TermsModal open={isTermsOpen} onClose={() => setIsTermsOpen(false)} />

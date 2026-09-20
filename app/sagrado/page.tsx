@@ -11,11 +11,12 @@ import GatewayTab from '../../components/painel/GatewayTab';
 import VipTab from '../../components/painel/VipTab';
 import ConteudoTab, { FaqRow } from '../../components/painel/ConteudoTab';
 import LotesTab, { BatchRow, BatchDraft } from '../../components/painel/LotesTab';
+import WidgetsTab from '../../components/painel/WidgetsTab';
+import AbandonosCard from '../../components/painel/AbandonosCard';
 import EquipeTab, { StaffRow } from '../../components/painel/EquipeTab';
 import {
   Shield, LayoutDashboard, Tags, FileText, ClipboardList, Users, UserCog,
-  LogOut, Check, X, Plus, Trash2, KeyRound, Loader2, Star, Eye, History, BarChart3, UsersRound
-} from 'lucide-react';
+  LogOut, Check, X, Plus, Trash2, KeyRound, Loader2, Star, Eye, History, BarChart3, UsersRound, Sparkles } from 'lucide-react';
 
 // StaffRow agora vem de components/painel/EquipeTab (fonte unica)
 
@@ -943,6 +944,7 @@ export default function SagradoPage() {
               { id: 'visao', label: 'Visão geral', icon: LayoutDashboard, show: !!me && me.role !== 'jurado' },
               { id: 'lotes', label: 'Lotes & Live', icon: Tags, show: canLotes },
               { id: 'conteudo', label: 'Conteúdo do site', icon: FileText, show: canContent },
+              { id: 'widgets', label: 'Widgets', icon: Sparkles, show: canContent },
               { id: 'inscritos', label: 'Inscrições', icon: ClipboardList, show: canSubs },
               { id: 'avaliacao', label: 'Avaliação', icon: Star, show: isJudge },
               { id: 'equipe', label: 'Equipe', icon: Users, show: canTeam },
@@ -1002,6 +1004,11 @@ export default function SagradoPage() {
             <ConteudoTab settings={settings} settingDrafts={settingDrafts} setSettingDrafts={setSettingDrafts} loadSettings={loadSettings} saveSetting={saveSetting} toInputValue={toInputValue} faqs={faqs} setFaqs={setFaqs} moveFaq={moveFaq} saveFaq={saveFaq} deleteFaq={deleteFaq} newFaq={newFaq} setNewFaq={setNewFaq} addFaq={addFaq} busy={busy} notice={notice} setMsg={setMsg} guarded={guarded} fmtDate={fmtDate} supabase={supabase} Field={Field} Notice={Notice} />
           )}
 
+          {/* WIDGETS - componente extraido */}
+          {tab === 'widgets' && canContent && (
+            <WidgetsTab settings={settings} loadSettings={loadSettings} supabase={supabase} Field={Field} Notice={Notice} />
+          )}
+
           {/* INSCRIÇÕES */}
           {tab === 'inscritos' && (
             <div className="space-y-4 fade-up-800">
@@ -1011,6 +1018,7 @@ export default function SagradoPage() {
                 </span>
                 <a href="/sagrado?tab=vip" className="font-mono text-[11px] font-bold text-[#F0C265] underline whitespace-nowrap self-start sm:self-center">Ver Grupo VIP →</a>
               </div>
+              <AbandonosCard supabase={supabase} fmtDate={fmtDate} />
               {canVip && (() => {
                 const preSize = 8;
                 const prePages = Math.max(1, Math.ceil(vipLeads.length / preSize));
