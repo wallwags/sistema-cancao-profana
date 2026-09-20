@@ -1051,7 +1051,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     <p className="text-[11px] text-red-400 font-mono mt-1 flex items-start gap-1"><span>⚠</span><span>{errors[key]}</span></p>
   ) : null;
 
-  const inputClass = (key: string, base: string) => errors[key] ? base.replace('border-white/20', 'border-red-500/60') : base;
+  const inputClass = (key: string, base: string) => errors[key] ? base.replace('border-white/30', 'border-red-500/60') : base;
 
   return (
     <>
@@ -1062,7 +1062,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
           rel="noopener noreferrer"
           className="fixed left-3 bottom-3 z-40 flex items-center gap-1.5 bg-[#0B0F19]/90 backdrop-blur-sm border border-[#F0C265]/30 text-[#F0C265] font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2.5 rounded-full shadow-lg hover:border-[#F0C265]/70 transition-colors"
         >
-          <MessageCircle className="w-3.5 h-3.5" /> Tenho dúvidas <span className="text-gray-200">›</span>
+          <MessageCircle className="w-3.5 h-3.5" /> Tenho dúvidas <span className="text-gray-100">›</span>
         </a>
       )}
       {isOpen && (
@@ -1075,13 +1075,13 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
       {/* QUIZ INTERACTIVE POPUP MODAL - external page scroll, no internal modal scroll */}
       {quizVisible && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/35 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/30 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start">
 
           <div className="absolute inset-0 cursor-pointer" onClick={requestCloseQuiz}></div>
 
           <div
             ref={quizCardRef}
-            className="bg-[#1C2333] border-2 border-[#E3B552] w-full max-w-xl rounded-[32px] p-6 md:p-8 my-auto relative space-y-6 shadow-[0_10px_50px_rgba(0,0,0,0.8)] flex flex-col justify-between z-10"
+            className="bg-[#242D42] border-2 border-[#E3B552] w-full max-w-xl rounded-[32px] p-6 pb-24 md:p-8 md:pb-24 my-auto relative space-y-6 shadow-[0_10px_50px_rgba(0,0,0,0.8)] flex flex-col justify-between z-10"
           >
             <button type="button" onClick={requestCloseQuiz} className="absolute right-5 top-5 text-[#B3B3B3] hover:text-white font-mono text-2xl font-bold">&times;</button>
 
@@ -1091,12 +1091,12 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   <div className="w-12 h-12 rounded-full bg-[#F0C265]/10 text-[#F0C265] border border-[#F0C265]/20 flex items-center justify-center text-xl shadow">⚡</div>
                   <div className="space-y-2">
                     <h3 className="font-display font-black text-xl text-white uppercase tracking-tight">Rascunho de Inscrição Ativo</h3>
-                    <p className="text-xs text-gray-200 max-w-sm mx-auto leading-relaxed">
+                    <p className="text-xs text-gray-100 max-w-sm mx-auto leading-relaxed">
                       Encontramos um progresso de matrícula salvo localmente para a banda/dupla <strong className="text-[#F0C265]">&quot;{draftToRestore.projectName}&quot;</strong>. Deseja retomar de onde parou?
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs pt-2">
-                    <button type="button" onClick={handleDiscardDraft} className="w-full sm:w-1/2 font-mono text-xs font-bold text-gray-200 px-4 py-3 border border-white/20 rounded-full hover:bg-white/10 transition-colors uppercase">Descartar</button>
+                    <button type="button" onClick={handleDiscardDraft} className="w-full sm:w-1/2 font-mono text-xs font-bold text-gray-100 px-4 py-3 border border-white/30 rounded-full hover:bg-white/10 transition-colors uppercase">Descartar</button>
                     <button type="button" onClick={handleRestoreDraft} className="w-full sm:w-1/2 btn-gold-shimmer px-4 py-3 rounded-full text-xs uppercase tracking-widest font-black text-black">Continuar</button>
                   </div>
                 </div>
@@ -1127,10 +1127,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                         {quizStep === 1 && (
                           <div className="space-y-4">
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Seu WhatsApp</h3>
-                            <p className="text-sm text-gray-200 leading-relaxed">Antes de tudo: um contato direto seu para garantir e recuperar sua vaga quando precisar.</p>
+                            <p className="text-base text-gray-100 leading-relaxed">Antes de tudo: um contato direto seu para garantir e recuperar sua vaga quando precisar.</p>
                             <div className="space-y-1 pt-1">
                               <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">WhatsApp <span className="text-red-400">*</span></label>
-                              <input type="tel" inputMode="numeric" value={respPhone} onChange={(e) => { setRespPhone(applyPhoneMask(e.target.value)); clearError('respPhone'); }} placeholder="(21) 99999-9999" autoComplete="tel" className={`w-full bg-[#252E42] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-400 transition-colors ${errors.respPhone ? 'border-red-500/60' : 'border-white/20 focus:border-[#E3B552]'}`} />
+                              <input type="tel" inputMode="numeric" value={respPhone} onChange={(e) => { setRespPhone(applyPhoneMask(e.target.value)); clearError('respPhone'); }} placeholder="(21) 99999-9999" autoComplete="tel" className={`w-full bg-[#2F3A54] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-300 transition-colors ${errors.respPhone ? 'border-red-500/60' : 'border-white/30 focus:border-[#E3B552]'}`} />
                               {fieldError('respPhone')}
                             </div>
                           </div>
@@ -1141,13 +1141,13 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Qual o nome da banda?</h3>
                             <div className="space-y-1">
                               <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome da Banda / Dupla de Rap <span className="text-red-400">*</span></label>
-                              <input type="text" value={projectName} onChange={(e) => { setProjectName(e.target.value.slice(0, 60)); clearError('projectName'); }} placeholder="Ex: Tempestade de Aço" autoComplete="organization" className={`w-full bg-[#252E42] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-400 transition-colors ${errors.projectName ? 'border-red-500/60' : 'border-white/20 focus:border-[#E3B552]'}`} />
+                              <input type="text" value={projectName} onChange={(e) => { setProjectName(e.target.value.slice(0, 60)); clearError('projectName'); }} placeholder="Ex: Tempestade de Aço" autoComplete="organization" className={`w-full bg-[#2F3A54] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-300 transition-colors ${errors.projectName ? 'border-red-500/60' : 'border-white/30 focus:border-[#E3B552]'}`} />
                               {fieldError('projectName')}
                             </div>
                             <div className="space-y-1 pt-2">
                               <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Instagram <span className="text-red-400">*</span></label>
-                              <div className={`flex items-stretch bg-[#252E42] border rounded-xl overflow-hidden transition-colors ${errors.projectInstagram ? 'border-red-500/60' : 'border-white/20 focus-within:border-[#E3B552]'}`}>
-                                <span className="flex items-center pl-3.5 pr-0.5 font-mono text-sm text-gray-200 select-none pointer-events-none">@</span>
+                              <div className={`flex items-stretch bg-[#2F3A54] border rounded-xl overflow-hidden transition-colors ${errors.projectInstagram ? 'border-red-500/60' : 'border-white/30 focus-within:border-[#E3B552]'}`}>
+                                <span className="flex items-center pl-3.5 pr-0.5 font-mono text-sm text-gray-100 select-none pointer-events-none">@</span>
                                 <input
                                   type="text"
                                   enterKeyHint="next"
@@ -1155,7 +1155,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                   onChange={(e) => { setProjectInstagram(e.target.value.replace(/[^a-zA-Z0-9._]/g, '').slice(0, 30)); clearError('projectInstagram'); }}
                                   placeholder="suabanda"
                                   autoComplete="off"
-                                  className="flex-1 min-w-0 bg-transparent px-1 py-3.5 text-white text-base outline-none placeholder-gray-400"
+                                  className="flex-1 min-w-0 bg-transparent px-1 py-3.5 text-white text-base outline-none placeholder-gray-300"
                                 />
                               </div>
                               {fieldError('projectInstagram')}
@@ -1166,16 +1166,16 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                         {quizStep === 3 && (
                           <div className="space-y-4">
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Qual é o estilo?</h3>
-                            <p className="text-sm text-gray-200">Escolha o que mais representa o som de vocês.</p>
+                            <p className="text-base text-gray-100 leading-relaxed">Escolha o que mais representa o som de vocês.</p>
                             <div className="flex flex-wrap gap-2 pt-1">
                               {ESTILOS.map(es => (
-                                <button key={es} type="button" onClick={() => { setProjectStyle(projectStyle === es ? '' : es); clearError('projectStyle'); }} className={`font-mono text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-full border transition-colors ${projectStyle === es ? 'bg-[#F0C265] text-black border-black' : 'text-gray-200 border-white/[0.28] bg-white/10 hover:border-[#F0C265]/50 hover:text-white'}`}>
+                                <button key={es} type="button" onClick={() => { setProjectStyle(projectStyle === es ? '' : es); clearError('projectStyle'); }} className={`font-mono text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-full border transition-colors ${projectStyle === es ? 'bg-[#F0C265] text-black border-black' : 'text-gray-100 border-white/[0.28] bg-white/10 hover:border-[#F0C265]/50 hover:text-white'}`}>
                                   {es}
                                 </button>
                               ))}
                             </div>
                             {projectStyle !== '' && !ESTILOS.includes(projectStyle) && (
-                              <input type="text" value={projectStyle} onChange={(e) => setProjectStyle(e.target.value)} placeholder="Descreva o estilo" className="w-full bg-[#252E42] border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-400" />
+                              <input type="text" value={projectStyle} onChange={(e) => setProjectStyle(e.target.value)} placeholder="Descreva o estilo" className="w-full bg-[#2F3A54] border border-white/30 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-300" />
                             )}
                             {fieldError('projectStyle')}
                           </div>
@@ -1184,10 +1184,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                         {quizStep === 4 && (
                           <div className="space-y-4">
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Como você se chama?</h3>
-                            <p className="text-sm text-gray-200">Você será o líder responsável pela inscrição.</p>
+                            <p className="text-base text-gray-100 leading-relaxed">Você será o líder responsável pela inscrição.</p>
                             <div className="space-y-1 pt-1">
                               <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome completo <span className="text-red-400">*</span></label>
-                              <input type="text" value={respName} onChange={(e) => { setRespName(e.target.value); clearError('respName'); }} placeholder="Nome completo" autoComplete="name" className={`w-full bg-[#252E42] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-400 transition-colors ${errors.respName ? 'border-red-500/60' : 'border-white/20 focus:border-[#E3B552]'}`} />
+                              <input type="text" value={respName} onChange={(e) => { setRespName(e.target.value); clearError('respName'); }} placeholder="Nome completo" autoComplete="name" className={`w-full bg-[#2F3A54] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-300 transition-colors ${errors.respName ? 'border-red-500/60' : 'border-white/30 focus:border-[#E3B552]'}`} />
                               {fieldError('respName')}
                             </div>
                           </div>
@@ -1196,10 +1196,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                         {quizStep === 5 && (
                           <div className="space-y-4">
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Seu melhor e-mail</h3>
-                            <p className="text-sm text-gray-200">Usado para confirmar a matrícula e comunicados oficiais do concurso.</p>
+                            <p className="text-base text-gray-100 leading-relaxed">Usado para confirmar a matrícula e comunicados oficiais do concurso.</p>
                             <div className="space-y-1 pt-1">
                               <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">E-mail <span className="text-red-400">*</span></label>
-                              <input type="email" inputMode="email" value={respEmail} onChange={(e) => { setRespEmail(e.target.value); clearError('respEmail'); }} placeholder="voce@email.com" autoComplete="email" className={`w-full bg-[#252E42] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-400 transition-colors ${errors.respEmail ? 'border-red-500/60' : 'border-white/20 focus:border-[#E3B552]'}`} />
+                              <input type="email" inputMode="email" value={respEmail} onChange={(e) => { setRespEmail(e.target.value); clearError('respEmail'); }} placeholder="voce@email.com" autoComplete="email" className={`w-full bg-[#2F3A54] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-300 transition-colors ${errors.respEmail ? 'border-red-500/60' : 'border-white/30 focus:border-[#E3B552]'}`} />
                               {fieldError('respEmail')}
                             </div>
                           </div>
@@ -1208,10 +1208,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                         {quizStep === 6 && (
                           <div className="space-y-4">
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Seu CPF</h3>
-                            <p className="text-sm text-gray-200">Serve para recuperar seu acesso à inscrição a qualquer momento.</p>
+                            <p className="text-base text-gray-100 leading-relaxed">Serve para recuperar seu acesso à inscrição a qualquer momento.</p>
                             <div className="space-y-1 pt-1">
                               <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">CPF <span className="text-red-400">*</span></label>
-                              <input type="text" inputMode="numeric" value={respCpf} onChange={(e) => { setRespCpf(applyCpfMask(e.target.value)); clearError('respCpf'); }} placeholder="000.000.000-00" autoComplete="off" className={`w-full bg-[#252E42] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-400 transition-colors ${errors.respCpf ? 'border-red-500/60' : 'border-white/20 focus:border-[#E3B552]'}`} />
+                              <input type="text" inputMode="numeric" value={respCpf} onChange={(e) => { setRespCpf(applyCpfMask(e.target.value)); clearError('respCpf'); }} placeholder="000.000.000-00" autoComplete="off" className={`w-full bg-[#2F3A54] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-300 transition-colors ${errors.respCpf ? 'border-red-500/60' : 'border-white/30 focus:border-[#E3B552]'}`} />
                               {fieldError('respCpf')}
                             </div>
                           </div>
@@ -1220,16 +1220,16 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                         {quizStep === 7 && (
                           <div className="space-y-4">
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Quantas pessoas na banda?</h3>
-                            <p className="text-sm text-gray-200">Contando com você. Mínimo 2, máximo 7 (regulamento).</p>
+                            <p className="text-base text-gray-100 leading-relaxed">Contando com você. Mínimo 2, máximo 7 (regulamento).</p>
                             <div className="flex flex-wrap gap-2 pt-1">
                               {[2, 3, 4, 5, 6, 7].map(n => (
-                                <button key={n} type="button" onClick={() => setTamanhoBanda(n)} className={`w-12 h-12 rounded-full font-display font-black text-lg transition-colors ${selectedMembers === n ? 'bg-[#F0C265] text-black border border-black' : 'text-gray-200 border border-white/[0.28] bg-white/10 hover:border-[#F0C265]/50 hover:text-white'}`}>
+                                <button key={n} type="button" onClick={() => setTamanhoBanda(n)} className={`w-12 h-12 rounded-full font-display font-black text-lg transition-colors ${selectedMembers === n ? 'bg-[#F0C265] text-black border border-black' : 'text-gray-100 border border-white/[0.28] bg-white/10 hover:border-[#F0C265]/50 hover:text-white'}`}>
                                   {n}
                                 </button>
                               ))}
                             </div>
                             {fieldError('tamanho')}
-                            <p className="text-[11px] text-gray-200 font-mono">A seguir, só o nome de cada integrante — cada um confirma os próprios dados depois pelo link do convite.</p>
+                            <p className="text-[11px] text-gray-100 font-mono">A seguir, só o nome de cada integrante — cada um confirma os próprios dados depois pelo link do convite.</p>
                           </div>
                         )}
 
@@ -1242,26 +1242,26 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                           return (
                             <div className="space-y-4">
                               <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Integrante {mi + 2} de {selectedMembers}</h3>
-                              <p className="text-sm text-gray-200">Só o nome por enquanto — cada integrante confirma os próprios dados pelo link do convite.</p>
+                              <p className="text-base text-gray-100 leading-relaxed">Só o nome por enquanto — cada integrante confirma os próprios dados pelo link do convite.</p>
                               <div className="space-y-1 pt-1">
                                 <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome <span className="text-red-400">*</span></label>
-                                <input type="text" enterKeyHint="next" value={m.name} onChange={(e) => { const v = e.target.value; setMembersList(l => l.map((x, i2) => i2 === mi ? { ...x, name: v } : x)); if (errors[mKey]) clearError(mKey); }} placeholder="Nome completo" autoComplete="off" className={`w-full bg-[#252E42] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-400 transition-colors ${errors[mKey] ? 'border-red-500/60' : 'border-white/20 focus:border-[#E3B552]'}`} />
+                                <input type="text" enterKeyHint="next" value={m.name} onChange={(e) => { const v = e.target.value; setMembersList(l => l.map((x, i2) => i2 === mi ? { ...x, name: v } : x)); if (errors[mKey]) clearError(mKey); }} placeholder="Nome completo" autoComplete="off" className={`w-full bg-[#2F3A54] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-300 transition-colors ${errors[mKey] ? 'border-red-500/60' : 'border-white/30 focus:border-[#E3B552]'}`} />
                                 {errors[mKey] && <p className="text-xs text-red-400 font-mono">{errors[mKey]}</p>}
                               </div>
                               <div className="space-y-2 pt-2">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Função <span className="text-[10px] text-gray-200 font-normal normal-case tracking-normal">(opcional)</span></label>
+                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Função <span className="text-[10px] text-gray-100 font-normal normal-case tracking-normal">(opcional)</span></label>
                                 <div className="flex flex-wrap gap-2">
                                   {FUNCOES.map(f => (
-                                    <button key={f} type="button" onClick={() => setMembersList(l => l.map((x, i2) => i2 === mi ? { ...x, role: x.role === f ? '' : f } : x))} className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-full border transition-colors ${m.role === f ? 'bg-[#F0C265] text-black border-black' : 'text-gray-200 border-white/[0.28] bg-white/10 hover:border-[#F0C265]/50 hover:text-white'}`}>
+                                    <button key={f} type="button" onClick={() => setMembersList(l => l.map((x, i2) => i2 === mi ? { ...x, role: x.role === f ? '' : f } : x))} className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-full border transition-colors ${m.role === f ? 'bg-[#F0C265] text-black border-black' : 'text-gray-100 border-white/[0.28] bg-white/10 hover:border-[#F0C265]/50 hover:text-white'}`}>
                                       {f}
                                     </button>
                                   ))}
-                                  <button type="button" onClick={() => setMembersList(l => l.map((x, i2) => i2 === mi ? { ...x, role: roleEhOutro ? '' : 'Outro' } : x))} className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-full border transition-colors ${roleEhOutro ? 'bg-[#F0C265] text-black border-black' : 'text-gray-200 border-white/[0.28] bg-white/10 hover:border-[#F0C265]/50 hover:text-white'}`}>
+                                  <button type="button" onClick={() => setMembersList(l => l.map((x, i2) => i2 === mi ? { ...x, role: roleEhOutro ? '' : 'Outro' } : x))} className={`font-mono text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-full border transition-colors ${roleEhOutro ? 'bg-[#F0C265] text-black border-black' : 'text-gray-100 border-white/[0.28] bg-white/10 hover:border-[#F0C265]/50 hover:text-white'}`}>
                                     Outro
                                   </button>
                                 </div>
                                 {roleEhOutro && (
-                                  <input type="text" value={m.role === 'Outro' ? '' : m.role} onChange={(e) => setMembersList(l => l.map((x, i2) => i2 === mi ? { ...x, role: e.target.value } : x))} placeholder="Descreva a função (ex: Percussionista)" className="w-full bg-[#252E42] border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-400" />
+                                  <input type="text" value={m.role === 'Outro' ? '' : m.role} onChange={(e) => setMembersList(l => l.map((x, i2) => i2 === mi ? { ...x, role: e.target.value } : x))} placeholder="Descreva a função (ex: Percussionista)" className="w-full bg-[#2F3A54] border border-white/30 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-300" />
                                 )}
                               </div>
                             </div>
@@ -1271,11 +1271,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                         {quizStep === selectedMembers + 7 && (
                           <div className="space-y-4">
                             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Revise e gere o Pix</h3>
-                            <p className="text-sm text-gray-200">Confirme os dados consolidados do sinal.</p>
+                            <p className="text-sm text-gray-100">Confirme os dados consolidados do sinal.</p>
 
-                            <div className="bg-[#222A3D] p-4 md:p-6 rounded-2xl border border-white/[0.16] space-y-4 md:space-y-5 text-sm font-mono">
+                            <div className="space-y-4 text-sm font-mono">
                               {/* IDENTIDADE DA BANDA + ANEL DE PROGRESSO */}
-                              <div className="flex items-center gap-3.5 bg-white/[0.05] border border-white/20 rounded-2xl p-4">
+                              <div className="flex items-center gap-3.5 bg-white/[0.08] border border-white/30 rounded-2xl p-4">
                                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black font-display font-black text-lg flex items-center justify-center shadow-lg shrink-0">
                                   {iniciais(projectName)}
                                 </div>
@@ -1283,7 +1283,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                   <span className="font-display font-black text-white text-base block truncate">{projectName || 'Banda'}</span>
                                   <span className="flex items-center gap-2 flex-wrap mt-1">
                                     {projectStyle && <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/30 px-2 py-0.5 rounded-full">{projectStyle}</span>}
-                                    {projectInstagram && <span className="font-mono text-[10px] text-gray-300">@{projectInstagram}</span>}
+                                    {projectInstagram && <span className="font-mono text-[10px] text-gray-100">@{projectInstagram}</span>}
                                   </span>
                                 </div>
                                 <div className="relative shrink-0">
@@ -1296,26 +1296,26 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                               </div>
 
                               {/* EQUIPE: avatar stack com iniciais */}
-                              <div className="bg-white/[0.05] border border-white/20 rounded-2xl p-4 space-y-2.5">
-                                <span className="font-mono text-[10px] text-gray-300 uppercase tracking-widest font-bold block">Equipe inscrita · {selectedMembers} pessoas</span>
+                              <div className="bg-white/[0.08] border border-white/30 rounded-2xl p-4 space-y-2.5">
+                                <span className="font-mono text-[10px] text-gray-100 uppercase tracking-widest font-bold block">Equipe inscrita · {selectedMembers} pessoas</span>
                                 <div className="flex items-center gap-2">
                                   <div className="w-10 h-10 rounded-full bg-[#F0C265]/15 border-2 border-[#F0C265] text-[#F0C265] font-display font-black text-xs flex items-center justify-center shrink-0" title={`${respName || 'Líder'} (líder)`}>{iniciais(respName)}</div>
                                   {membersList.map((m, i) => (
-                                    <div key={i} className="w-10 h-10 rounded-full bg-white/10 border border-white/20 text-gray-200 font-display font-black text-xs flex items-center justify-center shrink-0" title={m.name}>{iniciais(m.name)}</div>
+                                    <div key={i} className="w-10 h-10 rounded-full bg-white/10 border border-white/30 text-gray-100 font-display font-black text-xs flex items-center justify-center shrink-0" title={m.name}>{iniciais(m.name)}</div>
                                   ))}
                                 </div>
-                                <div className="font-mono text-[10px] text-gray-300 leading-snug">
+                                <div className="font-mono text-[10px] text-gray-100 leading-snug">
                                   <strong className="text-[#F0C265]">{respName || '—'}</strong> (líder){membersList.filter(m => m.name.trim()).length > 0 && <> · {membersList.filter(m => m.name.trim()).map(m => m.name.trim()).join(' · ')}</>}
                                 </div>
                               </div>
 
                               {/* LOTE */}
-                              <div className="flex justify-between items-center bg-white/[0.05] border border-white/20 rounded-2xl px-4 py-3">
-                                <span className="font-mono text-[10px] text-gray-300 uppercase tracking-widest font-bold">Lote vigente</span>
+                              <div className="flex justify-between items-center bg-white/[0.08] border border-white/30 rounded-2xl px-4 py-3">
+                                <span className="font-mono text-[10px] text-gray-100 uppercase tracking-widest font-bold">Lote vigente</span>
                                 <span className="font-mono text-xs font-black text-[#F0C265] uppercase">{activeLoteName} · R$ {Number.isInteger(unitFinal) ? unitFinal : unitFinal.toFixed(2).replace('.', ',')}/pessoa</span>
                               </div>
 
-                              <div className="border-t border-white/[0.16] pt-4 space-y-4">
+                              <div className="border-t border-white/25 pt-4 space-y-4">
                                 <div>
                                   <span className="font-mono text-sm text-[#F0C265] font-bold block mb-2.5">RETORNO GARANTIDO INCLUÍDO:</span>
                                   <div className="grid grid-cols-1 gap-2.5">
@@ -1323,10 +1323,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                       { i: <Mic className="w-4 h-4" />, t: 'Apresentação ao vivo no Estúdio Pedra Profana', v: 'R$ 1.500' },
                                       { i: <Video className="w-4 h-4" />, t: 'Gravação profissional da live', v: 'Incluída' },
                                     ].map(b => (
-                                      <div key={b.t} className="bg-white/[0.08] border border-white/20 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
-                                        <span className="flex items-center gap-2.5 text-xs text-gray-200 leading-snug"><span className="text-[#F0C265] shrink-0">{b.i}</span>{b.t}</span>
+                                      <div key={b.t} className="bg-white/[0.08] border border-white/30 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
+                                        <span className="flex items-center gap-2.5 text-xs text-gray-100 leading-snug"><span className="text-[#F0C265] shrink-0">{b.i}</span>{b.t}</span>
                                         <span className="text-right shrink-0">
-                                          <span className="block text-[11px] text-gray-200 line-through leading-none">{b.v}</span>
+                                          <span className="block text-[11px] text-gray-100 line-through leading-none">{b.v}</span>
                                           <span className="block text-[11px] text-[#10B981] font-black uppercase leading-tight">Grátis</span>
                                         </span>
                                       </div>
@@ -1335,24 +1335,24 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                 </div>
 
                                 <div className="bg-[#F0C265]/10 border border-[#F0C265]/30 rounded-2xl p-4 text-center">
-                                  <span className="font-mono text-[13px] text-gray-200 uppercase tracking-widest font-bold block">{paymentMode === 'lider' ? 'Pagamento único do líder' : 'Sua parte agora (líder)'}</span>
+                                  <span className="font-mono text-[13px] text-gray-100 uppercase tracking-widest font-bold block">{paymentMode === 'lider' ? 'Pagamento único do líder' : 'Sua parte agora (líder)'}</span>
                                   <div className="flex h-3.5 rounded-full overflow-hidden gap-0.5 max-w-[240px] mx-auto mt-2.5" title={`${selectedMembers} × R$ ${unitFinal}`}>
                                     {Array.from({ length: selectedMembers }).map((_, i) => (
                                       <div key={i} className="flex-1 bg-gradient-to-b from-[#FFF2D4] to-[#D4A843] rounded-sm" />
                                     ))}
                                   </div>
-                                  <span className="font-mono text-[10px] text-gray-300 block mt-1">{selectedMembers} × R$ {Number.isInteger(unitFinal) ? unitFinal : unitFinal.toFixed(2).replace('.', ',')} por integrante</span>
+                                  <span className="font-mono text-[10px] text-gray-100 block mt-1">{selectedMembers} × R$ {Number.isInteger(unitFinal) ? unitFinal : unitFinal.toFixed(2).replace('.', ',')} por integrante</span>
                                   {cupomDescUn > 0 && (
-                                    <span className="font-mono text-xs text-gray-200 line-through block mt-0.5">R$ {(paymentMode === 'lider' ? selectedMembers * activePrice : activePrice).toFixed(0)},00</span>
+                                    <span className="font-mono text-xs text-gray-100 line-through block mt-0.5">R$ {(paymentMode === 'lider' ? selectedMembers * activePrice : activePrice).toFixed(0)},00</span>
                                   )}
                                   <span className="font-display font-black text-4xl text-[#F0C265] block leading-tight mt-0.5">R$ {(paymentMode === 'lider' ? selectedMembers * unitFinal : unitFinal).toFixed(0)},00</span>
                                   {cupomDescUn > 0 && cupomValidado && (
                                     <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/30 px-2.5 py-1 rounded-full mt-1.5">Cupom {cupom} · -R$ {cupomDescUn.toFixed(0)},00 por integrante</span>
                                   )}
                                   {cupom && cupomInfo && cupomInfo.valido === false && (
-                                    <span className="block font-mono text-[10px] text-gray-200 uppercase tracking-wider mt-1.5">Cupom {cupom} não está ativo · valor normal do lote aplicado</span>
+                                    <span className="block font-mono text-[10px] text-gray-100 uppercase tracking-wider mt-1.5">Cupom {cupom} não está ativo · valor normal do lote aplicado</span>
                                   )}
-                                  <span className="text-sm text-gray-200 block mt-1.5 leading-relaxed">
+                                  <span className="text-sm text-gray-100 block mt-1.5 leading-relaxed">
                                     {paymentMode === 'lider'
                                       ? <>Um único Pix cobre todos os {selectedMembers} integrantes.<br /></>
                                       : <>Cada integrante paga a própria parte pelo link exclusivo.<br /></>
@@ -1380,13 +1380,15 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                 aria-hidden="true"
                                 className="absolute opacity-0 h-0 w-0 pointer-events-none"
                               />
-                              <label className="flex items-start gap-3 cursor-pointer">
-                                <input type="checkbox" checked={acceptRules} onChange={(e) => { setAcceptRules(e.target.checked); clearError('acceptRules'); }} className="mt-1 w-4 h-4 text-[#F0C265] bg-black border-white/30 rounded focus:ring-[#F0C265]" />
-                                <span className="text-xs text-gray-200 leading-relaxed font-normal">
-                                  <span className="text-red-400">*</span> Declaramos ciência das regras do concurso e autorizamos a captação de áudio e vídeo da apresentação, concordando com as etapas.
-                                </span>
-                              </label>
-                              {fieldError('acceptRules')}
+                              <div className={`border-2 rounded-2xl p-4 transition-colors ${errors.acceptRules ? 'border-red-500/70' : 'border-[#F0C265]/40 bg-[#F0C265]/[0.06]'}`}>
+                                <label className="flex items-start gap-3.5 cursor-pointer">
+                                  <input type="checkbox" checked={acceptRules} onChange={(e) => { setAcceptRules(e.target.checked); clearError('acceptRules'); }} className="mt-1 w-5 h-5 shrink-0 accent-[#F0C265] rounded focus:ring-[#F0C265]" />
+                                  <span className="text-sm text-gray-100 leading-relaxed font-medium">
+                                    <span className="text-red-400">*</span> Declaro ciência das regras e autorizo a captação de áudio e vídeo da apresentação.
+                                  </span>
+                                </label>
+                                {fieldError('acceptRules')}
+                              </div>
                               {similarBands.length > 0 && (similarChoice === 'none' || (similarChoice === 'mine' && (!mineResult || !mineResult.ok))) && (
                                 <div className="bg-amber-500/10 border border-amber-500/40 rounded-xl px-4 py-3 space-y-2.5">
                                   <span className="text-xs text-amber-300 font-bold uppercase tracking-wide block">Nome parecido pendente: {similarBands.join(', ')}</span>
@@ -1397,13 +1399,13 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                     </div>
                                   ) : (
                                     <div className="space-y-2.5">
-                                      <label className="block font-mono text-[11px] text-gray-200 font-bold uppercase tracking-wider">Seu CPF para localizar sua vaga</label>
+                                      <label className="block font-mono text-[11px] text-gray-100 font-bold uppercase tracking-wider">Seu CPF para localizar sua vaga</label>
                                       <input
                                         inputMode="numeric"
                                         value={mineCpf}
                                         onChange={(e) => { setMineCpf(e.target.value.replace(/\D/g, '').slice(0, 11)); setMineResult(null); }}
                                         placeholder="000.000.000-00"
-                                        className="w-full bg-black/35 border border-white/[0.28] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10B981] placeholder-gray-400"
+                                        className="w-full bg-black/30 border border-white/[0.28] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10B981] placeholder-gray-300"
                                       />
                                       {mineResult && (
                                         <div className={`rounded-xl px-4 py-3 text-xs leading-snug ${mineResult.ok ? 'bg-[#10B981]/10 border border-[#10B981]/40 text-[#10B981]' : 'bg-red-500/10 border border-red-500/40 text-red-200'}`}>
@@ -1414,7 +1416,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                         <button type="button" onClick={handleMineCheck} disabled={mineChecking || mineCpf.length !== 11} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider disabled:opacity-50 active:scale-[0.98] transition-transform">
                                           {mineChecking ? 'Verificando...' : 'Localizar'}
                                         </button>
-                                        <button type="button" onClick={() => { setSimilarChoice('none'); setMineCpf(''); setMineResult(null); }} className="font-mono text-sm font-bold text-gray-200 border border-white/20 px-3 py-3 rounded-xl uppercase hover:text-white transition-colors">Voltar</button>
+                                        <button type="button" onClick={() => { setSimilarChoice('none'); setMineCpf(''); setMineResult(null); }} className="font-mono text-sm font-bold text-gray-100 border border-white/30 px-3 py-3 rounded-xl uppercase hover:text-white transition-colors">Voltar</button>
                                       </div>
                                     </div>
                                   )}
@@ -1433,7 +1435,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                     )}
 
                     {/* CONTROLS */}
-                    <div className="border-t border-white/20 pt-4 space-y-3 shrink-0">
+                    <div className="border-t border-white/30 pt-4 space-y-3 shrink-0">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-[#F0EAE0] font-bold font-mono">{quizStep}/{selectedMembers + 7}</span>
                         {origem === 'v2' && (
@@ -1443,13 +1445,13 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
                       <div className="flex gap-2.5">
                         {quizStep > 1 && (
-                          <button type="button" onClick={handleQuizPrev} className="font-mono text-xs font-bold text-white border border-white/20 bg-white/10 px-5 py-3 rounded-xl uppercase flex-1 sm:flex-none">Voltar</button>
+                          <button type="button" onClick={handleQuizPrev} className="font-mono text-xs font-bold text-white border border-white/30 bg-white/10 px-5 py-3 rounded-xl uppercase flex-1 sm:flex-none">Voltar</button>
                         )}
                         {quizStep < selectedMembers + 7 ? (
                           <button type="button" onClick={handleQuizNext} className="btn-gold-shimmer px-7 py-3 rounded uppercase border-none text-black flex-1 sm:flex-none">Continuar</button>
                         ) : (
-                          <button type="button" onClick={handleLaunchCheckout} className="font-mono text-xs font-bold text-black bg-lime px-7 py-3 rounded-xl uppercase border-none flex-1 sm:flex-none">
-                            Gerar Pix
+                          <button type="button" onClick={handleLaunchCheckout} className="font-display font-black text-sm sm:text-base text-black bg-lime px-7 py-4 rounded-2xl uppercase border-none flex-1 tracking-wide shadow-[0_0_30px_rgba(163,230,53,0.35)] active:scale-[0.98] transition-transform">
+                            Garantir minha vaga
                           </button>
                         )}
                       </div>
@@ -1464,31 +1466,31 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
       {/* CHECKOUT POPUP MODAL - external page scroll */}
       {checkoutVisible && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/35 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/30 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start">
 
             <div className="absolute inset-0 cursor-pointer" onClick={requestCloseCheckout}></div>
 
             <div
               ref={checkoutCardRef}
-              className="bg-[#1C2333] border-2 border-[#E3B552] max-w-sm w-full p-6 rounded-[32px] relative space-y-6 shadow-2xl z-10 my-auto"
+              className="bg-[#242D42] border-2 border-[#E3B552] max-w-sm w-full p-6 rounded-[32px] relative space-y-6 shadow-2xl z-10 my-auto"
             >
-              <button onClick={requestCloseCheckout} className="absolute right-4 top-4 text-gray-200 hover:text-white font-mono text-xl">&times;</button>
+              <button onClick={requestCloseCheckout} className="absolute right-4 top-4 text-gray-100 hover:text-white font-mono text-xl">&times;</button>
 
               <div className="text-center space-y-2 pt-1">
                 <span className="font-mono text-[11px] text-lime font-bold bg-lime/10 border border-lime/20 px-3 py-1 rounded-full w-max mx-auto block uppercase">● {pixActive ? 'Pagamento seguro via Mercado Pago' : (sandboxSimulacao ? 'Ambiente de teste (sandbox)' : 'Servidor autenticado')}</span>
-                <h3 className="font-display font-bold text-xl text-white uppercase tracking-tight">PIX DE INSCRIÇÃO</h3>
-                <p className="text-[11px] text-gray-200 leading-snug max-w-[260px] mx-auto">Escaneie o QR no app do banco ou use o Pix Copia e Cola. A confirmação é automática.</p>
+                <h3 className="font-display font-bold text-xl text-white uppercase tracking-tight">{"Pix Copia & Cola"}</h3>
+                <p className="text-[11px] text-gray-100 leading-snug max-w-[260px] mx-auto">Escaneie o QR no app do banco ou use o Pix Copia e Cola. A confirmação é automática.</p>
               </div>
 
               {/* RESUMO DO PEDIDO */}
-              <div className="bg-white/[0.09] border border-white/20 rounded-2xl px-4 py-3 space-y-1.5">
+              <div className="bg-white/[0.09] border border-white/30 rounded-2xl px-4 py-3 space-y-1.5">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-200 font-mono uppercase tracking-wider">Inscrição · {activeLoteName}</span>
+                  <span className="text-gray-100 font-mono uppercase tracking-wider">Inscrição · {activeLoteName}</span>
                   <span className="text-white font-bold font-mono">{projectName || 'Banda'}</span>
                 </div>
-                <div className="flex justify-between items-center text-xs border-t border-white/[0.16] pt-1.5">
-                  <span className="text-gray-200 font-mono uppercase tracking-wider">{selectedMembers} integrante{selectedMembers > 1 ? 's' : ''} · R$ {Number.isInteger(unitFinal) ? unitFinal : unitFinal.toFixed(2).replace('.', ',')},00 cada</span>
-                  <span className="text-gray-200 font-mono">{selectedMembers}kg alimento</span>
+                <div className="flex justify-between items-center text-xs border-t border-white/25 pt-1.5">
+                  <span className="text-gray-100 font-mono uppercase tracking-wider">{selectedMembers} integrante{selectedMembers > 1 ? 's' : ''} · R$ {Number.isInteger(unitFinal) ? unitFinal : unitFinal.toFixed(2).replace('.', ',')},00 cada</span>
+                  <span className="text-gray-100 font-mono">{selectedMembers}kg alimento</span>
                 </div>
                 {cupomDiscount > 0 && (
                   <div className="flex justify-between items-center border-t border-[#F0C265]/20 pt-1.5">
@@ -1498,18 +1500,36 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                     <span className="font-mono text-xs font-bold text-[#F0C265]">-R$ {Number.isInteger(cupomDiscount) ? cupomDiscount : cupomDiscount.toFixed(2).replace('.', ',')},00</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center border-t border-white/[0.16] pt-2">
-                  <span className="font-mono text-[11px] text-gray-200 uppercase tracking-widest font-bold">{paymentMode === 'lider' ? 'Total único (líder)' : 'Sua parte'}</span>
+                <div className="flex justify-between items-center border-t border-white/25 pt-2">
+                  <span className="font-mono text-[11px] text-gray-100 uppercase tracking-widest font-bold">{paymentMode === 'lider' ? 'Total único (líder)' : 'Sua parte'}</span>
                   <span className="font-display font-black text-xl text-[#F0C265]">
                     {cupomDiscount > 0 && (
-                      <span className="font-mono text-xs text-gray-200 line-through mr-1.5 font-bold">R$ {Number.isInteger(displayTotal + cupomDiscount) ? displayTotal + cupomDiscount : (displayTotal + cupomDiscount).toFixed(2).replace('.', ',')},00</span>
+                      <span className="font-mono text-xs text-gray-100 line-through mr-1.5 font-bold">R$ {Number.isInteger(displayTotal + cupomDiscount) ? displayTotal + cupomDiscount : (displayTotal + cupomDiscount).toFixed(2).replace('.', ',')},00</span>
                     )}
                     R$ {Number.isInteger(displayTotal) ? displayTotal : displayTotal.toFixed(2).replace('.', ',')},00
                   </span>
                 </div>
               </div>
 
-              <div className="bg-[#10141D] p-4 rounded-xl flex flex-col items-center space-y-4 border border-white/[0.16]">
+              {/* ACOES PRINCIPAIS: copiar e duvidas, acima do QR */}
+              <div className="space-y-2.5">
+                <button onClick={copyPixCode} className="w-full flex items-center justify-center gap-2 font-display font-black text-sm uppercase tracking-widest text-black btn-gold-shimmer py-4 rounded-2xl active:scale-[0.98] transition-transform">
+                  <Copy className="w-4 h-4" />
+                  {pixCopied ? 'Código copiado!' : 'Copiar código Pix'}
+                </button>
+                {suporteWa && (
+                  <a
+                    href={suporteWa}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 font-mono text-sm font-bold uppercase tracking-wide text-black bg-[#25D366] py-3.5 rounded-2xl active:scale-[0.98] transition-transform"
+                  >
+                    <MessageCircle className="w-4 h-4" /> Tenho dúvidas <span className="opacity-60">›</span>
+                  </a>
+                )}
+              </div>
+
+              <div className="bg-[#10141D] p-4 rounded-xl flex flex-col items-center space-y-4 border border-white/25">
                 <div className="w-48 h-48 bg-white p-3 rounded-xl flex items-center justify-center relative shadow-lg">
                   {pixData?.qrBase64 ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -1528,7 +1548,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   </div>
                   )}
                   {isCheckoutLoading && (
-                    <div className="absolute inset-0 bg-[#252E42]/95 flex flex-col items-center justify-center text-center p-3 rounded-xl">
+                    <div className="absolute inset-0 bg-[#2F3A54]/95 flex flex-col items-center justify-center text-center p-3 rounded-xl">
                       <span className="w-8 h-8 rounded-full border-2 border-[#F0C265] border-t-transparent animate-spin mb-3"></span>
                       <div className="space-y-1 mt-2 text-center relative z-20">
                         <span className="font-mono text-xs text-[#F0C265] uppercase tracking-widest font-bold block animate-pulse">
@@ -1542,18 +1562,18 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                 <div className="text-center space-y-3 w-full">
                   <div>
                     {paymentMode === 'lider' ? (
-                      <span className="font-mono text-[10px] text-gray-200 block uppercase font-bold">PAGAMENTO ÚNICO DO LÍDER · cobre os {selectedMembers} integrantes</span>
+                      <span className="font-mono text-[10px] text-gray-100 block uppercase font-bold">PAGAMENTO ÚNICO DO LÍDER · cobre os {selectedMembers} integrantes</span>
                     ) : (
-                      <span className="font-mono text-[10px] text-gray-200 block uppercase font-bold">SUA PARTE (LÍDER)</span>
+                      <span className="font-mono text-[10px] text-gray-100 block uppercase font-bold">SUA PARTE (LÍDER)</span>
                     )}
                     {pixData?.expiresAt && !checkoutExpired && (
-                      <span className="font-mono text-[10px] text-gray-200 block uppercase mt-1">QR Code válido até {fmtValidade(pixData.expiresAt)} (BRT)</span>
+                      <span className="font-mono text-[10px] text-gray-100 block uppercase mt-1">QR Code válido até {fmtValidade(pixData.expiresAt)} (BRT)</span>
                     )}
                   </div>
 
                   {/* Live polling status line (feedback while QR is on screen) */}
                   {!checkoutExpired && !isCheckoutLoading && (
-                    <span className="font-mono text-[10px] text-gray-200 block animate-pulse uppercase tracking-widest">
+                    <span className="font-mono text-[10px] text-gray-100 block animate-pulse uppercase tracking-widest">
                       {pollingStep === 0 && "● Aguardando pagamento Pix..."}
                       {pollingStep === 1 && "● Consultando compensação..."}
                       {pollingStep === 2 && "● Identificando Pix bancário..."}
@@ -1580,10 +1600,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                 <div className="space-y-3">
                   <div className="bg-[#8B1E1E]/10 border border-[#8B1E1E]/40 rounded-xl p-4 text-center space-y-2">
                     <span className="font-mono text-xs text-[#FF4B2E] uppercase font-bold tracking-widest block">⏰ Reserva de oferta expirada</span>
-                    <p className="text-xs text-gray-200 leading-relaxed">Seus dados continuam salvos{pixData?.expiresAt ? <> e o QR Code permanece válido até {fmtValidade(pixData.expiresAt)} (BRT) — pode pagá-lo normalmente que a vaga confirma sozinha</> : ''}. Renove o prazo para manter a garantia do valor do {activeLoteName}.</p>
+                    <p className="text-xs text-gray-100 leading-relaxed">Seus dados continuam salvos{pixData?.expiresAt ? <> e o QR Code permanece válido até {fmtValidade(pixData.expiresAt)} (BRT) — pode pagá-lo normalmente que a vaga confirma sozinha</> : ''}. Renove o prazo para manter a garantia do valor do {activeLoteName}.</p>
                   </div>
                   <button onClick={renewReservation} className="font-mono text-sm font-bold text-black btn-gold-shimmer py-3 rounded-xl w-full uppercase border-none">Renovar 10 minutos</button>
-                  <button onClick={closeCheckout} className="font-mono text-xs font-bold text-gray-200 border border-white/20 py-2.5 rounded-xl w-full hover:bg-white/10 transition-colors uppercase">Fechar e continuar depois</button>
+                  <button onClick={closeCheckout} className="font-mono text-xs font-bold text-gray-100 border border-white/30 py-2.5 rounded-xl w-full hover:bg-white/10 transition-colors uppercase">Fechar e continuar depois</button>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1592,16 +1612,14 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                       ⚡ Simular pagamento (teste)
                     </button>
                   )}
-                  <button onClick={copyPixCode} className="font-mono text-sm font-bold text-white bg-white/10 border border-white/30 py-3 rounded-xl w-full hover:bg-white/[0.15] transition-colors uppercase">
-                    {pixCopied ? '✓ Código Pix Copiado!' : 'Copiar Código Pix'}
-                  </button>
+
                   {showManualConfirm && (
                     pixActive ? (
-                      <button onClick={handleManualPixCheck} className="font-mono text-[10px] text-gray-200 hover:text-[#F0C265] uppercase tracking-widest w-full py-1 transition-colors">
+                      <button onClick={handleManualPixCheck} className="font-mono text-[10px] text-gray-100 hover:text-[#F0C265] uppercase tracking-widest w-full py-1 transition-colors">
                         Pagamento não identificado? Verificar novamente
                       </button>
                     ) : (
-                      <button onClick={() => handleSimulateWebhook()} className="font-mono text-[10px] text-gray-200 hover:text-[#F0C265] uppercase tracking-widest w-full py-1 transition-colors">
+                      <button onClick={() => handleSimulateWebhook()} className="font-mono text-[10px] text-gray-100 hover:text-[#F0C265] uppercase tracking-widest w-full py-1 transition-colors">
                         Pagamento não identificado? Verificar novamente
                       </button>
                     )
@@ -1620,18 +1638,18 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
               )}
 
               {/* Barra de seguranca e credibilidade (rodape) */}
-              <div className="border-t border-white/[0.16] pt-3">
+              <div className="border-t border-white/25 pt-3">
                 <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap opacity-70">
-                  <span className="flex items-center gap-1 font-mono text-[9px] text-gray-200 uppercase tracking-wider">
+                  <span className="flex items-center gap-1 font-mono text-[9px] text-gray-100 uppercase tracking-wider">
                     <svg width="10" height="12" viewBox="0 0 10 12" fill="none"><rect x="0.5" y="5" width="9" height="6.5" rx="1.5" stroke="#F0C265"/><path d="M2.5 5V3.5a2.5 2.5 0 0 1 5 0V5" stroke="#F0C265"/></svg>
                     SSL 256-bit
                   </span>
                   <span className="w-1 h-1 rounded-full bg-gray-700" />
-                  <span className="font-mono text-[9px] text-gray-200 uppercase tracking-wider font-black">Mercado Pago</span>
+                  <span className="font-mono text-[9px] text-gray-100 uppercase tracking-wider font-black">Mercado Pago</span>
                   <span className="w-1 h-1 rounded-full bg-gray-700" />
-                  <span className="font-mono text-[9px] text-gray-200 uppercase tracking-wider">Pix · Banco Central</span>
+                  <span className="font-mono text-[9px] text-gray-100 uppercase tracking-wider">Pix · Banco Central</span>
                   <span className="w-1 h-1 rounded-full bg-gray-700" />
-                  <span className="flex items-center gap-1 font-mono text-[9px] text-gray-200 uppercase tracking-wider">
+                  <span className="flex items-center gap-1 font-mono text-[9px] text-gray-100 uppercase tracking-wider">
                     <svg width="10" height="12" viewBox="0 0 10 12" fill="none"><path d="M5 1L1 2.5v3c0 2.8 1.7 4.6 4 5.5 2.3-.9 4-2.7 4-5.5v-3L5 1z" stroke="#F0C265"/></svg>
                     Dados protegidos
                   </span>
@@ -1645,11 +1663,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   <span className="text-3xl">🎵</span>
                   <div className="space-y-2">
                     <h4 className="font-display font-black text-lg text-white uppercase tracking-tight">Fechar o checkout?</h4>
-                    <p className="text-xs text-gray-200 leading-relaxed max-w-[240px]">Seus dados ficam salvos no rascunho e você pode retomar a inscrição a qualquer momento.</p>
+                    <p className="text-xs text-gray-100 leading-relaxed max-w-[240px]">Seus dados ficam salvos no rascunho e você pode retomar a inscrição a qualquer momento.</p>
                   </div>
                   <div className="flex flex-col gap-3 w-full max-w-[240px] pt-1">
                     <button onClick={() => setConfirmClose(false)} className="btn-gold-shimmer px-4 py-3 rounded-full text-xs uppercase tracking-widest font-black text-black">Continuar pagando</button>
-                    <button onClick={closeCheckout} className="font-mono text-xs font-bold text-gray-200 border border-white/20 py-2.5 rounded-full hover:bg-white/10 transition-colors uppercase">Fechar por agora</button>
+                    <button onClick={closeCheckout} className="font-mono text-xs font-bold text-gray-100 border border-white/30 py-2.5 rounded-full hover:bg-white/10 transition-colors uppercase">Fechar por agora</button>
                   </div>
                 </div>
               )}
@@ -1659,11 +1677,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
       {/* SUCCESS STATE - BACKSTAGE PASS / CONCERT TICKET */}
       {successVisible && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/35 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/30 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start">
 
             <div
               ref={successCardRef}
-              className="bg-[#1C2333] border-2 border-[#F0C265] max-w-md w-full rounded-[32px] text-center overflow-hidden shadow-2xl relative my-auto"
+              className="bg-[#242D42] border-2 border-[#F0C265] max-w-md w-full rounded-[32px] text-center overflow-hidden shadow-2xl relative my-auto"
             >
 
               {/* Luxury Ticket Background Graphics */}
@@ -1671,8 +1689,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
               <div className="absolute -left-32 -bottom-32 w-64 h-64 bg-purple-600/5 rounded-full blur-3xl pointer-events-none"></div>
 
               {/* Faux Torn Edge notches represent real tickets */}
-              <div className="absolute left-[-10px] top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#252E42] border-r border-[#F0C265]"></div>
-              <div className="absolute right-[-10px] top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#252E42] border-l border-[#F0C265]"></div>
+              <div className="absolute left-[-10px] top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#2F3A54] border-r border-[#F0C265]"></div>
+              <div className="absolute right-[-10px] top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#2F3A54] border-l border-[#F0C265]"></div>
 
               {/* TICKET TOP PORTION */}
               <div className="p-6 md:p-8 space-y-4">
@@ -1684,38 +1702,38 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   <h3 className="font-display font-black text-2xl text-white uppercase tracking-tightest leading-tight">MATRÍCULA CONFIRMADA!</h3>
                 </div>
 
-                <p className="text-xs text-gray-200 leading-relaxed max-w-xs mx-auto">Inscrição registrada com sucesso! Sua matrícula fica ativa no portal do candidato após a confirmação do pagamento.</p>
+                <p className="text-xs text-gray-100 leading-relaxed max-w-xs mx-auto">Inscrição registrada com sucesso! Sua matrícula fica ativa no portal do candidato após a confirmação do pagamento.</p>
               </div>
 
               {/* DASHED SEPARATOR LINE */}
               <div className="border-t-2 border-dashed border-[#F0C265]/30 relative"></div>
 
               {/* TICKET BOTTOM PORTION */}
-              <div className="p-6 md:p-8 bg-[#222A3D] space-y-6">
+              <div className="p-6 md:p-8 bg-[#2B3550] space-y-6">
 
-                <div className="grid grid-cols-2 gap-4 text-left border border-white/[0.16] p-4 rounded-2xl bg-white/[0.08] font-mono text-[11px]">
+                <div className="grid grid-cols-2 gap-4 text-left border border-white/25 p-4 rounded-2xl bg-white/[0.08] font-mono text-[11px]">
                   <div>
-                    <span className="text-gray-200 uppercase block text-[9px]">CÓDIGO DE ACESSO DA BANDA:</span>
+                    <span className="text-gray-100 uppercase block text-[9px]">CÓDIGO DE ACESSO DA BANDA:</span>
                     <span className="text-xs font-black text-[#F0C265] font-mono block mt-0.5">{(inviteCode || '').toUpperCase()}</span>
                   </div>
                   <div>
-                    <span className="text-gray-200 uppercase block text-[9px]">ROSTER CONECTADO:</span>
+                    <span className="text-gray-100 uppercase block text-[9px]">ROSTER CONECTADO:</span>
                     <span className="text-xs font-black text-[#F0EAE0] font-mono block mt-0.5">{selectedMembers} INTEGRANTES</span>
                   </div>
-                  <div className="col-span-2 border-t border-white/[0.16] pt-3">
-                    <span className="text-gray-200 uppercase block text-[9px]">RESPONSÁVEL:</span>
+                  <div className="col-span-2 border-t border-white/25 pt-3">
+                    <span className="text-gray-100 uppercase block text-[9px]">RESPONSÁVEL:</span>
                     <span className="text-xs font-black text-white font-mono block mt-0.5">{respName || 'não informado'}</span>
-                    {respEmail && <span className="text-[10px] text-gray-200 font-mono block mt-0.5">{respEmail}</span>}
+                    {respEmail && <span className="text-[10px] text-gray-100 font-mono block mt-0.5">{respEmail}</span>}
                   </div>
-                  <div className="col-span-2 border-t border-white/[0.16] pt-3">
+                  <div className="col-span-2 border-t border-white/25 pt-3">
                     <span className="text-[#10B981] uppercase font-bold block text-[9px]">Condição Solidária Obrigatória:</span>
-                    <p className="text-xs text-gray-200 mt-1 leading-relaxed font-mono">Trazer {selectedMembers}kg de alimento não-perecível na entrada do estúdio.</p>
+                    <p className="text-xs text-gray-100 mt-1 leading-relaxed font-mono">Trazer {selectedMembers}kg de alimento não-perecível na entrada do estúdio.</p>
                   </div>
                 </div>
 
                 {/* Realistic Barcode Design */}
                 <div className="space-y-1">
-                  <div className="h-9 bg-white/10 rounded px-4 flex items-center justify-between opacity-70 border border-white/[0.16]">
+                  <div className="h-9 bg-white/10 rounded px-4 flex items-center justify-between opacity-70 border border-white/25">
                     <div className="w-1.5 h-full bg-white/80"></div>
                     <div className="w-0.5 h-full bg-white/80"></div>
                     <div className="w-1 h-full bg-white/80"></div>
@@ -1728,14 +1746,14 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                     <div className="w-0.5 h-full bg-white/80"></div>
                     <div className="w-1.5 h-full bg-white/80"></div>
                   </div>
-                  <span className="font-mono text-[8px] text-gray-200 uppercase tracking-widest block">Pedra Profana Backstage Access</span>
+                  <span className="font-mono text-[8px] text-gray-100 uppercase tracking-widest block">Pedra Profana Backstage Access</span>
                 </div>
 
                 {/* Complemento pos-matricula: bio + foto via WhatsApp do estudio */}
                 {suporteWa && (
-                  <div className="space-y-2.5 bg-[#222A3D] border border-white/20 rounded-2xl p-4 text-left">
+                  <div className="space-y-2.5 bg-[#2B3550] border border-white/30 rounded-2xl p-4 text-left">
                     <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Falta pouco para o dossiê completo</span>
-                    <p className="text-xs text-gray-200 leading-relaxed">Envie pelo WhatsApp do estúdio a <strong className="text-white">história da banda</strong> (bio) e a <strong className="text-white">foto oficial</strong> para os jurados. Leva 2 minutos.</p>
+                    <p className="text-xs text-gray-100 leading-relaxed">Envie pelo WhatsApp do estúdio a <strong className="text-white">história da banda</strong> (bio) e a <strong className="text-white">foto oficial</strong> para os jurados. Leva 2 minutos.</p>
                     <a
                       href={suporteWa}
                       target="_blank"
@@ -1749,18 +1767,18 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
                 {/* Convite da banda */}
                 {inviteCode && (
-                  <div className="space-y-3.5 bg-[#222A3D] border border-[#F0C265]/25 rounded-2xl p-5 text-left">
+                  <div className="space-y-3.5 bg-[#2B3550] border border-[#F0C265]/25 rounded-2xl p-5 text-left">
                     <span className="font-mono text-xs text-[#F0C265] uppercase tracking-widest font-black block">🔗 Link exclusivo da banda</span>
                     {paymentMode === 'lider' ? (
                       <>
-                        <p className="text-sm text-gray-200 leading-relaxed">Envie aos integrantes: cada um acessa, confirma os próprios dados e aparece no roster com a função dele. A parte de todos já está coberta pelo seu Pix.</p>
+                        <p className="text-sm text-gray-100 leading-relaxed">Envie aos integrantes: cada um acessa, confirma os próprios dados e aparece no roster com a função dele. A parte de todos já está coberta pelo seu Pix.</p>
                         <p className="text-sm text-white leading-snug">
                           Banda <strong className="text-[#10B981]">ativa</strong> no concurso{bandResult ? <> · <strong className="text-[#F0C265]">{bandResult.pago}</strong>/<strong className="text-[#F0C265]">{bandResult.total}</strong> integrantes confirmados</> : ''}.
                         </p>
                       </>
                     ) : (
                       <>
-                        <p className="text-sm text-gray-200 leading-relaxed">Envie aos integrantes: cada um acessa, confirma os próprios dados e paga a parte dele.</p>
+                        <p className="text-sm text-gray-100 leading-relaxed">Envie aos integrantes: cada um acessa, confirma os próprios dados e paga a parte dele.</p>
                         <p className="text-sm text-white leading-snug">
                           A banda ativa no concurso ao atingir <strong className="text-[#F0C265]">{bandResult?.minimo ?? 2} partes pagas</strong>
                           {bandResult ? <> agora: <strong className="text-[#F0C265]">{bandResult.pago}</strong></> : ''}.
@@ -1798,7 +1816,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   <button
                     type="button"
                     onClick={handleViralShare}
-                    className="w-full sm:w-1/2 flex items-center justify-center gap-1.5 font-mono text-xs font-bold text-white bg-white/10 border border-white/20 px-4 py-3 rounded-full hover:bg-white/[0.15] transition-colors uppercase"
+                    className="w-full sm:w-1/2 flex items-center justify-center gap-1.5 font-mono text-xs font-bold text-white bg-white/10 border border-white/30 px-4 py-3 rounded-full hover:bg-white/[0.15] transition-colors uppercase"
                   >
                     {shareCopied ? '✓ Convocação Copiada!' : (<><Share2 className="w-3.5 h-3.5" /> Compartilhar</>)}
                   </button>
