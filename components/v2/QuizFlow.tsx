@@ -513,8 +513,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     if (!newMemberName.trim()) errs.newMemberName = 'Informe o nome completo.';
     if (!newMemberPhone || newMemberPhone.replace(/\D/g, '').length < 10) errs.newMemberPhone = 'Informe o WhatsApp com DDD.';
     if (!newMemberEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newMemberEmail)) errs.newMemberEmail = 'Informe um e-mail válido.';
-    if (!newMemberBirth) errs.newMemberBirth = 'Informe a data de nascimento.';
-    else if (!isValidBirthDate(newMemberBirth)) errs.newMemberBirth = 'Data inválida.';
+    if (newMemberBirth && !isValidBirthDate(newMemberBirth)) errs.newMemberBirth = 'Data inválida (ou deixe vazio).';
     const effRole = newMemberRole === 'Outro' ? newMemberRoleOther.trim() : newMemberRole;
     if (!effRole) errs.newMemberRole = 'Selecione ou descreva a função.';
     setMemberErrors(errs);
@@ -1350,7 +1349,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                       {memberErrors.newMemberName && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberName}</p>}
                                     </div>
                                     <div className="space-y-1">
-                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">Nascimento (DD/MM/AAAA) <span className="text-red-400">*</span></label>
+                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">Nascimento (DD/MM/AAAA) <span className="text-[10px] text-gray-500 font-normal normal-case tracking-normal">(opcional)</span></label>
                                       <input type="text" value={newMemberBirth} onChange={(newE) => { setNewMemberBirth(applyDateMask(newE.target.value)); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberBirth; return c; }); }} className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberBirth ? 'border-red-500/60' : 'border-white/10'}`} maxLength={10} />
                                       {memberErrors.newMemberBirth && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberBirth}</p>}
                                     </div>
