@@ -32,6 +32,7 @@ const ESTILOS = ['Rap', 'Trap', 'Funk', 'Rock', 'MPB', 'Pop', 'Sertanejo', 'Outr
 const FUNCOES = ['Vocalista', 'MC', 'Beatmaker', 'Guitarrista', 'Baixista', 'Baterista', 'Tecladista', 'DJ'];
 
 export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false, origem = 'home', sandboxPix = false, linkLoteId = null, cupom = null, suporteWa = null, homeFakePix = false }: QuizFlowProps) {
+  const [fakePixLive, setFakePixLive] = useState(false);
   const [quizStep, setQuizStep] = useState(1);
 
   // Quiz form states
@@ -784,11 +785,12 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   // Na home vale o flag global; na /v2 o dev decide via sandbox.
   useEffect(() => {
     if (!isOpen) return;
-    supabase.from('site_settings').select('key,value').in('key', ['gateway_pix_active', 'payment_mode'])
+    supabase.from('site_settings').select('key,value').in('key', ['gateway_pix_active', 'payment_mode', 'home_pix_fake'])
       .then(({ data }) => {
         const map: Record<string, string> = {};
         (data || []).forEach(r => { map[r.key] = typeof r.value === 'string' ? r.value : String(r.value ?? ''); });
         setPixGatewayOn(map['gateway_pix_active'] === 'true');
+        setFakePixLive(map['home_pix_fake'] === 'true');
         setPaymentMode(map['payment_mode'] === 'lider' ? 'lider' : 'individual');
         // Sandbox /v2: config do dev (ativa o layout de teste e o botao de simulacao)
         if (origem === 'v2' && map['v2_env']) {
@@ -813,9 +815,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     handleSimulateWebhook(true);
   };
 
-  const pixActive = origem === 'v2' ? (pixGatewayOn && sandboxPix && !homeFakePix) : (pixGatewayOn && !homeFakePix);
+  const fakePixEfetivo = homeFakePix || fakePixLive;
+  const pixActive = origem === 'v2' ? (pixGatewayOn && sandboxPix && !fakePixEfetivo) : (pixGatewayOn && !fakePixEfetivo);
   // Na /v2 com sandbox ativo e Pix real desligado: checkout de SIMULACAO com layout real
-  const sandboxSimulacao = homeFakePix || (origem === 'v2' && sandboxV2.ativo && !pixActive);
+  const sandboxSimulacao = fakePixEfetivo || (origem === 'v2' && sandboxV2.ativo && !pixActive);
 
   // Confirmacao de pagamento: Pix real (gateway) ou simulacao local (fallback pre-chaves)
   useEffect(() => {
@@ -1162,6 +1165,42 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                               </div>
                               {fieldError('projectInstagram')}
                             </div>
+                            {similarBands.length > 0 && (similarChoice === 'none' || similarChoice === 'mine') && (
+                              <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl p-4 space-y-3">
+                                <span className="font-mono text-xs text-amber-400 uppercase tracking-widest font-black block">Já existe banda com nome parecido</span>
+                                <p className="text-sm text-amber-100/90 leading-relaxed">
+                                  <strong className="text-white">{similarBands.join(', ')}</strong>. Sua banda é uma delas ou é outra banda mesmo?
+                                </p>
+                                {similarChoice !== 'mine' ? (
+                                  <div className="grid grid-cols-2 gap-2.5">
+                                    <button type="button" onClick={() => setSimilarChoice('mine')} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-[#10B981]/25 active:scale-[0.98] transition-transform">Sou da banda</button>
+                                    <button type="button" onClick={() => setSimilarChoice('other')} className="font-mono text-sm font-black text-white bg-gradient-to-b from-red-500 to-red-700 px-3 py-3 rounded-xl uppercase tracking-wider shadow-lg shadow-red-900/30 active:scale-[0.98] transition-transform">É outra</button>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2.5">
+                                    <label className="block font-mono text-[11px] text-gray-200 font-bold uppercase tracking-wider">CPF do líder desta banda</label>
+                                    <input
+                                      inputMode="numeric"
+                                      value={mineCpf}
+                                      onChange={(e) => { setMineCpf(e.target.value.replace(/\D/g, '').slice(0, 11)); setMineResult(null); }}
+                                      placeholder="000.000.000-00"
+                                      className="w-full bg-[#2F3A54] border border-white/25 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10B981] placeholder-gray-300"
+                                    />
+                                    {mineResult && (
+                                      <div className={`rounded-xl px-4 py-3 text-xs leading-snug ${mineResult.ok ? 'bg-[#10B981]/10 border border-[#10B981]/40 text-[#10B981]' : 'bg-red-500/10 border border-red-500/40 text-red-200'}`}>
+                                        {mineResult.ok ? '✓ ' : '⚠ '}{mineResult.msg}
+                                      </div>
+                                    )}
+                                    <div className="grid grid-cols-2 gap-2.5">
+                                      <button type="button" onClick={handleMineCheck} disabled={mineChecking || mineCpf.length !== 11} className="font-mono text-sm font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-3 rounded-xl uppercase tracking-wider disabled:opacity-50 active:scale-[0.98] transition-transform">
+                                        {mineChecking ? 'Verificando...' : 'Localizar banda'}
+                                      </button>
+                                      <button type="button" onClick={() => { setSimilarChoice('none'); setMineCpf(''); setMineResult(null); }} className="font-mono text-sm font-bold text-gray-300 border border-white/25 px-3 py-3 rounded-xl uppercase hover:text-white transition-colors">Voltar</button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
 
@@ -1405,7 +1444,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                   <span className="text-xs text-amber-300 font-bold uppercase tracking-wide block">Nome parecido pendente: {similarBands.join(', ')}</span>
                                   {similarChoice !== 'mine' ? (
                                     <div className="flex flex-col sm:flex-row gap-2">
-                                      <button type="button" onClick={() => { setSimilarChoice('mine'); }} className="font-mono text-[11px] font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-2.5 rounded-xl uppercase flex-1">É minha banda (verificar CPF)</button>
+                                      <button type="button" onClick={() => { setSimilarChoice('mine'); }} className="font-mono text-[11px] font-black text-black bg-gradient-to-b from-[#10B981] to-[#059669] px-3 py-2.5 rounded-xl uppercase flex-1">Sou da banda (confirmar com CPF do líder)</button>
                                       <button type="button" onClick={() => setSimilarChoice('other')} className="font-mono text-[11px] font-black text-white bg-gradient-to-b from-red-500 to-red-700 px-3 py-2.5 rounded-xl uppercase flex-1">É outra banda</button>
                                     </div>
                                   ) : (
@@ -1525,7 +1564,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
               {/* ACOES PRINCIPAIS: copiar e duvidas, acima do QR */}
               <div className="space-y-2.5">
                 {pixData?.qr ? (
-                  <button onClick={copyPixCode} className="w-full flex items-center justify-center gap-2 font-mono font-black text-sm uppercase tracking-widest text-black bg-lime py-4 rounded-2xl active:scale-[0.98] transition-transform shadow-[0_0_25px_rgba(163,230,53,0.3)]">
+                  <button onClick={copyPixCode} className="w-full flex items-center justify-center gap-2 font-mono font-black text-sm uppercase tracking-widest text-black btn-gold-shimmer py-4 rounded-2xl active:scale-[0.98] transition-transform">
                     <Copy className="w-4 h-4" />
                     {pixCopied ? 'Código copiado!' : 'Copiar código Pix'}
                   </button>
