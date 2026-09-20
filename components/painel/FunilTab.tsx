@@ -1,6 +1,6 @@
 'use client';
 
-// ABA FUNIL do painel /sagrado — extraída do page.tsx na dívida técnica de 17/09.
+// ABA FUNIL do painel /sagrado · extraída do page.tsx na dívida técnica de 17/09.
 // Componente puro de exibição: recebe os dados e callbacks prontos via props.
 // Nenhum visual ou cálculo foi alterado na extração (movimentação 1:1).
 

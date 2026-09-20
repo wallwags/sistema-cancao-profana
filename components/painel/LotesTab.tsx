@@ -1,6 +1,6 @@
 'use client';
 
-// Aba LOTES & LIVE do painel /sagrado — extraída 1:1 do page.tsx (17/09, dívida técnica).
+// Aba LOTES & LIVE do painel /sagrado · extraída 1:1 do page.tsx (17/09, dívida técnica).
 // Reúne as 4 seções irmãs: Sandbox (dev), Método de cobrança, Cupons e o gerenciador de lotes/live.
 import { Loader2 } from 'lucide-react';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -223,7 +223,7 @@ export default function LotesTab({ isDev, canLotes, me, batches, settings, setti
                 <option value="">Selecione...</option>
                 {batches.map(b => (
                   <option key={String(b.id)} value={String(b.id)}>
-                    {String(b.name)} — R$ {String(b.price_per_member)}
+                    {String(b.name)} · R$ {String(b.price_per_member)}
                   </option>
                 ))}
               </select>

@@ -1,6 +1,6 @@
 'use client';
 
-// Aba CONTEÚDO do painel /sagrado — extraída 1:1 do page.tsx (17/09, dívida técnica).
+// Aba CONTEÚDO do painel /sagrado · extraída 1:1 do page.tsx (17/09, dívida técnica).
 import { useState } from 'react';
 import { Loader2, ArrowUp, ArrowDown, Plus, Trash2, X } from 'lucide-react';
 import type { SupabaseClient } from '@supabase/supabase-js';

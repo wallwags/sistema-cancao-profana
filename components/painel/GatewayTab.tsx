@@ -1,6 +1,6 @@
 'use client';
 
-// Aba GATEWAY DE PAGAMENTOS do painel /sagrado — extraída 1:1 do page.tsx (17/09, dívida técnica).
+// Aba GATEWAY DE PAGAMENTOS do painel /sagrado · extraída 1:1 do page.tsx (17/09, dívida técnica).
 import { Loader2 } from 'lucide-react';
 import { inputCls, btnGold, btnGhost } from './ui';
 

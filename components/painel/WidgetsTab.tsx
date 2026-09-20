@@ -1,7 +1,7 @@
 'use client';
 
 // Aba WIDGETS do painel /sagrado: prova social na home, selo de vagas e WhatsApp de suporte.
-// Os valores sao exibicao (ficticios por design) — nada aqui interfere em pagamentos ou vagas reais.
+// Os valores sao exibicao (ficticios por design) · nada aqui interfere em pagamentos ou vagas reais.
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -18,10 +18,10 @@ interface WidgetsTabProps {
 const CHAVES: Array<{ key: string; label: string; kind: 'bool' | 'text' | 'url' | 'number'; dica?: string }> = [
   { key: 'widget_ativo', label: 'Widget de prova social ativo', kind: 'bool', dica: 'Mini-card pulsante no canto inferior direito da home.' },
   { key: 'widget_imagem', label: 'Imagem do widget (URL)', kind: 'text', dica: 'Padrão: /widgets/mosaic.png (mosaico de artistas). Pode ser qualquer imagem.' },
-  { key: 'widget_bandas_min', label: 'Bandas — mínimo', kind: 'number', dica: 'Padrão 2.' },
-  { key: 'widget_bandas_max', label: 'Bandas — máximo', kind: 'number', dica: 'Padrão 4.' },
-  { key: 'widget_visitantes_min', label: 'Visitantes agora — mínimo', kind: 'number', dica: 'Padrão 25.' },
-  { key: 'widget_visitantes_max', label: 'Visitantes agora — máximo', kind: 'number', dica: 'Padrão 78.' },
+  { key: 'widget_bandas_min', label: 'Bandas · mínimo', kind: 'number', dica: 'Padrão 2.' },
+  { key: 'widget_bandas_max', label: 'Bandas · máximo', kind: 'number', dica: 'Padrão 4.' },
+  { key: 'widget_visitantes_min', label: 'Visitantes agora · mínimo', kind: 'number', dica: 'Padrão 25.' },
+  { key: 'widget_visitantes_max', label: 'Visitantes agora · máximo', kind: 'number', dica: 'Padrão 78.' },
   { key: 'social_vagas_pct', label: 'Selo "X% das vagas já preenchidas"', kind: 'number', dica: 'Número fictício exibido acima da tabela de lotes. Padrao 40. 0 = oculta o selo.' },
 ];
 
@@ -57,7 +57,7 @@ export default function WidgetsTab({ settings, loadSettings, supabase, Field, No
           <h3 className="font-display font-bold text-white uppercase">✨ Widgets e prova social</h3>
           <p className="text-xs text-gray-400 leading-snug mt-1">
             Controla o mini-card pulsante da home (foto + bandas + visitantes) e o selo de porcentagem de vagas.
-            Os números são de <strong className="text-white">exibição</strong>, gerados dentro das faixas abaixo — não são estatísticas reais.
+            Os números são de <strong className="text-white">exibição</strong>, gerados dentro das faixas abaixo · não são estatísticas reais.
           </p>
         </div>
 

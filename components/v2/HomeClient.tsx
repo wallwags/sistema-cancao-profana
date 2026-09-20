@@ -861,7 +861,7 @@ export default function HomeClient({ cfg }: { cfg: HomeCfg | null }) {
 
       {/* CONVITE DE INTEGRANTE - bottom sheet sobre a landing */}
       {sheetCode && (
-        <InviteSheet inviteCode={sheetCode} startPhase={sheetStart} onClose={() => setSheetCode(null)} />
+        <InviteSheet inviteCode={sheetCode} startPhase={sheetStart} onClose={() => setSheetCode(null)} suporteWa={cfg?.suporteWa} />
       )}
 
       {/* WAITLIST: popup de e-mail enquanto as inscrições estiverem fechadas */}

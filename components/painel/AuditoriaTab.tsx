@@ -1,6 +1,6 @@
 'use client';
 
-// Aba AUDITORIA do painel /sagrado — extraída 1:1 do page.tsx (17/09, dívida técnica).
+// Aba AUDITORIA do painel /sagrado · extraída 1:1 do page.tsx (17/09, dívida técnica).
 import { btnGhost } from './ui';
 
 interface AuditoriaTabProps {

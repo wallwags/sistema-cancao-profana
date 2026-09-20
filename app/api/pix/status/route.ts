@@ -41,8 +41,9 @@ export async function GET(req: NextRequest) {
     const [code, who] = ref.split(':');
     if (code && who === 'L') {
       await supabase.rpc('confirm_leader_payment', { p_code: code });
+    } else if (code && who && who !== 'L') {
+      await supabase.rpc('confirm_member_payment', { p_code: code, p_member_id: who });
     }
-    // Pagamento de integrante sera confirmado pelo webhook (ref traz o member id)
 
     await supabase
       .from('subscriptions')

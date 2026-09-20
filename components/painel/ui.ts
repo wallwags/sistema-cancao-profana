@@ -1,5 +1,5 @@
 // Atomos visuais compartilhados do painel /sagrado (fonte unica de verdade).
-// Extraidos do page.tsx monolito na dívida tecnica de 17/09 — nenhum visual mudou.
+// Extraidos do page.tsx monolito na dívida tecnica de 17/09 · nenhum visual mudou.
 
 export const inputCls = "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-2.5 text-white text-xs outline-none focus:border-[#E3B552] font-mono";
 

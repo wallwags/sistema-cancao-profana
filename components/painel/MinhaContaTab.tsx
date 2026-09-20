@@ -1,6 +1,6 @@
 'use client';
 
-// Aba MINHA CONTA do painel /sagrado — extraída 1:1 do page.tsx (17/09, dívida técnica).
+// Aba MINHA CONTA do painel /sagrado · extraída 1:1 do page.tsx (17/09, dívida técnica).
 import { Loader2, KeyRound } from 'lucide-react';
 import { inputCls, btnGold } from './ui';
 

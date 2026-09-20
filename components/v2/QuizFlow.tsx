@@ -1229,7 +1229,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                               ))}
                             </div>
                             {fieldError('tamanho')}
-                            <p className="text-[11px] text-gray-100 font-mono">A seguir, só o nome de cada integrante — cada um confirma os próprios dados depois pelo link do convite.</p>
+                            <p className="text-[11px] text-gray-100 font-mono">A seguir, só o nome de cada integrante · cada um confirma os próprios dados depois pelo link do convite.</p>
                           </div>
                         )}
 
@@ -1242,7 +1242,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                           return (
                             <div className="space-y-4">
                               <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Integrante {mi + 2} de {selectedMembers}</h3>
-                              <p className="text-base text-gray-100 leading-relaxed">Só o nome por enquanto — cada integrante confirma os próprios dados pelo link do convite.</p>
+                              <p className="text-base text-gray-100 leading-relaxed">Só o nome por enquanto · cada integrante confirma os próprios dados pelo link do convite.</p>
                               <div className="space-y-1 pt-1">
                                 <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome <span className="text-red-400">*</span></label>
                                 <input type="text" enterKeyHint="next" value={m.name} onChange={(e) => { const v = e.target.value; setMembersList(l => l.map((x, i2) => i2 === mi ? { ...x, name: v } : x)); if (errors[mKey]) clearError(mKey); }} placeholder="Nome completo" autoComplete="off" className={`w-full bg-[#2F3A54] border rounded-xl px-4 py-3.5 text-white text-base outline-none placeholder-gray-300 transition-colors ${errors[mKey] ? 'border-red-500/60' : 'border-white/30 focus:border-[#E3B552]'}`} />
@@ -1307,7 +1307,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                     ))}
                                   </div>
                                   <div className="font-mono text-[10px] text-gray-100 leading-snug mt-2 truncate">
-                                    <strong className="text-[#F0C265]">{respName || '—'}</strong> (líder){membersList.filter(m => m.name.trim()).length > 0 && <> · {membersList.filter(m => m.name.trim()).map(m => m.name.trim()).join(' · ')}</>}
+                                    <strong className="text-[#F0C265]">{respName || '-'}</strong> (líder){membersList.filter(m => m.name.trim()).length > 0 && <> · {membersList.filter(m => m.name.trim()).map(m => m.name.trim()).join(' · ')}</>}
                                   </div>
                                 </div>
                               </div>
@@ -1609,7 +1609,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                 <div className="space-y-3">
                   <div className="bg-[#8B1E1E]/10 border border-[#8B1E1E]/40 rounded-xl p-4 text-center space-y-2">
                     <span className="font-mono text-xs text-[#FF4B2E] uppercase font-bold tracking-widest block">⏰ Reserva de oferta expirada</span>
-                    <p className="text-xs text-gray-100 leading-relaxed">Seus dados continuam salvos{pixData?.expiresAt ? <> e o QR Code permanece válido até {fmtValidade(pixData.expiresAt)} (BRT) — pode pagá-lo normalmente que a vaga confirma sozinha</> : ''}. Renove o prazo para manter a garantia do valor do {activeLoteName}.</p>
+                    <p className="text-xs text-gray-100 leading-relaxed">Seus dados continuam salvos{pixData?.expiresAt ? <> e o QR Code permanece válido até {fmtValidade(pixData.expiresAt)} (BRT) · pode pagá-lo normalmente que a vaga confirma sozinha</> : ''}. Renove o prazo para manter a garantia do valor do {activeLoteName}.</p>
                   </div>
                   <button onClick={renewReservation} className="font-mono text-sm font-bold text-black btn-gold-shimmer py-3 rounded-xl w-full uppercase border-none">Renovar 10 minutos</button>
                   <button onClick={closeCheckout} className="font-mono text-xs font-bold text-gray-100 border border-white/30 py-2.5 rounded-xl w-full hover:bg-white/10 transition-colors uppercase">Fechar e continuar depois</button>
@@ -1743,7 +1743,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                 {/* Depoimento curto */}
                 <div className="bg-white/[0.06] border border-white/20 rounded-2xl px-4 py-3 text-left">
                   <p className="text-xs text-gray-100 italic leading-relaxed">"Achei que fosse complicado, mas em 3 minutos a banda já estava garantida no concurso."</p>
-                  <span className="font-mono text-[10px] text-gray-300 uppercase tracking-wider block mt-1.5">— Banda do Cerrado · Goiânia, GO</span>
+                  <span className="font-mono text-[10px] text-gray-300 uppercase tracking-wider block mt-1.5">- Banda do Cerrado · Goiânia, GO</span>
                 </div>
 
                 {/* Realistic Barcode Design */}
@@ -1763,22 +1763,6 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   </div>
                   <span className="font-mono text-[8px] text-gray-100 uppercase tracking-widest block">Pedra Profana Backstage Access</span>
                 </div>
-
-                {/* Complemento pos-matricula: bio + foto via WhatsApp do estudio */}
-                {suporteWa && (
-                  <div className="space-y-2.5 bg-[#2B3550] border border-white/30 rounded-2xl p-4 text-left">
-                    <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Falta pouco para o dossiê completo</span>
-                    <p className="text-xs text-gray-100 leading-relaxed">Envie pelo WhatsApp do estúdio a <strong className="text-white">história da banda</strong> (bio) e a <strong className="text-white">foto oficial</strong> para os jurados. Leva 2 minutos.</p>
-                    <a
-                      href={suporteWa}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center gap-1.5 font-mono text-xs font-bold text-black bg-[#10B981] px-3 py-3 rounded-xl uppercase tracking-wide"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" /> Enviar bio e foto pelo WhatsApp
-                    </a>
-                  </div>
-                )}
 
                 {/* Convite da banda */}
                 {inviteCode && (

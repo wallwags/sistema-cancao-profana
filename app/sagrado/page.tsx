@@ -386,7 +386,7 @@ export default function SagradoPage() {
 
   const loadCupons = useCallback(async () => {
     // RPC SECURITY DEFINER (permite manage_lotes); fallback: select direto.
-    // Se ambos falharem, EXIBE o erro na tela — lista de cupons nunca fica vazia em silencio.
+    // Se ambos falharem, EXIBE o erro na tela · lista de cupons nunca fica vazia em silencio.
     const { data: rpc, error: errRpc } = await supabase.rpc('list_cupons_lote');
     if (Array.isArray(rpc)) { setCupomLista(rpc as Array<Record<string, unknown>>); setNotice(p => ({ ...p, 'cupom-lista': { kind: 'info', msg: '' } })); return; }
     const { data, error: errSel } = await supabase.from('lote_cupons').select('*').order('created_at', { ascending: false });
@@ -1014,7 +1014,7 @@ export default function SagradoPage() {
             <div className="space-y-4 fade-up-800">
               <div className="bg-[#F0C265]/10 border border-[#F0C265]/30 rounded-2xl px-4 py-3 flex flex-col sm:flex-row justify-between gap-2">
                 <span className="text-xs text-[#F0C265] leading-snug">
-                  <strong className="font-black uppercase tracking-wider">Como ler esta aba:</strong> <strong className="text-white">Pré-interessados</strong> = deixaram e-mail no Grupo VIP (sem pagar). <strong className="text-white">Bandas</strong> = inscritos reais — clique na banda para ver integrantes, pagamentos e contato.
+                  <strong className="font-black uppercase tracking-wider">Como ler esta aba:</strong> <strong className="text-white">Pré-interessados</strong> = deixaram e-mail no Grupo VIP (sem pagar). <strong className="text-white">Bandas</strong> = inscritos reais · clique na banda para ver integrantes, pagamentos e contato.
                 </span>
                 <a href="/sagrado?tab=vip" className="font-mono text-[11px] font-bold text-[#F0C265] underline whitespace-nowrap self-start sm:self-center">Ver Grupo VIP →</a>
               </div>
@@ -1060,7 +1060,7 @@ export default function SagradoPage() {
               })()}
 
                 <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
-                  <h3 className="font-display font-bold text-white uppercase border-b border-white/5 pb-3">Bandas inscritas ({totalCount}) — clique para abrir a ficha completa</h3>
+                  <h3 className="font-display font-bold text-white uppercase border-b border-white/5 pb-3">Bandas inscritas ({totalCount}) · clique para abrir a ficha completa</h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-[1fr_150px_150px] gap-3">
                     <input className={inputCls} placeholder="Buscar por nome da banda..." value={searchQ} onChange={(e) => { setSearchQ(e.target.value); setPage(0); }} />

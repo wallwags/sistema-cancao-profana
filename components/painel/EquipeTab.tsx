@@ -1,6 +1,6 @@
 'use client';
 
-// Aba EQUIPE do painel /sagrado — extraída 1:1 do page.tsx (17/09, dívida técnica).
+// Aba EQUIPE do painel /sagrado · extraída 1:1 do page.tsx (17/09, dívida técnica).
 import { Loader2, UserPlus } from 'lucide-react';
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { inputCls, btnGold } from './ui';

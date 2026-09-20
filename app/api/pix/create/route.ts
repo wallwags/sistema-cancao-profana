@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
     const code = String(body.code || '').replace(/[^a-z0-9]/g, '').slice(0, 12);
     const email = String(body.email || '').slice(0, 120);
     const name = String(body.name || '').slice(0, 80);
+    const memberId = String(body.memberId || '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 40);
     if (!code || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
       return NextResponse.json({ ok: false, error: 'dados_invalidos' }, { status: 400 });
     }
@@ -40,15 +41,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'codigo_invalido' }, { status: 404 });
     }
 
+    // MODO INTEGRANTE: cobranca individual da parte dele (convite)
+    let membro: { id: string; name: string; payment_status: string | null; claimed_at: string | null } | null = null;
+    type MembroPix = { id: string; name: string; payment_status: string | null; claimed_at: string | null };
+    if (memberId) {
+      const { data: m } = await supabase
+        .from('members')
+        .select('id, name, payment_status, claimed_at')
+        .eq('id', memberId)
+        .eq('project_id', project.id)
+        .eq('is_responsible', false)
+        .maybeSingle();
+      if (!m) return NextResponse.json({ ok: false, error: 'vaga_invalida' }, { status: 404 });
+      if (m.payment_status === 'paid') return NextResponse.json({ ok: true, alreadyPaid: true });
+      membro = m as unknown as MembroPix;
+    }
+
     // Modo de cobranca: lider paga 1 unico Pix do total de todos
     const { data: modeData } = await supabase.from('site_settings').select('value').eq('key', 'payment_mode').maybeSingle();
-    const liderMode = String(modeData?.value ?? '') === 'lider';
-    const amount = liderMode
-      ? Number(project.entry_price) * Math.max(Number(project.total_members) || 1, 1)
-      : Number(project.entry_price);
+    const liderMode = !memberId && String(modeData?.value ?? '') === 'lider';
+    const amount = memberId
+      ? Number(project.entry_price)
+      : liderMode
+        ? Number(project.entry_price) * Math.max(Number(project.total_members) || 1, 1)
+        : Number(project.entry_price);
 
     // ANTI-COBRANCA-DUPLICADA: se o pagamento correspondente ja foi feito, nao gera novo Pix
-    if (liderMode) {
+    if (membro) {
+      // anti-duplicada do integrante feita acima (payment_status)
+    } else if (liderMode) {
       if (project.status === 'paid') {
         return NextResponse.json({ ok: true, alreadyPaid: true });
       }
@@ -118,9 +139,9 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         transaction_amount: Math.round(amount * 100) / 100,
-        description: `Cancao Profana - ${String(project.name).slice(0, 60)}`,
+        description: memberId ? `Cancao Profana - integrante - ${String(project.name).slice(0, 45)}` : `Cancao Profana - ${String(project.name).slice(0, 60)}`,
         payment_method_id: 'pix',
-        external_reference: `${code}:L`,
+        external_reference: memberId ? `${code}:${memberId}` : `${code}:L`,
         // (valor ja reflete o modo de cobranca calculado acima)
         payer: { email, first_name: name.slice(0, 60) || 'Candidato' },
       }),
