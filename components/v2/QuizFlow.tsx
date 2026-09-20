@@ -53,7 +53,6 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   // Inline add-member form
   const [isAddingMemberInline, setIsAddingMemberInline] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
-  const [newMemberCpf, setNewMemberCpf] = useState('');
   const [newMemberBirth, setNewMemberBirth] = useState('');
   const [newMemberRole, setNewMemberRole] = useState('');
   const [newMemberRoleOther, setNewMemberRoleOther] = useState('');
@@ -460,7 +459,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       if (!projectBio.trim()) errs.projectBio = 'Escreva uma biografia para avaliação dos jurados.';
       if (projectInstagram.replace(/@/g, '').trim().length < 2) errs.projectInstagram = 'Informe o @ do Instagram da banda.';
       if (!projectPhotoName) errs.projectPhotoName = 'Envie a foto oficial do projeto.';
-      if (!projectVideoLink.trim() || !projectVideoLink.includes('youtube.com') && !projectVideoLink.includes('youtu.be')) errs.projectVideoLink = 'Cole o link do YouTube com a música da banda.';
+      if (projectVideoLink.trim() && !projectVideoLink.includes('youtube.com') && !projectVideoLink.includes('youtu.be')) errs.projectVideoLink = 'Cole um link do YouTube válido (ou deixe vazio).';
     }
     if (step === 3) {
       if (!respName.trim()) errs.respName = 'Informe o nome completo do responsável.';
@@ -512,11 +511,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       return;
     }
     if (!newMemberName.trim()) errs.newMemberName = 'Informe o nome completo.';
-    if (!newMemberCpf) errs.newMemberCpf = 'Informe o CPF.';
     if (!newMemberPhone || newMemberPhone.replace(/\D/g, '').length < 10) errs.newMemberPhone = 'Informe o WhatsApp com DDD.';
     if (!newMemberEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newMemberEmail)) errs.newMemberEmail = 'Informe um e-mail válido.';
-    else if (newMemberCpf.length < 14) errs.newMemberCpf = 'CPF incompleto.';
-    else if (!isValidCPF(newMemberCpf)) errs.newMemberCpf = 'CPF inválido.';
     if (!newMemberBirth) errs.newMemberBirth = 'Informe a data de nascimento.';
     else if (!isValidBirthDate(newMemberBirth)) errs.newMemberBirth = 'Data inválida.';
     const effRole = newMemberRole === 'Outro' ? newMemberRoleOther.trim() : newMemberRole;
@@ -525,10 +521,9 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     if (Object.keys(errs).length > 0) return;
 
     const copy = [...membersList];
-    copy.push({ name: newMemberName.trim(), cpf: newMemberCpf, birth: newMemberBirth, role: effRole, phone: newMemberPhone.trim(), email: newMemberEmail.trim() });
+    copy.push({ name: newMemberName.trim(), cpf: '', birth: newMemberBirth, role: effRole, phone: newMemberPhone.trim(), email: newMemberEmail.trim() });
     setMembersList(copy);
     setNewMemberName('');
-    setNewMemberCpf('');
     setNewMemberBirth('');
     setNewMemberPhone('');
     setNewMemberEmail('');
@@ -647,7 +642,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         } catch { /* segue sem foto */ }
       }
 
-      const membersPayload = membersList.map(m => ({ name: m.name, cpf: m.cpf, birth: m.birth, role: m.role, phone: m.phone || '', email: m.email || '' }));
+      const membersPayload = membersList.map(m => ({ name: m.name, cpf: '', birth: m.birth, role: m.role, phone: m.phone || '', email: m.email || '' }));
 
       const { data, error } = await supabase.rpc('create_band_registration', {
         p_origem: origem === 'v2' ? 'v2' : 'home',
@@ -1046,7 +1041,6 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       clearError('respName'); clearError('respCpf'); clearError('respBirth'); clearError('respPhone'); clearError('respEmail');
     } else if (quizStep === 4) {
       setNewMemberName("John Bryan");
-      setNewMemberCpf("123.456.789-09");
       setNewMemberBirth("24/05/2000");
       setNewMemberRole("Guitarrista");
       openMemberForm();
@@ -1128,7 +1122,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                             <p className="text-sm text-gray-300">Insira as informações gerais da banda/artista.</p>
                             <div className="space-y-4 pt-2">
                               <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome da Banda / Dupla de Rap *</label>
+                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome da Banda / Dupla de Rap <span className="text-red-400">*</span></label>
                                 <input
                                   type="text"
                                   value={projectName}
@@ -1178,7 +1172,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
                               </div>
                               <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Estilo / Gênero *</label>
+                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Estilo / Gênero <span className="text-red-400">*</span></label>
                                 <input
                                   type="text"
                                   value={projectStyle}
@@ -1200,7 +1194,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                             <div className="space-y-4 pt-2">
                               <div className="space-y-1">
                                 <div className="flex justify-between items-baseline">
-                                  <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Biografia *</label>
+                                  <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Biografia <span className="text-red-400">*</span></label>
 
                                   {/* Dynamic Profile Strength Meter */}
                                   <span className="font-mono text-[9px] uppercase tracking-wider font-bold">
@@ -1221,7 +1215,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                 <span className="text-xs text-gray-500 font-mono block text-right mt-1 font-bold">{projectBio.length}/400 caracteres</span>
                               </div>
                               <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Foto Oficial *</label>
+                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Foto Oficial <span className="text-red-400">*</span></label>
 
                                 {/* Real-time browser canvas compression upload */}
                                 <div className={`border border-dashed rounded-xl p-5 text-center cursor-pointer bg-black/40 relative ${errors.projectPhotoName ? 'border-red-500/60' : 'border-white/10 hover:border-[#E3B552]'}`}>
@@ -1238,7 +1232,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                  <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Instagram *</label>
+                                  <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Instagram <span className="text-red-400">*</span></label>
                                   <div className={`flex items-stretch bg-[#05070B] border rounded-xl overflow-hidden transition-colors ${errors.projectInstagram ? 'border-red-500/60' : 'border-white/10 focus-within:border-[#E3B552]'}`}>
                                     <span className="flex items-center pl-3.5 pr-0.5 font-mono text-sm text-gray-400 select-none pointer-events-none">@</span>
                                     <input
@@ -1252,7 +1246,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                   {fieldError('projectInstagram')}
                                 </div>
                                 <div className="space-y-1">
-                                  <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Link do Vídeo (YouTube) *</label>
+                                  <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Link do Vídeo (YouTube) <span className="text-[10px] text-gray-500 font-normal normal-case tracking-normal">(opcional)</span></label>
                                   <input
                                     type="url"
                                     value={projectVideoLink}
@@ -1273,27 +1267,27 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                             <p className="text-sm text-gray-300">Preencha as credenciais do integrante responsável legal da banda / dupla.</p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                               <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome Completo *</label>
+                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nome Completo <span className="text-red-400">*</span></label>
                                 <input type="text" value={respName} onChange={(e) => { setRespName(e.target.value); clearError('respName'); }} className={inputClass('respName', "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors")} required />
                                 {fieldError('respName')}
                               </div>
                               <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">CPF *</label>
+                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">CPF <span className="text-red-400">*</span></label>
                                 <input type="text" value={respCpf} onChange={(e) => { setRespCpf(applyCpfMask(e.target.value)); clearError('respCpf'); }} className={inputClass('respCpf', "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors")} maxLength={14} required />
                                 {fieldError('respCpf')}
                               </div>
                               <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nascimento *</label>
+                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Nascimento <span className="text-red-400">*</span></label>
                                 <input type="text" value={respBirth} onChange={(e) => { setRespBirth(applyDateMask(e.target.value)); clearError('respBirth'); }} className={inputClass('respBirth', "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors")} maxLength={10} required />
                                 {fieldError('respBirth')}
                               </div>
                               <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">WhatsApp *</label>
+                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">WhatsApp <span className="text-red-400">*</span></label>
                                 <input type="tel" value={respPhone} onChange={(e) => { setRespPhone(applyPhoneMask(e.target.value)); clearError('respPhone'); }} className={inputClass('respPhone', "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors")} maxLength={15} required />
                                 {fieldError('respPhone')}
                               </div>
                               <div className="space-y-1">
-                                <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Sua função na banda *</label>
+                                <label className="block font-mono text-xs text-[#F0C265] font-bold uppercase">Sua função na banda <span className="text-red-400">*</span></label>
                                 <select
                                   value={respRole}
                                   onChange={(e) => { setRespRole(e.target.value); if (e.target.value !== 'Outro') setRespRoleOther(''); }}
@@ -1315,7 +1309,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                 )}
                               </div>
                               <div className="space-y-1 md:col-span-2">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">E-mail *</label>
+                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">E-mail <span className="text-red-400">*</span></label>
                                 <input type="email" inputMode="email" value={respEmail} onChange={(e) => { setRespEmail(e.target.value); clearError('respEmail'); }} placeholder="Ex: contato@suabanda.com" className={inputClass('respEmail', "w-full bg-[#05070B] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E3B552] placeholder-gray-600 focus:ring-2 focus:ring-[#E3B552]/30 focus-visible:ring-2 focus-visible:ring-[#E3B552]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05070B] transition-colors")} required />
                                 {fieldError('respEmail')}
                                 <span className="text-[10px] text-gray-500 font-mono block">Usado para confirmar a matrícula e comunicados oficiais do concurso.</span>
@@ -1351,32 +1345,27 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1">
-                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">Nome Completo</label>
+                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">Nome Completo <span className="text-red-400">*</span></label>
                                       <input type="text" value={newMemberName} onChange={(newE) => { setNewMemberName(newE.target.value); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberName; return c; }); }} className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberName ? 'border-red-500/60' : 'border-white/10'}`} />
                                       {memberErrors.newMemberName && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberName}</p>}
                                     </div>
                                     <div className="space-y-1">
-                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">CPF</label>
-                                      <input type="text" value={newMemberCpf} onChange={(newE) => { setNewMemberCpf(applyCpfMask(newE.target.value)); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberCpf; return c; }); }} className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberCpf ? 'border-red-500/60' : 'border-white/10'}`} maxLength={14} />
-                                      {memberErrors.newMemberCpf && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberCpf}</p>}
-                                    </div>
-                                    <div className="space-y-1">
-                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">Nascimento (DD/MM/AAAA)</label>
+                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">Nascimento (DD/MM/AAAA) <span className="text-red-400">*</span></label>
                                       <input type="text" value={newMemberBirth} onChange={(newE) => { setNewMemberBirth(applyDateMask(newE.target.value)); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberBirth; return c; }); }} className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberBirth ? 'border-red-500/60' : 'border-white/10'}`} maxLength={10} />
                                       {memberErrors.newMemberBirth && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberBirth}</p>}
                                     </div>
                                     <div className="space-y-1">
-                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">WhatsApp *</label>
+                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">WhatsApp <span className="text-red-400">*</span></label>
                                       <input type="tel" value={newMemberPhone} onChange={(newE) => { setNewMemberPhone(newE.target.value); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberPhone; return c; }); }} placeholder="(21) 99999-9999" className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberPhone ? 'border-red-500/60' : 'border-white/10'}`} maxLength={15} />
                                       {memberErrors.newMemberPhone && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberPhone}</p>}
                                     </div>
                                     <div className="space-y-1">
-                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">E-mail *</label>
+                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">E-mail <span className="text-red-400">*</span></label>
                                       <input type="email" value={newMemberEmail} onChange={(newE) => { setNewMemberEmail(newE.target.value); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberEmail; return c; }); }} placeholder="voce@email.com" className={`w-full bg-[#05070B] border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#E3B552] ${memberErrors.newMemberEmail ? 'border-red-500/60' : 'border-white/10'}`} autoComplete="email" />
                                       {memberErrors.newMemberEmail && <p className="text-[10px] text-red-400 font-mono">⚠ {memberErrors.newMemberEmail}</p>}
                                     </div>
                                     <div className="space-y-1 sm:col-span-2">
-                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">Função na banda *</label>
+                                      <label className="block font-mono text-[10px] text-gray-400 uppercase">Função na banda <span className="text-red-400">*</span></label>
                                       <select
                                         value={newMemberRole}
                                         onChange={(newE) => { setNewMemberRole(newE.target.value); if (newE.target.value !== 'Outro') setNewMemberRoleOther(''); setMemberErrors(prev => { const c = { ...prev }; delete c.newMemberRole; return c; }); }}
@@ -1426,7 +1415,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                     <span className="w-8 h-8 rounded-full bg-[#E3B552]/10 text-[#F0C265] flex items-center justify-center font-mono text-xs font-bold border border-[#E3B552]/20">{index + 2}</span>
                                     <div>
                                       <span className="text-xs sm:text-sm font-bold text-white block">{m.name || `Integrante ${index + 2}`}</span>
-                                      <span className="font-mono text-[10px] text-gray-400 uppercase block mt-0.5">Integrante {index + 2} • {m.role || 'não informado'} • CPF: {m.cpf || '---'} • Nascimento: {m.birth || '---'}</span>
+                                      <span className="font-mono text-[10px] text-gray-400 uppercase block mt-0.5">Integrante {index + 2} • {m.role || 'não informado'} • Nascimento: {m.birth || '---'}</span>
                                     </div>
                                   </div>
                                   <button type="button" onClick={() => removeQuizMember(index)} className="text-xs text-red-500 hover:text-red-400 font-bold uppercase font-mono tracking-wider flex items-center gap-1">
@@ -1525,7 +1514,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                               <label className="flex items-start gap-3 cursor-pointer">
                                 <input type="checkbox" checked={acceptRules} onChange={(e) => { setAcceptRules(e.target.checked); clearError('acceptRules'); }} className="mt-1 w-4 h-4 text-[#F0C265] bg-black border-[#2E2820] rounded focus:ring-[#F0C265]" />
                                 <span className="text-xs text-gray-300 leading-relaxed font-normal">
-                                  Declaramos ciência das regras do concurso e autorizamos a captação de áudio e vídeo da apresentação, concordando com as etapas.
+                                  <span className="text-red-400">*</span> Declaramos ciência das regras do concurso e autorizamos a captação de áudio e vídeo da apresentação, concordando com as etapas.
                                 </span>
                               </label>
                               {fieldError('acceptRules')}
