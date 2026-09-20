@@ -17,10 +17,10 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const code = String(body.code || '').replace(/[^a-z0-9]/g, '').slice(0, 12);
-    const email = String(body.email || '').slice(0, 120);
-    const name = String(body.name || '').slice(0, 80);
+    let email = String(body.email || '').slice(0, 120);
+    let name = String(body.name || '').slice(0, 80);
     const memberId = String(body.memberId || '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 40);
-    if (!code || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    if (!code || (!memberId && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))) {
       return NextResponse.json({ ok: false, error: 'dados_invalidos' }, { status: 400 });
     }
 
@@ -42,18 +42,24 @@ export async function POST(req: NextRequest) {
     }
 
     // MODO INTEGRANTE: cobranca individual da parte dele (convite)
-    let membro: { id: string; name: string; payment_status: string | null; claimed_at: string | null } | null = null;
-    type MembroPix = { id: string; name: string; payment_status: string | null; claimed_at: string | null };
+    let membro: { id: string; name: string; cpf: string; email: string; payment_status: string | null; claimed_at: string | null } | null = null;
+    type MembroPix = { id: string; name: string; cpf: string; email: string; payment_status: string | null; claimed_at: string | null };
     if (memberId) {
       const { data: m } = await supabase
         .from('members')
-        .select('id, name, payment_status, claimed_at')
+        .select('id, name, cpf, email, payment_status, claimed_at')
         .eq('id', memberId)
         .eq('project_id', project.id)
         .eq('is_responsible', false)
         .maybeSingle();
       if (!m) return NextResponse.json({ ok: false, error: 'vaga_invalida' }, { status: 404 });
       if (m.payment_status === 'paid') return NextResponse.json({ ok: true, alreadyPaid: true });
+      if (m.claimed_at === null) return NextResponse.json({ ok: false, error: 'vaga_nao_confirmada' }, { status: 409 });
+      // payer do MP exige um e-mail: usa o do integrante se existir, senao um identificador de cobranca
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        email = m.email && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m.email) ? m.email : `integrante.${memberId.slice(0, 8)}@cobranca.pedraprofana.com`;
+      }
+      if (!name) name = m.name;
       membro = m as unknown as MembroPix;
     }
 
