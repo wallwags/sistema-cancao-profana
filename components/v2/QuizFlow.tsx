@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { Trash2, Plus, X, Copy, Share2, Ticket, MessageCircle, Mic, Video, Apple } from 'lucide-react';
+import { Trash2, Plus, X, Copy, Share2, Ticket, MessageCircle, Mic, Video, Apple, Loader2 } from 'lucide-react';
 import Script from 'next/script';
 import { supabase } from '../../lib/supabase';
 import {
@@ -1524,10 +1524,17 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
               {/* ACOES PRINCIPAIS: copiar e duvidas, acima do QR */}
               <div className="space-y-2.5">
-                <button onClick={copyPixCode} className="w-full flex items-center justify-center gap-2 font-display font-black text-sm uppercase tracking-widest text-black btn-gold-shimmer py-4 rounded-2xl active:scale-[0.98] transition-transform">
-                  <Copy className="w-4 h-4" />
-                  {pixCopied ? 'Código copiado!' : 'Copiar código Pix'}
-                </button>
+                {pixData?.qr ? (
+                  <button onClick={copyPixCode} className="w-full flex items-center justify-center gap-2 font-mono font-black text-sm uppercase tracking-widest text-black bg-lime py-4 rounded-2xl active:scale-[0.98] transition-transform shadow-[0_0_25px_rgba(163,230,53,0.3)]">
+                    <Copy className="w-4 h-4" />
+                    {pixCopied ? 'Código copiado!' : 'Copiar código Pix'}
+                  </button>
+                ) : (
+                  <button disabled className="w-full flex items-center justify-center gap-2.5 font-mono font-bold text-sm uppercase tracking-widest text-gray-200 bg-white/10 py-4 rounded-2xl cursor-wait">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Preparando código Pix...
+                  </button>
+                )}
                 {suporteWa && (
                   <a
                     href={suporteWa}
