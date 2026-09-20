@@ -459,7 +459,6 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     if (step === 2) {
       if (!projectBio.trim()) errs.projectBio = 'Escreva uma biografia para avaliação dos jurados.';
       if (projectInstagram.replace(/@/g, '').trim().length < 2) errs.projectInstagram = 'Informe o @ do Instagram da banda.';
-      if (!projectPhotoName) errs.projectPhotoName = 'Envie a foto oficial do projeto.';
       if (projectVideoLink.trim() && !projectVideoLink.includes('youtube.com') && !projectVideoLink.includes('youtu.be')) errs.projectVideoLink = 'Cole um link do YouTube válido (ou deixe vazio).';
     }
     if (step === 3) {
@@ -1225,11 +1224,11 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                 <span className="text-xs text-gray-500 font-mono block text-right mt-1 font-bold">{projectBio.length}/400 caracteres</span>
                               </div>
                               <div className="space-y-1">
-                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Foto Oficial <span className="text-red-400">*</span></label>
+                                <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Foto Oficial <span className="text-[10px] text-gray-500 font-normal normal-case tracking-normal">(opcional)</span></label>
 
                                 {/* Real-time browser canvas compression upload */}
                                 <div className={`border border-dashed rounded-xl p-5 text-center cursor-pointer bg-black/40 relative ${errors.projectPhotoName ? 'border-red-500/60' : 'border-white/10 hover:border-[#E3B552]'}`}>
-                                  <input type="file" onChange={handleImageCompression} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" required />
+                                  <input type="file" onChange={handleImageCompression} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" />
                                   {projectPhotoName ? (
                                     <span className="text-sm text-[#10B981] font-bold">✓ Foto Selecionada: {projectPhotoName}</span>
                                   ) : (
