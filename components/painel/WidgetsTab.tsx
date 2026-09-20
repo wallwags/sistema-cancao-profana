@@ -23,7 +23,6 @@ const CHAVES: Array<{ key: string; label: string; kind: 'bool' | 'text' | 'url' 
   { key: 'widget_visitantes_min', label: 'Visitantes agora — mínimo', kind: 'number', dica: 'Padrão 25.' },
   { key: 'widget_visitantes_max', label: 'Visitantes agora — máximo', kind: 'number', dica: 'Padrão 78.' },
   { key: 'social_vagas_pct', label: 'Selo "X% das vagas já preenchidas"', kind: 'number', dica: 'Número fictício exibido acima da tabela de lotes. Padrao 40. 0 = oculta o selo.' },
-  { key: 'suporte_whatsapp_url', label: 'WhatsApp "Tenho dúvidas" (quiz)', kind: 'url', dica: 'Link direto (wa.me/5521999999999) ou convite do grupo. Vazio = usa o link do Grupo VIP.' },
 ];
 
 export default function WidgetsTab({ settings, loadSettings, supabase, Field, Notice }: WidgetsTabProps) {
@@ -97,6 +96,32 @@ export default function WidgetsTab({ settings, loadSettings, supabase, Field, No
           {msg && <Notice kind={msg.kind}>{msg.text}</Notice>}
           <button type="button" onClick={salvarTudo} disabled={busy} className={btnGold}>
             {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Salvar widgets'}
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-[#25D366]/30 rounded-2xl p-5 space-y-4">
+        <div className="border-b border-white/5 pb-3">
+          <h3 className="font-display font-bold text-white uppercase">💬 WhatsApp "Tenho dúvidas"</h3>
+          <p className="text-xs text-gray-400 leading-snug mt-1">
+            Aparece como botão verde durante o quiz e na tela de sucesso. Deixe vazio para usar o link do Grupo VIP.
+          </p>
+        </div>
+        <Field label="Link do WhatsApp de atendimento (wa.me/5521999999999 ou convite)">
+          <input className={inputCls} value={val('suporte_whatsapp_url')} onChange={(e) => setVal('suporte_whatsapp_url', e.target.value)} placeholder="https://wa.me/5521999999999" />
+        </Field>
+        <div className="flex justify-end items-center gap-3">
+          {msg && <Notice kind={msg.kind}>{msg.text}</Notice>}
+          <button type="button" onClick={async () => {
+            setBusy(true);
+            const { error } = await supabase.rpc('staff_save_setting', { p_key: 'suporte_whatsapp_url', p_value: (drafts['suporte_whatsapp_url'] ?? settings['suporte_whatsapp_url'] ?? '').trim() });
+            setBusy(false);
+            if (error) { setMsg({ kind: 'err', text: 'Erro: ' + error.message }); return; }
+            await loadSettings();
+            setDrafts(p => { const c = { ...p }; delete c.suporte_whatsapp_url; return c; });
+            setMsg({ kind: 'ok', text: 'Link do atendimento salvo.' });
+          }} disabled={busy} className={btnGold}>
+            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Salvar atendimento'}
           </button>
         </div>
       </div>

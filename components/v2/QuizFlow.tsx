@@ -1274,42 +1274,45 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                             <p className="text-sm text-gray-100">Confirme os dados consolidados do sinal.</p>
 
                             <div className="space-y-4 text-sm font-mono">
-                              {/* IDENTIDADE DA BANDA + ANEL DE PROGRESSO */}
-                              <div className="flex items-center gap-3.5 bg-white/[0.08] border border-white/30 rounded-2xl p-4">
-                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black font-display font-black text-lg flex items-center justify-center shadow-lg shrink-0">
-                                  {iniciais(projectName)}
+                              {/* BANDA: identidade, equipe e progresso em um bloco */}
+                              <div className="bg-white/[0.08] border border-white/30 rounded-2xl p-4 space-y-3.5">
+                                <div className="flex items-center gap-3.5">
+                                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-b from-[#FFF2D4] via-[#F0C265] to-[#B88A28] text-black font-display font-black text-lg flex items-center justify-center shadow-lg shrink-0">
+                                    {iniciais(projectName)}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <span className="font-display font-black text-white text-base block truncate">{projectName || 'Banda'}</span>
+                                    <span className="flex items-center gap-2 flex-wrap mt-1">
+                                      {projectStyle && <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/30 px-2 py-0.5 rounded-full">{projectStyle}</span>}
+                                      {projectInstagram && <span className="font-mono text-[10px] text-gray-100">@{projectInstagram}</span>}
+                                    </span>
+                                  </div>
+                                  <div className="relative shrink-0">
+                                    <svg viewBox="0 0 48 48" className="w-12 h-12 -rotate-90">
+                                      <circle cx="24" cy="24" r="20" stroke="rgba(255,255,255,0.14)" strokeWidth="5" fill="none" />
+                                      <circle cx="24" cy="24" r="20" stroke="#F0C265" strokeWidth="5" fill="none" strokeLinecap="round" strokeDasharray={`${(pct / 100) * 125.6} 125.6`} />
+                                    </svg>
+                                    <span className="absolute inset-0 flex items-center justify-center font-mono text-[10px] font-black text-[#F0C265]">{pct}%</span>
+                                  </div>
                                 </div>
-                                <div className="min-w-0 flex-1">
-                                  <span className="font-display font-black text-white text-base block truncate">{projectName || 'Banda'}</span>
-                                  <span className="flex items-center gap-2 flex-wrap mt-1">
-                                    {projectStyle && <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#F0C265] bg-[#F0C265]/10 border border-[#F0C265]/30 px-2 py-0.5 rounded-full">{projectStyle}</span>}
-                                    {projectInstagram && <span className="font-mono text-[10px] text-gray-100">@{projectInstagram}</span>}
-                                  </span>
-                                </div>
-                                <div className="relative shrink-0">
-                                  <svg viewBox="0 0 48 48" className="w-12 h-12 -rotate-90">
-                                    <circle cx="24" cy="24" r="20" stroke="rgba(255,255,255,0.12)" strokeWidth="5" fill="none" />
-                                    <circle cx="24" cy="24" r="20" stroke="#F0C265" strokeWidth="5" fill="none" strokeLinecap="round" strokeDasharray={`${(pct / 100) * 125.6} 125.6`} />
-                                  </svg>
-                                  <span className="absolute inset-0 flex items-center justify-center font-mono text-[10px] font-black text-[#F0C265]">{pct}%</span>
+                                <div className="border-t border-white/15 pt-3">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="font-mono text-[10px] text-gray-100 uppercase tracking-widest font-bold">Equipe · {selectedMembers} pessoas</span>
+                                    <span className="font-mono text-[10px] text-gray-100">{selectedMembers - 1 - membersList.filter(m => m.name.trim()).length > 0 ? `${selectedMembers - 1 - membersList.filter(m => m.name.trim()).length} nome(s) pendente(s)` : 'roster completo'}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-9 h-9 rounded-full bg-[#F0C265]/15 border-2 border-[#F0C265] text-[#F0C265] font-display font-black text-[10px] flex items-center justify-center shrink-0" title={`${respName || 'Líder'} (líder)`}>{iniciais(respName)}</div>
+                                    {membersList.map((m, i) => (
+                                      <div key={i} className={`w-9 h-9 rounded-full font-display font-black text-[10px] flex items-center justify-center shrink-0 ${m.name.trim() ? 'bg-white/10 border border-white/30 text-gray-100' : 'border border-dashed border-white/30 text-gray-300'}`} title={m.name || `Integrante ${i + 2}`}>{iniciais(m.name) || '?'}</div>
+                                    ))}
+                                  </div>
+                                  <div className="font-mono text-[10px] text-gray-100 leading-snug mt-2 truncate">
+                                    <strong className="text-[#F0C265]">{respName || '—'}</strong> (líder){membersList.filter(m => m.name.trim()).length > 0 && <> · {membersList.filter(m => m.name.trim()).map(m => m.name.trim()).join(' · ')}</>}
+                                  </div>
                                 </div>
                               </div>
 
-                              {/* EQUIPE: avatar stack com iniciais */}
-                              <div className="bg-white/[0.08] border border-white/30 rounded-2xl p-4 space-y-2.5">
-                                <span className="font-mono text-[10px] text-gray-100 uppercase tracking-widest font-bold block">Equipe inscrita · {selectedMembers} pessoas</span>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-10 h-10 rounded-full bg-[#F0C265]/15 border-2 border-[#F0C265] text-[#F0C265] font-display font-black text-xs flex items-center justify-center shrink-0" title={`${respName || 'Líder'} (líder)`}>{iniciais(respName)}</div>
-                                  {membersList.map((m, i) => (
-                                    <div key={i} className="w-10 h-10 rounded-full bg-white/10 border border-white/30 text-gray-100 font-display font-black text-xs flex items-center justify-center shrink-0" title={m.name}>{iniciais(m.name)}</div>
-                                  ))}
-                                </div>
-                                <div className="font-mono text-[10px] text-gray-100 leading-snug">
-                                  <strong className="text-[#F0C265]">{respName || '—'}</strong> (líder){membersList.filter(m => m.name.trim()).length > 0 && <> · {membersList.filter(m => m.name.trim()).map(m => m.name.trim()).join(' · ')}</>}
-                                </div>
-                              </div>
-
-                              {/* LOTE */}
+                                                            {/* LOTE */}
                               <div className="flex justify-between items-center bg-white/[0.08] border border-white/30 rounded-2xl px-4 py-3">
                                 <span className="font-mono text-[10px] text-gray-100 uppercase tracking-widest font-bold">Lote vigente</span>
                                 <span className="font-mono text-xs font-black text-[#F0C265] uppercase">{activeLoteName} · R$ {Number.isInteger(unitFinal) ? unitFinal : unitFinal.toFixed(2).replace('.', ',')}/pessoa</span>
@@ -1320,11 +1323,17 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                                   <span className="font-mono text-sm text-[#F0C265] font-bold block mb-2.5">RETORNO GARANTIDO INCLUÍDO:</span>
                                   <div className="grid grid-cols-1 gap-2.5">
                                     {[
-                                      { i: <Mic className="w-4 h-4" />, t: 'Apresentação ao vivo no Estúdio Pedra Profana', v: 'R$ 1.500' },
-                                      { i: <Video className="w-4 h-4" />, t: 'Gravação profissional da live', v: 'Incluída' },
+                                      { i: <Mic className="w-4 h-4" />, t: 'Apresentação ao vivo', d: 'Estúdio Pedra Profana', v: 'R$ 1.500' },
+                                      { i: <Video className="w-4 h-4" />, t: 'Gravação profissional', d: 'Áudio e vídeo da live', v: 'Incluída' },
                                     ].map(b => (
-                                      <div key={b.t} className="bg-white/[0.08] border border-white/30 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
-                                        <span className="flex items-center gap-2.5 text-xs text-gray-100 leading-snug"><span className="text-[#F0C265] shrink-0">{b.i}</span>{b.t}</span>
+                                      <div key={b.t} className="bg-gradient-to-b from-white/[0.10] to-white/[0.04] border border-white/25 rounded-xl px-3.5 py-3 flex items-center justify-between gap-2">
+                                        <span className="flex items-center gap-3 min-w-0">
+                                          <span className="w-9 h-9 rounded-xl bg-[#F0C265]/15 border border-[#F0C265]/40 text-[#F0C265] flex items-center justify-center shrink-0">{b.i}</span>
+                                          <span className="min-w-0">
+                                            <span className="block text-xs font-bold text-gray-100 leading-snug">{b.t}</span>
+                                            <span className="block font-mono text-[10px] text-gray-300 uppercase tracking-wider">{b.d}</span>
+                                          </span>
+                                        </span>
                                         <span className="text-right shrink-0">
                                           <span className="block text-[11px] text-gray-100 line-through leading-none">{b.v}</span>
                                           <span className="block text-[11px] text-[#10B981] font-black uppercase leading-tight">Grátis</span>
@@ -1451,7 +1460,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                           <button type="button" onClick={handleQuizNext} className="btn-gold-shimmer px-7 py-3 rounded uppercase border-none text-black flex-1 sm:flex-none">Continuar</button>
                         ) : (
                           <button type="button" onClick={handleLaunchCheckout} className="font-display font-black text-sm sm:text-base text-black bg-lime px-7 py-4 rounded-2xl uppercase border-none flex-1 tracking-wide shadow-[0_0_30px_rgba(163,230,53,0.35)] active:scale-[0.98] transition-transform">
-                            Garantir minha vaga
+                            Concluir inscrição
                           </button>
                         )}
                       </div>
@@ -1587,7 +1596,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F0C265] opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-[#F0C265]"></span>
                       </span>
-                      <span className="text-[11px] uppercase tracking-widest">Oferta garantida por</span>
+                      <span className="text-[11px] uppercase tracking-widest">Sua vaga garantida por</span>
                       <span className="text-sm text-[#F0C265]">{formatCheckoutTime(checkoutTimeLeft)}</span>
                     </div>
                   ) : (
@@ -1731,6 +1740,12 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   </div>
                 </div>
 
+                {/* Depoimento curto */}
+                <div className="bg-white/[0.06] border border-white/20 rounded-2xl px-4 py-3 text-left">
+                  <p className="text-xs text-gray-100 italic leading-relaxed">"Achei que fosse complicado, mas em 3 minutos a banda já estava garantida no concurso."</p>
+                  <span className="font-mono text-[10px] text-gray-300 uppercase tracking-wider block mt-1.5">— Banda do Cerrado · Goiânia, GO</span>
+                </div>
+
                 {/* Realistic Barcode Design */}
                 <div className="space-y-1">
                   <div className="h-9 bg-white/10 rounded px-4 flex items-center justify-between opacity-70 border border-white/25">
@@ -1769,22 +1784,25 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                 {inviteCode && (
                   <div className="space-y-3.5 bg-[#2B3550] border border-[#F0C265]/25 rounded-2xl p-5 text-left">
                     <span className="font-mono text-xs text-[#F0C265] uppercase tracking-widest font-black block">🔗 Link exclusivo da banda</span>
-                    {paymentMode === 'lider' ? (
-                      <>
-                        <p className="text-sm text-gray-100 leading-relaxed">Envie aos integrantes: cada um acessa, confirma os próprios dados e aparece no roster com a função dele. A parte de todos já está coberta pelo seu Pix.</p>
-                        <p className="text-sm text-white leading-snug">
-                          Banda <strong className="text-[#10B981]">ativa</strong> no concurso{bandResult ? <> · <strong className="text-[#F0C265]">{bandResult.pago}</strong>/<strong className="text-[#F0C265]">{bandResult.total}</strong> integrantes confirmados</> : ''}.
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-sm text-gray-100 leading-relaxed">Envie aos integrantes: cada um acessa, confirma os próprios dados e paga a parte dele.</p>
-                        <p className="text-sm text-white leading-snug">
-                          A banda ativa no concurso ao atingir <strong className="text-[#F0C265]">{bandResult?.minimo ?? 2} partes pagas</strong>
-                          {bandResult ? <> agora: <strong className="text-[#F0C265]">{bandResult.pago}</strong></> : ''}.
-                        </p>
-                      </>
-                    )}
+                    <p className="text-sm text-gray-100 leading-relaxed">
+                      {paymentMode === 'lider'
+                        ? 'Envie o link para os integrantes confirmarem os próprios dados no roster. As partes deles já estão cobertas pelo seu Pix.'
+                        : 'Envie o link para os integrantes confirmarem os próprios dados e pagarem a parte deles.'}
+                    </p>
+                    <div>
+                      <div className="flex justify-between items-baseline mb-1.5">
+                        <span className="font-mono text-[10px] text-gray-100 uppercase tracking-widest font-bold">Partes confirmadas</span>
+                        <span className="font-mono text-xs font-black text-white"><strong className="text-[#10B981]">{bandResult?.pago ?? 1}</strong>/{bandResult?.total ?? selectedMembers}</span>
+                      </div>
+                      <div className="h-2.5 bg-black/40 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-[#10B981] to-[#34D399] rounded-full transition-all" style={{ width: `${Math.min(100, Math.round(((bandResult?.pago ?? 1) / (bandResult?.total ?? selectedMembers)) * 100))}%` }} />
+                      </div>
+                      {(bandResult?.total ?? selectedMembers) - (bandResult?.pago ?? 1) > 0 && (
+                        <span className="font-mono text-[10px] text-gray-200 block mt-1.5 uppercase tracking-wider">
+                          Falta{((bandResult?.total ?? selectedMembers) - (bandResult?.pago ?? 1)) === 1 ? '' : 'm'} {(bandResult?.total ?? selectedMembers) - (bandResult?.pago ?? 1)} integrante{((bandResult?.total ?? selectedMembers) - (bandResult?.pago ?? 1)) === 1 ? '' : 's'} para ativar a banda
+                        </span>
+                      )}
+                    </div>
                     <div className="flex flex-col sm:flex-row gap-2.5">
                       <button
                         type="button"
@@ -1795,7 +1813,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                             setTimeout(() => setInviteCopied(false), 2500);
                           } catch { /* clipboard */ }
                         }}
-                        className="w-full sm:flex-1 font-mono text-sm font-bold text-white bg-white/[0.15] border border-white/[0.28] px-3 py-3 rounded-xl hover:bg-white/15 transition-colors uppercase"
+                        className="w-full sm:flex-1 font-mono text-sm font-bold text-white bg-white/10 border border-white/25 px-3 py-4 rounded-2xl hover:bg-white/15 transition-colors uppercase"
                       >
                         {inviteCopied ? '✓ Link copiado!' : 'Copiar link'}
                       </button>
@@ -1822,9 +1840,9 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   </button>
                   <a
                     href={inviteCode ? `/minha-inscricao?k=${inviteCode}` : '/v2'}
-                    className="w-full sm:w-1/2 btn-gold-shimmer px-4 py-3 rounded-full text-xs uppercase tracking-widest font-black text-black text-center"
+                    className="w-full sm:w-1/2 btn-gold-shimmer px-4 py-4 rounded-2xl text-sm uppercase tracking-widest font-black text-black text-center flex items-center justify-center gap-1.5"
                   >
-                    Ver minha inscrição
+                    Minha inscrição ›
                   </a>
                 </div>
               </div>
