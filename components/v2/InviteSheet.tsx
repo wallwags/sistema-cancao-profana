@@ -37,7 +37,7 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
   const cardRef = useRef<HTMLDivElement | null>(null);
   const dragStartY = useRef<number | null>(null);
 
-  const [phase, setPhase] = useState<'loading' | 'confirm' | 'pick' | 'cpf' | 'summary' | 'pix' | 'done'>('loading');
+  const [phase, setPhase] = useState<'loading' | 'confirm' | 'whats' | 'pick' | 'cpf' | 'summary' | 'pix' | 'done'>('loading');
   const [paymentMode, setPaymentMode] = useState<'individual' | 'lider'>('individual');
   const [data, setData] = useState<InviteData | null>(null);
   const [slotId, setSlotId] = useState<string | null>(null);
@@ -114,9 +114,14 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
     setPhase('cpf');
   };
 
+  const avancarDaEtapaWhats = () => {
+    setError('');
+    if (!isValidWhatsApp(whats)) { setError('Informe um WhatsApp válido com DDD.'); return; }
+    setPhase('pick');
+  };
+
   const concluir = async () => {
     setError('');
-    if (name.trim().length < 3) { setError('Informe seu nome completo.'); return; }
     if (!isValidWhatsApp(whats)) { setError('Informe um WhatsApp válido com DDD.'); return; }
     if (!isValidCPF(cpf)) { setError('CPF inválido. Confira os dígitos.'); return; }
     setBusy(true);
@@ -248,14 +253,26 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
         )}
 
         {/* 2. ESCOLHE O NOME (com funcao definida pelo lider) */}
+        {data && phase === 'whats' && (
+          <div className="space-y-4">
+            <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Seu WhatsApp</h3>
+            <p className="text-base text-gray-100 leading-relaxed">Você foi escalado pelo líder <strong className="text-[#F0C265]">{data.leader_first}</strong> na banda <strong className="text-[#F0C265]">{data.band}</strong>. Primeiro, seu contato direto.</p>
+            <div className="space-y-1 pt-1">
+              <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">WhatsApp <span className="text-red-400">*</span></label>
+              <input type="tel" inputMode="numeric" enterKeyHint="next" value={whats} onChange={(e) => { setWhats(applyPhoneMask(e.target.value)); setError(''); }} placeholder="(21) 90000-0000" autoComplete="tel" className={fieldCls(error && !isValidWhatsApp(whats) ? error : '')} />
+            </div>
+            {error && <p className="text-xs text-red-300 font-mono">{error}</p>}
+            <div className="flex gap-2.5 pt-2">
+              <button type="button" onClick={slideDownClose} className="font-mono text-xs font-bold text-gray-200 border border-white/25 bg-white/10 px-5 py-4 rounded-2xl uppercase">Voltar</button>
+              <button type="button" onClick={avancarDaEtapaWhats} className="flex-1 font-mono font-black text-sm sm:text-base text-black bg-lime px-7 py-4 rounded-2xl uppercase tracking-wide active:scale-[0.98] transition-transform">Continuar</button>
+            </div>
+          </div>
+        )}
+
         {data && phase === 'pick' && (
           <div className="space-y-4">
             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Quem é você?</h3>
-            <p className="text-base text-gray-100 leading-relaxed">Você foi escalado pelo líder <strong className="text-[#F0C265]">{data.leader_first}</strong>. Toque no seu nome:</p>
-            <div className="space-y-1">
-              <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Seu WhatsApp <span className="text-red-400">*</span></label>
-              <input type="tel" inputMode="numeric" enterKeyHint="next" value={whats} onChange={(e) => { setWhats(applyPhoneMask(e.target.value)); setError(''); }} placeholder="(21) 90000-0000" autoComplete="tel" className={fieldCls(error && !isValidWhatsApp(whats) ? error : '')} />
-            </div>
+            <p className="text-base text-gray-100 leading-relaxed">Agora toque no seu nome na lista:</p>
             <div className="space-y-2.5 pt-1">
               {data.slots.map(sl => (
                 <button

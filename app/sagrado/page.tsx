@@ -1255,7 +1255,7 @@ export default function SagradoPage() {
                                 <span className="flex items-center gap-2 shrink-0">
                                   {m.payment_status && (
                                     <span className={`font-mono text-[11px] font-bold uppercase px-2 py-0.5 rounded border ${m.payment_status === 'paid' ? 'text-[#10B981] border-[#10B981]/30 bg-[#10B981]/10' : 'text-amber-500 border-amber-500/30 bg-amber-500/10'}`}>
-                                      {m.payment_status === 'paid' ? 'parte paga' : m.claimed_at ? 'parte pendente' : 'não confirmado'}
+                                      {m.payment_status === 'paid' ? 'parte paga' : m.claimed_at ? 'confirmou · não pagou' : 'não apareceu'}
                                     </span>
                                   )}
                                   {canSubs && m.payment_status !== 'paid' && m.claimed_at && m.id && (
@@ -1265,7 +1265,7 @@ export default function SagradoPage() {
                                       setBusy(null);
                                       if (!error) await openDetail(p.id); else setMsg(`mem-${m.id}`, 'err', 'Erro ao confirmar.');
                                     }} disabled={busy === `mem-${m.id}`} className="bg-[#10B981] text-black font-mono text-[11px] font-bold px-2 py-1 rounded uppercase disabled:opacity-50">
-                                      {busy === `mem-${m.id}` ? '...' : 'Confirmar'}
+                                      {busy === `mem-${m.id}` ? '...' : 'Marcar como pago'}
                                     </button>
                                   )}
                                 </span>

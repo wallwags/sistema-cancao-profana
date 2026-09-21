@@ -786,7 +786,7 @@ export default function MinhaInscricaoPage() {
                       <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Integrante {i + 2} • CPF: {m.cpf_mask || 'aguardando'} • WhatsApp: {(m as { phone_mask?: string | null }).phone_mask || 'aguardando'}</span>
                       {m.payment_status && (
                         <span className={`font-mono text-xs uppercase font-bold block mt-0.5 ${m.payment_status === 'paid' ? 'text-[#10B981]' : 'text-amber-500'}`}>
-                          {m.payment_status === 'paid' ? (data.leader?.payment_status === 'paid' && !m.is_responsible ? '✓ Coberto pelo líder' : '✓ Parte paga') : (m.has_cpf ? '⏳ Parte pendente' : '⏳ Aguardando confirmação')}
+                          {m.payment_status === 'paid' ? (data.leader?.payment_status === 'paid' && !m.is_responsible ? '✓ Coberto pelo líder' : '✓ Parte paga') : (m.has_cpf ? '⏳ Confirmou · aguardando pagamento' : '⏳ Aguardando o integrante')}
                         </span>
                       )}
                     </div>
