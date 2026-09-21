@@ -529,7 +529,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       const { data: slotsData, error } = await supabase.rpc('get_invite', { p_code: similarRefCode.current });
       if (error || !slotsData) { setMineResult({ ok: false, msg: 'Não foi possível verificar a banda agora. Tente novamente.' }); return; }
       const livres = ((slotsData as { slots?: Array<{ id: string; name: string; claimed: boolean }> }).slots || []).filter(sl => !sl.claimed);
-      if (!livres.length) { setMineResult({ ok: false, msg: 'Todas as vagas desta banda já foram confirmadas.' }); return; }
+      if (!livres.length) { setMineResult({ ok: false, msg: 'Todas as vagas desta banda já foram pagas.' }); return; }
       const norm = (t: string) => (t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const partes = norm(membroNome).split(/\s+/).filter(Boolean);
       let melhor: { id: string; name: string } | null = null;

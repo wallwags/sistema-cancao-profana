@@ -132,7 +132,7 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
     if (err) {
       const m = err.message || '';
       setError(
-        m.includes('VAGA_JA_RECLAMADA') ? 'Essa vaga acabou de ser confirmada por outra pessoa. Escolha outra ou fale com o líder.' :
+        m.includes('VAGA_JA_PAGA') ? 'Essa vaga já foi paga. Fale com o líder se houver algo errado.' :
         m.includes('CPF_INVALIDO') ? 'CPF inválido.' :
         m.includes('MUITAS_TENTATIVAS') ? 'Muitas tentativas. Aguarde alguns minutos e tente de novo.' :
         'Não foi possível confirmar agora. Tente novamente.'
@@ -288,11 +288,11 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
                     {sl.role && <span className="font-mono text-[11px] text-gray-200 uppercase tracking-wider block">{sl.role}</span>}
                   </span>
                   {sl.claimed
-                    ? <span className="flex items-center gap-1 font-mono text-[11px] text-[#10B981] uppercase font-bold shrink-0"><Check className="w-3.5 h-3.5" /> confirmado</span>
+                    ? <span className="flex items-center gap-1 font-mono text-[11px] text-[#10B981] uppercase font-bold shrink-0"><Check className="w-3.5 h-3.5" /> pago ✓</span>
                     : <span className="font-mono text-[11px] text-[#F0C265] uppercase font-bold shrink-0">Sou eu ›</span>}
                 </button>
               ))}
-              {data.slots.length === 0 && <p className="text-sm text-gray-200 font-mono">Nenhuma vaga pendente nesta banda.</p>}
+              {data.slots.length === 0 && <p className="text-sm text-gray-200 font-mono">Todas as vagas desta banda já foram pagas.</p>}
             </div>
           </div>
         )}
