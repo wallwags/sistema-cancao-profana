@@ -53,7 +53,7 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
   const [result, setResult] = useState<{ pago: number; total: number; ativa: boolean } | null>(null);
 
   const totalTelas = 4; // confirmar, nome, cpf, resumo
-  const faseTela: Record<string, number> = { confirm: 1, pick: 2, cpf: 3, summary: 4, pix: 4, done: 4 };
+  const faseTela: Record<string, number> = { whats: 1, confirm: 2, pick: 3, cpf: 4, summary: 5, pix: 5, done: 5 };
   const pct = Math.min(100, Math.round(4 + Math.pow(Math.max(faseTela[phase] ?? 1, 1) / totalTelas, 0.6) * 96));
 
   useEffect(() => {
@@ -92,7 +92,7 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
       const { data: inv, error } = await supabase.rpc('get_invite', { p_code: inviteCode });
       if (error || !inv) { setError('Convite não encontrado ou inválido.'); setData(null); return; }
       setData(inv as unknown as InviteData);
-      setPhase(startPhase === 'pick' ? 'pick' : 'confirm');
+      setPhase('whats'); // WhatsApp sempre primeiro
       fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ref: inviteCode, event: 'invite_opened' }) }).catch(() => {});
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,7 +122,6 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
 
   const concluir = async () => {
     setError('');
-    if (!isValidWhatsApp(whats)) { setError('Informe um WhatsApp válido com DDD.'); return; }
     if (!isValidCPF(cpf)) { setError('CPF inválido. Confira os dígitos.'); return; }
     setBusy(true);
     const { error: err } = await supabase.rpc('claim_member_slot', {
@@ -238,21 +237,6 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
         )}
 
         {/* 1. CONFIRMA */}
-        {data && phase === 'confirm' && (
-          <div className="space-y-4 text-center">
-            <span className="inline-block bg-[#F0C265]/15 text-[#F0C265] border border-[#F0C265]/30 font-mono text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full">Convite de banda</span>
-            <h2 className="font-display font-black text-2xl text-white uppercase leading-tight">
-              Você faz parte da <span className="text-[#F0C265]">{data.band}</span>?
-            </h2>
-            <p className="text-base text-gray-100">{data.style || 'não informado'} • escalado por {data.leader_first}</p>
-            <div className="flex flex-col gap-2.5 pt-1">
-              <button onClick={goConfirm} className="w-full flex items-center justify-center font-mono font-black text-sm sm:text-base text-black bg-lime px-7 py-4 rounded-2xl border-none tracking-wide shadow-[0_0_30px_rgba(163,230,53,0.35)] active:scale-[0.98] transition-transform uppercase">Sim, sou integrante</button>
-              <button onClick={slideDownClose} className="font-mono text-xs font-bold text-gray-300 border border-white/25 py-3 rounded-full hover:bg-white/10 transition-colors uppercase">Não fui eu</button>
-            </div>
-          </div>
-        )}
-
-        {/* 2. ESCOLHE O NOME (com funcao definida pelo lider) */}
         {data && phase === 'whats' && (
           <div className="space-y-4">
             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Seu WhatsApp</h3>
@@ -269,6 +253,21 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
           </div>
         )}
 
+        {data && phase === 'confirm' && (
+          <div className="space-y-4 text-center">
+            <span className="inline-block bg-[#F0C265]/15 text-[#F0C265] border border-[#F0C265]/30 font-mono text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full">Convite de banda</span>
+            <h2 className="font-display font-black text-2xl text-white uppercase leading-tight">
+              Você faz parte da <span className="text-[#F0C265]">{data.band}</span>?
+            </h2>
+            <p className="text-base text-gray-100">{data.style || 'não informado'} • escalado por {data.leader_first}</p>
+            <div className="flex flex-col gap-2.5 pt-1">
+              <button onClick={goConfirm} className="w-full flex items-center justify-center font-mono font-black text-sm sm:text-base text-black bg-lime px-7 py-4 rounded-2xl border-none tracking-wide shadow-[0_0_30px_rgba(163,230,53,0.35)] active:scale-[0.98] transition-transform uppercase">Sim, sou integrante</button>
+              <button onClick={slideDownClose} className="font-mono text-xs font-bold text-gray-300 border border-white/25 py-3 rounded-full hover:bg-white/10 transition-colors uppercase">Não fui eu</button>
+            </div>
+          </div>
+        )}
+
+        {/* 2. ESCOLHE O NOME (com funcao definida pelo lider) */}
         {data && phase === 'pick' && (
           <div className="space-y-4">
             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Quem é você?</h3>
