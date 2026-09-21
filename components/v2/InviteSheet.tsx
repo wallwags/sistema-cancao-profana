@@ -7,7 +7,7 @@ import gsap from 'gsap';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import { X, Check, Users, Loader2, Copy, MessageCircle } from 'lucide-react';
-import { applyCpfMask, isValidCPF } from '../../lib/validators';
+import { applyCpfMask, applyPhoneMask, isValidCPF, isValidWhatsApp } from '../../lib/validators';
 
 interface Slot {
   id: string;
@@ -45,6 +45,7 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
   const [busy, setBusy] = useState(false);
   const [name, setName] = useState('');
   const [cpf, setCpf] = useState('');
+  const [whats, setWhats] = useState('');
   const [pix, setPix] = useState<{ paymentId: string; qr: string | null; qrBase64: string | null; amount: number } | null>(null);
   const [pixCopied, setPixCopied] = useState(false);
   const [polling, setPolling] = useState(false);
@@ -116,11 +117,12 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
   const concluir = async () => {
     setError('');
     if (name.trim().length < 3) { setError('Informe seu nome completo.'); return; }
+    if (!isValidWhatsApp(whats)) { setError('Informe um WhatsApp válido com DDD.'); return; }
     if (!isValidCPF(cpf)) { setError('CPF inválido. Confira os dígitos.'); return; }
     setBusy(true);
     const { error: err } = await supabase.rpc('claim_member_slot', {
       p_code: inviteCode, p_member_id: slotId,
-      p_name: name.trim(), p_cpf: cpf, p_birth: '', p_phone: '', p_email: ''
+      p_name: name.trim(), p_cpf: cpf, p_birth: '', p_phone: whats, p_email: ''
     });
     setBusy(false);
     if (err) {
@@ -250,6 +252,10 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
           <div className="space-y-4">
             <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">Quem é você?</h3>
             <p className="text-base text-gray-100 leading-relaxed">Você foi escalado pelo líder <strong className="text-[#F0C265]">{data.leader_first}</strong>. Toque no seu nome:</p>
+            <div className="space-y-1">
+              <label className="block font-mono text-sm text-[#F0C265] font-bold uppercase">Seu WhatsApp <span className="text-red-400">*</span></label>
+              <input type="tel" inputMode="numeric" enterKeyHint="next" value={whats} onChange={(e) => { setWhats(applyPhoneMask(e.target.value)); setError(''); }} placeholder="(21) 90000-0000" autoComplete="tel" className={fieldCls(error && !isValidWhatsApp(whats) ? error : '')} />
+            </div>
             <div className="space-y-2.5 pt-1">
               {data.slots.map(sl => (
                 <button
@@ -305,7 +311,7 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
                 <span className="font-mono text-[10px] text-[#10B981] font-bold uppercase">{selectedSlot?.role || 'Integrante'}</span>
               </div>
               <p className="font-display font-black text-white text-lg leading-tight">{name}</p>
-              <p className="font-mono text-xs text-gray-200">{cpf}</p>
+              <p className="font-mono text-xs text-gray-200">{whats} · {cpf}</p>
               <div className="border-t border-white/15 pt-3 font-mono text-xs text-gray-100 space-y-1">
                 <p><span className="text-gray-300 uppercase text-[10px] tracking-widest block">Banda:</span> <strong className="text-white text-sm">{data.band}</strong> · liderada por {data.leader_first}</p>
                 <p><span className="text-gray-300 uppercase text-[10px] tracking-widest block">Condição solidária:</span> {selectedSlotCount}kg de alimento na entrada do estúdio</p>

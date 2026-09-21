@@ -490,7 +490,7 @@ export default function MinhaInscricaoPage() {
                   <button
                     onClick={async () => {
                       try {
-                        await navigator.clipboard.writeText(`${window.location.origin}/minha-inscricao?k=${data.invite_code}`);
+                        await navigator.clipboard.writeText(`${window.location.origin}/?b=${data.invite_code}`);
                         setLinkCopied(true);
                         setTimeout(() => setLinkCopied(false), 2500);
                       } catch { /* clipboard */ }
@@ -727,22 +727,20 @@ export default function MinhaInscricaoPage() {
             <div className="bg-[#10B981]/10 border border-[#10B981]/40 rounded-2xl p-5 space-y-3">
               <span className="font-mono text-xs text-[#10B981] uppercase tracking-widest font-black block">🔗 Convide os integrantes para confirmar presença</span>
               <p className="text-sm text-gray-200 leading-relaxed">
-                No modo atual, o seu Pix cobre a parte de todos. Cada integrante acessa este link, confirma o CPF
-                (o mesmo que você escalou) e aparece no roster com a função dela na banda.
-              </p>
+                No modo atual, o seu Pix cobre a parte de todos. Cada integrante acessa este link, confirma o próprio WhatsApp, nome e CPF, e aparece no roster com a função dela na banda.</p>
               <div className="flex flex-col sm:flex-row gap-2.5">
                 <button
                   type="button"
                   onClick={async () => {
                     try {
-                      await navigator.clipboard.writeText(`${window.location.origin}/minha-inscricao?k=${data.invite_code}`);
+                      await navigator.clipboard.writeText(`${window.location.origin}/?b=${data.invite_code}`);
                       setLinkCopied(true);
                       setTimeout(() => setLinkCopied(false), 2500);
                     } catch { /* clipboard */ }
                   }}
                   className="w-full sm:flex-1 font-mono text-xs font-bold text-white bg-white/10 border border-white/15 px-3 py-3 rounded-xl uppercase hover:bg-white/15 transition-colors"
                 >
-                  {linkCopied ? '✓ Link copiado!' : 'Copiar link de confirmação'}
+                  {linkCopied ? '✓ Link copiado!' : 'Copiar link de convite'}
                 </button>
                 <a
                   href={`/api/wa/${data.invite_code}`}
@@ -785,7 +783,7 @@ export default function MinhaInscricaoPage() {
                     <span className="w-6 h-6 rounded-full bg-[#E3B552]/10 text-[#F0C265] flex items-center justify-center font-mono text-[11px] font-bold border border-[#E3B552]/20">{i + 2}</span>
                     <div>
                       <span className="text-sm font-bold text-white block">{m.name}</span>
-                      <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Integrante {i + 2} • CPF: {m.cpf_mask || 'aguardando confirmação'}</span>
+                      <span className="font-mono text-xs text-gray-400 tracking-wider uppercase block mt-0.5">Integrante {i + 2} • CPF: {m.cpf_mask || 'aguardando'} • WhatsApp: {(m as { phone_mask?: string | null }).phone_mask || 'aguardando'}</span>
                       {m.payment_status && (
                         <span className={`font-mono text-xs uppercase font-bold block mt-0.5 ${m.payment_status === 'paid' ? 'text-[#10B981]' : 'text-amber-500'}`}>
                           {m.payment_status === 'paid' ? (data.leader?.payment_status === 'paid' && !m.is_responsible ? '✓ Coberto pelo líder' : '✓ Parte paga') : (m.has_cpf ? '⏳ Parte pendente' : '⏳ Aguardando confirmação')}
