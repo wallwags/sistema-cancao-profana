@@ -176,6 +176,7 @@ export default function SagradoPage() {
   const [newFaq, setNewFaq] = useState({ question: '', answer: '' });
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
   const [detail, setDetail] = useState<{ proj: Record<string, unknown> | null; members: MemberFull[]; sub: Record<string, unknown> | null; subsTotal: number; scores: ScoreView[]; member_edits: Array<Record<string, unknown>>; invite_code: string | null; whatsapp_clicks: number } | null>(null);
   const [ownScores, setOwnScores] = useState<Record<string, JuryDraft>>({});
   const [juryDraft, setJuryDraft] = useState<Record<string, JuryDraft>>({});
@@ -1267,6 +1268,24 @@ export default function SagradoPage() {
                                     }} disabled={busy === `mem-${m.id}`} className="bg-[#10B981] text-black font-mono text-[11px] font-bold px-2 py-1 rounded uppercase disabled:opacity-50">
                                       {busy === `mem-${m.id}` ? '...' : 'Marcar como pago'}
                                     </button>
+                                  )}
+                                  {isDev && m.payment_status !== 'paid' && m.id && (
+                                    removing === m.id ? (
+                                      <span className="flex items-center gap-1">
+                                        <button type="button" onClick={async () => {
+                                          setBusy(`rm-${m.id}`);
+                                          const { error } = await supabase.rpc('staff_remove_member', { p_member_id: m.id });
+                                          setBusy(null);
+                                          if (error) { setMsg(`rm-${m.id}`, 'err', 'Erro: ' + error.message); return; }
+                                          setRemoving(null);
+                                          await openDetail(p.id);
+                                          setMsg(`rm-${m.id}`, 'ok', 'Integrante removido.');
+                                        }} disabled={busy === `rm-${m.id}`} className="bg-red-600 text-white font-mono text-[11px] font-bold px-2.5 py-1 rounded uppercase">Confirmar remoção</button>
+                                        <button onClick={() => setRemoving(null)} className="text-gray-400 hover:text-white px-1">×</button>
+                                      </span>
+                                    ) : (
+                                      <button onClick={() => setRemoving(m.id!)} className="font-mono text-[11px] font-bold text-red-400/80 hover:text-red-400 uppercase border border-red-500/30 px-2 py-1 rounded">Excluir</button>
+                                    )
                                   )}
                                 </span>
                                 <span className="font-mono text-[11px] text-gray-500">#{i + 1}</span>

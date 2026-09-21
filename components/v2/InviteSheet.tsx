@@ -330,7 +330,7 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
               <p className="font-mono text-xs text-gray-200">{whats} · {cpf}</p>
               <div className="border-t border-white/15 pt-3 font-mono text-xs text-gray-100 space-y-1">
                 <p><span className="text-gray-300 uppercase text-[10px] tracking-widest block">Banda:</span> <strong className="text-white text-sm">{data.band}</strong> · liderada por {data.leader_first}</p>
-                <p><span className="text-gray-300 uppercase text-[10px] tracking-widest block">Condição solidária:</span> {selectedSlotCount}kg de alimento na entrada do estúdio</p>
+                <p><span className="text-gray-300 uppercase text-[10px] tracking-widest block">Condição solidária:</span> 1kg de alimento (sua parte) na entrada do estúdio</p>
               </div>
               <button type="button" onClick={() => { setPhase('cpf'); setError(''); }} className="text-xs text-[#F0C265] underline uppercase font-bold">Editar CPF</button>
             </div>

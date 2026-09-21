@@ -438,15 +438,15 @@ export default function MinhaInscricaoPage() {
                 <span className="text-3xl leading-none animate-pulse">⏳</span>
                 <div className="flex-1">
                   <span className="font-display font-black text-lg text-[#F0C265] uppercase tracking-wide block leading-snug">
-                    {pendentes > 0 ? `${pendentes} parte(s) da banda ainda não foi paga` : `${faltam} pagamento(s) para a banda ativar`}
+                    {data.leader?.payment_status === 'paid'
+                      ? 'Pagamento único do líder confirmado'
+                      : `${paidCount} de ${data.members.filter(m => !m.removed).length} integrantes pagaram`}
                   </span>
                   <p className="text-sm text-gray-200 leading-snug mt-1.5">
-                    A banda entra no concurso com <strong className="text-white">no mínimo 2</strong> e{' '}
-                    <strong className="text-white">no máximo 7</strong> integrantes
                     {data.leader?.payment_status === 'paid'
-                      ? '. Pagamento único do líder confirmado: todos estão cobertos.'
-                      : ' (cada um paga a própria parte pelo link).' }
-                    {faltam > 0 && <> Faltam <strong className="text-[#F0C265]">{faltam}</strong>.</>}
+                      ? <>Sua parte cobre todos os integrantes. Faltam <strong className="text-[#F0C265]">{pendentes}</strong> confirmarem os próprios dados pelo link.</>
+                      : 'Cada integrante paga a própria parte pelo link de convite.'}
+                    {data.leader?.payment_status !== 'paid' && faltam > 0 && <> Faltam <strong className="text-[#F0C265]">{faltam}</strong> pagamento(s) para a inscrição ativar.</>}
                   </p>
                 </div>
               </div>

@@ -55,7 +55,7 @@ export default function SocialProofWidget({ ativo, imagem, bMin, bMax, vMin, vMa
 
   return (
     <div
-      className={`fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-[60] transition-all duration-500 ${visivel ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+      className={`fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-[90] transition-all duration-500 ${visivel ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
       role="status"
     >
       <div className="relative flex items-center gap-3 bg-[#0B0F19]/95 backdrop-blur-md border border-[#F0C265]/35 rounded-2xl pl-2.5 pr-8 py-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.75)] max-w-[280px] sm:max-w-none">
