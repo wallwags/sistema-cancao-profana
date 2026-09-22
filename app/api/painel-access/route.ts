@@ -16,7 +16,9 @@ export async function POST(req: NextRequest) {
     const { data: userData } = await supabase.auth.getUser(auth.slice(7));
     if (!userData?.user) return NextResponse.json({ ok: false }, { status: 401 });
 
-    const { error } = await supabase.rpc('registrar_acesso_painel');
+    const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim();
+    const ua = req.headers.get('user-agent') || '';
+    const { error } = await supabase.rpc('registrar_acesso_painel', { p_ip: ip, p_ua: ua });
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
     return NextResponse.json({ ok: true });
   } catch {

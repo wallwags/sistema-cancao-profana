@@ -81,7 +81,7 @@ export default function FunilTab({ funnel, funnelDays, setFunnelDays, loadFunnel
   return (
     <div className="space-y-5 fade-up-800">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-        <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold">Analytics do evento · funil real de conversão</span>
+        <span className="font-mono text-[11px] text-gray-400 uppercase tracking-widest font-bold">Analytics do evento · visitantes reais (testes do painel excluídos automaticamente)</span>
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex bg-white/5 border border-white/10 rounded-full p-0.5">
             {periodos.map(pd => (
