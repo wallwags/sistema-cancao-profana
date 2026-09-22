@@ -289,6 +289,13 @@ export default function HomeClient({ cfg }: { cfg: HomeCfg | null }) {
   };
 
   const handleOpenQuiz = () => {
+    // Retomada: se o visitante ja tinha Pix gerado nesta sessao (fechou/sumiu e voltou), reabre direto na tela do Pix
+    if (typeof window !== 'undefined' && window.sessionStorage.getItem('cp_pix_pendente') === '1') {
+      window.dispatchEvent(new CustomEvent('cp_retomar_checkout'));
+      setQuizMounted(true);
+      setIsQuizOpen(true);
+      return;
+    }
     // Aberta tambem durante a live: nesse caso o servidor registra com o preco exclusivo da Live
     setQuizMounted(true);
     setIsQuizOpen(true);

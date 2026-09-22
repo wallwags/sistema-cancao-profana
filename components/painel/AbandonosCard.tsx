@@ -35,6 +35,8 @@ export default function AbandonosCard({ supabase, fmtDate, isDev = false }: { su
   const [erro, setErro] = useState('');
   const [filtro, setFiltro] = useState<Filtro>('todos');
   const [excluirRef, setExcluirRef] = useState('');
+  const [detalhe, setDetalhe] = useState<{ ref: string; total: string; primeiro: string; ultimo: string; ip: string; ua: string; is_test: boolean; eventos: Array<{ event: string; step: string; quando: string; ip: string; ua: string; is_test: boolean }> } | null>(null);
+  const [carregandoDetalhe, setCarregandoDetalhe] = useState(false);
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
 
   useEffect(() => {
@@ -45,6 +47,16 @@ export default function AbandonosCard({ supabase, fmtDate, isDev = false }: { su
       setCarregando(false);
     })();
   }, [supabase]);
+
+  const abrirDetalhe = async (ref: string) => {
+    setDetalhe({ ref, total: '...', primeiro: '', ultimo: '', ip: '', ua: '', is_test: false, eventos: [] });
+    setCarregandoDetalhe(true);
+    const { data, error } = await supabase.rpc('staff_funnel_session', { p_ref: ref });
+    setCarregandoDetalhe(false);
+    if (error) { setMsg({ kind: 'err', text: 'Erro: ' + error.message }); return; }
+    const d = (typeof data === 'object' && data ? data : null) as typeof detalhe;
+    if (d) setDetalhe(d);
+  };
 
   const excluirSessao = async (ref: string) => {
     setMsg(null);
@@ -93,7 +105,10 @@ export default function AbandonosCard({ supabase, fmtDate, isDev = false }: { su
       {msg && <p className={`text-xs font-mono ${msg.kind === 'ok' ? 'text-[#10B981]' : 'text-red-400'}`}>{msg.text}</p>}
       <div className="space-y-1.5 max-h-[320px] overflow-y-auto pr-1">
         {filtrada.map(s => (
-          <div key={s.ref} className="bg-black/30 border border-white/5 rounded-xl px-3.5 py-2.5 flex flex-col sm:flex-row justify-between sm:items-center gap-1.5">
+          <div key={s.ref}
+            onClick={() => abrirDetalhe(s.ref)}
+            className="bg-black/30 border border-white/5 rounded-xl px-3.5 py-2.5 flex flex-col sm:flex-row justify-between sm:items-center gap-1.5 cursor-pointer hover:border-[#F0C265]/40 transition-colors"
+          >
             <div className="min-w-0 flex items-center gap-2 flex-wrap">
               <span className="font-mono text-[10px] font-black px-2 py-0.5 rounded-full border border-[#F0C265]/40 bg-[#F0C265]/10 text-[#F0C265] uppercase">
                 Etapa {s.max_step ?? '?'}/5
@@ -123,6 +138,33 @@ export default function AbandonosCard({ supabase, fmtDate, isDev = false }: { su
           </div>
         ))}
       </div>
+
+      {detalhe && (
+        <div className="bg-[#0B0F19]/80 border border-[#F0C265]/30 rounded-2xl p-5 space-y-3">
+          <div className="flex justify-between items-start gap-3">
+            <div>
+              <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-black block">Sessão {detalhe.ref.slice(0, 10)}…</span>
+              <span className="font-mono text-[10px] text-gray-300 block mt-0.5">
+                {detalhe.total} eventos · {detalhe.primeiro} → {detalhe.ultimo} · {detalhe.ip || 'ip oculto'} · {detalhe.is_test ? 'TESTE' : 'visitante real'}
+              </span>
+            </div>
+            <button onClick={() => setDetalhe(null)} className="text-gray-300 hover:text-white text-lg leading-none">×</button>
+          </div>
+          {carregandoDetalhe && <p className="text-xs text-gray-400 font-mono">Carregando...</p>}
+          {!carregandoDetalhe && (
+            <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1">
+              {detalhe.eventos.map((e, i) => (
+                <div key={i} className="flex items-center gap-2.5 bg-black/30 border border-white/5 rounded-lg px-3 py-1.5 font-mono text-[10px]">
+                  <span className="text-[#F0C265] font-black shrink-0">{e.quando}</span>
+                  <span className="text-white font-bold shrink-0">{e.event}{e.step ? ` · ${e.step}` : ''}</span>
+                  {e.is_test && <span className="text-sky-300 shrink-0 uppercase font-bold">teste</span>}
+                </div>
+              ))}
+            </div>
+          )}
+          <span className="font-mono text-[9px] text-gray-400 block">Horários de São Paulo (BRT) · cada linha = uma tela do quiz/percurso</span>
+        </div>
+      )}
     </div>
   );
 }

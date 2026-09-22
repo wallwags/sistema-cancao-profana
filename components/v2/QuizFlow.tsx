@@ -112,6 +112,23 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [showManualConfirm, setShowManualConfirm] = useState(false);
   const [pollingStep, setPollingStep] = useState(0);
   const [pixCopied, setPixCopied] = useState(false);
+  const retomarCheckout = () => {
+    try {
+      if (window.sessionStorage.getItem('cp_pix_pendente') !== '1') return;
+      if (!pixDataRef.current?.paymentId) return;
+      if (isCheckoutOpen || checkoutExpired) return;
+      setSlideDirection('next');
+      setQuizStep(selectedMembers + 7);
+      setIsCheckoutOpen(true);
+      setCheckoutVisible(true);
+      setIsCheckoutLoading(false);
+    } catch { /* */ }
+  };
+  useEffect(() => {
+    const handler = () => retomarCheckout();
+    window.addEventListener('cp_retomar_checkout', handler);
+    return () => window.removeEventListener('cp_retomar_checkout', handler);
+  });
   const [shareCopied, setShareCopied] = useState(false);
 
   // Success ticket
@@ -249,10 +266,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     const key = event + ':' + step;
     if (funnelLogged.current.has(key)) return;
     if (!sessionRef.current && typeof window !== 'undefined') {
-      sessionRef.current = sessionStorage.getItem('cp_funnel_session') || '';
+      sessionRef.current = localStorage.getItem('cp_device_id') || '';
       if (!sessionRef.current) {
         sessionRef.current = Math.random().toString(36).slice(2) + Date.now().toString(36);
-        sessionStorage.setItem('cp_funnel_session', sessionRef.current);
+        localStorage.setItem('cp_device_id', sessionRef.current);
       }
     }
     const modoTeste = typeof window !== 'undefined' && window.localStorage.getItem('cp_modo_teste') === '1';
@@ -986,6 +1003,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
           return;
         }
         applyPixData({ paymentId: String(data.paymentId), qr: data.qr ? String(data.qr) : null, qrBase64: data.qrBase64 ? String(data.qrBase64) : null, amount: typeof data.amount === 'number' ? data.amount : undefined, expiresAt: data.expiresAt ? String(data.expiresAt) : null });
+        try { window.sessionStorage.setItem('cp_pix_pendente', '1'); } catch { /* */ }
         setIsCheckoutLoading(false);
       } catch {
         if (!cancelled) {
@@ -1057,6 +1075,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       }
       setBandResult({ pago: Number(payRes.pago), minimo: Number(payRes.minimo), total: Number(payRes.total), ativa: Boolean(payRes.banda_ativa) });
 
+      try { window.sessionStorage.removeItem('cp_pix_pendente'); } catch { /* */ }
       setTicketCode(deriveTicketCode(id));
       onPaymentSuccess();
 
