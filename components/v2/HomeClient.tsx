@@ -940,7 +940,7 @@ export default function HomeClient({ cfg }: { cfg: HomeCfg | null }) {
       {/* PROVA SOCIAL: mini-card pulsante (config da aba Widgets) */}
       <SocialProofWidget
         ativo={cfg?.widget?.ativo ?? false}
-        imagem={cfg?.widget?.imagem || '/widgets/mosaic.png'}
+        imagem={cfg?.widget?.imagem || '/widgets/mosaic.webp'}
         bMin={cfg?.widget?.bMin ?? 2}
         bMax={cfg?.widget?.bMax ?? 4}
         vMin={cfg?.widget?.vMin ?? 25}

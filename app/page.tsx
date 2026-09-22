@@ -63,7 +63,7 @@ export default async function Page() {
         socialVagasPct: map.social_vagas_pct === '0' ? 0 : (Number(map.social_vagas_pct) || 40),
         widget: {
           ativo: map.widget_ativo !== 'false',
-          imagem: map.widget_imagem || '/widgets/mosaic.png',
+          imagem: map.widget_imagem || '/widgets/mosaic.webp',
           bMin: Number(map.widget_bandas_min) || 2,
           bMax: Number(map.widget_bandas_max) || 4,
           vMin: Number(map.widget_visitantes_min) || 25,

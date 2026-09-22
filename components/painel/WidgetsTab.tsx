@@ -17,7 +17,7 @@ interface WidgetsTabProps {
 
 const CHAVES: Array<{ key: string; label: string; kind: 'bool' | 'text' | 'url' | 'number'; dica?: string }> = [
   { key: 'widget_ativo', label: 'Widget de prova social ativo', kind: 'bool', dica: 'Mini-card pulsante no canto inferior direito da home.' },
-  { key: 'widget_imagem', label: 'Imagem do widget (URL)', kind: 'text', dica: 'Padrão: /widgets/mosaic.png (mosaico de artistas). Pode ser qualquer imagem.' },
+  { key: 'widget_imagem', label: 'Imagem do widget (URL)', kind: 'text', dica: 'Padrão: /widgets/mosaic.webp (mosaico de artistas). Pode ser qualquer imagem.' },
   { key: 'widget_bandas_min', label: 'Bandas · mínimo', kind: 'number', dica: 'Padrão 2.' },
   { key: 'widget_bandas_max', label: 'Bandas · máximo', kind: 'number', dica: 'Padrão 4.' },
   { key: 'widget_visitantes_min', label: 'Visitantes agora · mínimo', kind: 'number', dica: 'Padrão 25.' },
@@ -141,7 +141,7 @@ export default function WidgetsTab({ settings, loadSettings, supabase, Field, No
         <span className="font-mono text-[11px] text-[#F0C265] uppercase tracking-widest font-bold block mb-2">Prévia do widget</span>
         <div className="inline-flex items-center gap-3 bg-[#0B0F19]/95 border border-[#F0C265]/35 rounded-2xl pl-2.5 pr-8 py-2.5 max-w-[300px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={val('widget_imagem') || '/widgets/mosaic.png'} alt="Prévia" className="w-14 h-14 rounded-xl object-cover border border-[#F0C265]/40" />
+          <img src={val('widget_imagem') || '/widgets/mosaic.webp'} alt="Prévia" className="w-14 h-14 rounded-xl object-cover border border-[#F0C265]/40" />
           <div className="leading-tight">
             <span className="block text-xs font-bold text-white">{val('widget_bandas_min') || 2} bandas acabaram de garantir vaga</span>
             <span className="font-mono text-[10px] text-gray-400 uppercase tracking-wider mt-0.5 block">{val('widget_visitantes_min') || 25} visitantes agora</span>
