@@ -891,9 +891,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     if (!isOpen) return;
     (async () => {
       try {
-        const { data: gs } = await supabase.rpc('dev_get_gateway_state');
-        if (gs && gs.public_key) setMpPublicKey(String(gs.public_key));
-      } catch { /* sem permissao ou sem chave */ }
+        const res = await fetch('/api/card/publickey');
+        const d = await res.json().catch(() => null);
+        if (d?.ok && d.publicKey) setMpPublicKey(String(d.publicKey));
+      } catch { /* sem chave configurada */ }
     })();
     supabase.from('site_settings').select('key,value').in('key', ['gateway_pix_active', 'payment_mode', 'home_pix_fake'])
       .then(({ data }) => {
