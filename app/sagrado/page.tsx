@@ -474,6 +474,7 @@ export default function SagradoPage() {
     (async () => {
       const ok = await loadStaff();
       if (ok) {
+        fetch('/api/painel-access', { headers: { Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}` } }).catch(() => {});
         await Promise.all([loadBatches(), loadSettings(), loadFaqs(), loadProjects(), loadLive(), loadOwnScores(), loadSlotMode(), loadVip(), loadVipLeads(), loadHomeMode(), loadHomeCtaMode(), loadGateway()]);
       }
       setBooting(false);
@@ -1482,7 +1483,7 @@ export default function SagradoPage() {
 
           {/* AUDITORIA - componente extraido */}
           {tab === 'auditoria' && canAudit && (
-            <AuditoriaTab audit={audit} openAuditTab={openAuditTab} fmtDate={fmtDate} />
+            <AuditoriaTab audit={audit} openAuditTab={openAuditTab} fmtDate={fmtDate} supabase={supabase} isDev={isDev} />
           )}
 
           {/* MINHA CONTA - componente extraido */}
