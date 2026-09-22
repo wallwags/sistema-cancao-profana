@@ -1773,7 +1773,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                 {mpPublicKey && (
                   <button
                     type="button"
-                    onClick={() => { setCardStep(true); setCardError(null); setCardResult(null); }}
+                    onClick={() => { setCardStep(true); setCardError(null); setCardResult(null); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'auto' }); }}
                     className="mx-auto flex items-center gap-1.5 text-sm font-bold text-[#B57BFF] underline underline-offset-4 hover:text-[#C89AFF] transition-colors py-1"
                   >
                     <CreditCard className="w-4 h-4" /> Pagar com cartão de crédito
@@ -1891,12 +1891,12 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
         {/* ETAPA DO CARTAO (Checkout Transparente MP, dentro do mesmo popup) */}
         {checkoutVisible && cardStep && (
-          <div className="fixed inset-0 z-[55] overflow-y-auto bg-black/40 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start" onClick={() => { setCardStep(false); setCardError(null); }}>
+          <div className="fixed inset-0 z-[55] overflow-y-auto bg-black/40 backdrop-blur-sm px-4 py-6 sm:p-6 flex justify-center items-start sm:items-center" onClick={() => { setCardStep(false); setCardError(null); }}>
             <div className="absolute inset-0 cursor-pointer" onClick={() => { setCardStep(false); setCardError(null); }} />
-            <div className="bg-white w-full max-w-md rounded-2xl relative shadow-2xl z-10 my-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white w-full max-w-md rounded-2xl relative shadow-2xl z-10 sm:my-auto" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 pt-4 pb-2 border-b border-gray-200">
                 <div className="flex items-center gap-2">
-                  <img src="https://http2.mlstatic.com/frontend-assets/ui-navigation/5.21.22/mercadopago/logo__large.png" alt="Mercado Pago" className="h-6" />
+                  <span className="font-display font-black text-lg text-[#009EE3] tracking-tight">mercado pago</span>
                 </div>
                 <button onClick={() => { setCardStep(false); setCardError(null); }} className="text-gray-400 hover:text-gray-700 text-xl leading-none">×</button>
               </div>
@@ -2012,10 +2012,10 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   <span>Seus dados de cartão não são armazenados</span>
                 </div>
                 <div className="flex items-center justify-center gap-2 opacity-80 pb-1">
-                  <img src="https://img.icons8.com/color/48/visa.png" alt="Visa" className="h-5" />
-                  <img src="https://img.icons8.com/color/48/mastercard.png" alt="Mastercard" className="h-5" />
-                  <img src="https://img.icons8.com/color/48/elo.png" alt="Elo" className="h-5" />
-                  <img src="https://img.icons8.com/color/48/amex.png" alt="Amex" className="h-5" />
+                  <svg viewBox="0 0 48 30" className="h-5" aria-label="Visa"><rect width="48" height="30" rx="4" fill="#1A1F71"/><text x="24" y="20" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="bold" fontStyle="italic">VISA</text></svg>
+                  <svg viewBox="0 0 48 30" className="h-5" aria-label="Mastercard"><rect width="48" height="30" rx="4" fill="#252525"/><circle cx="19" cy="15" r="8" fill="#EB001B"/><circle cx="29" cy="15" r="8" fill="#F79E1B" fillOpacity="0.9"/></svg>
+                  <svg viewBox="0 0 48 30" className="h-5" aria-label="Elo"><rect width="48" height="30" rx="4" fill="#000"/><circle cx="17" cy="15" r="6" fill="#FFCB05"/><circle cx="24" cy="15" r="6" fill="#00A4E0"/><circle cx="31" cy="15" r="6" fill="#EF4123"/></svg>
+                  <svg viewBox="0 0 48 30" className="h-5" aria-label="Amex"><rect width="48" height="30" rx="4" fill="#2E77BC"/><text x="24" y="19" textAnchor="middle" fill="#fff" fontSize="7" fontWeight="bold">AMEX</text></svg>
                 </div>
               </div>
             </div>
