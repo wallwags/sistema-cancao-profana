@@ -33,6 +33,7 @@ const FUNCOES = ['Vocalista', 'MC', 'Beatmaker', 'Guitarrista', 'Baixista', 'Bat
 
 export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false, origem = 'home', sandboxPix = false, linkLoteId = null, cupom = null, suporteWa = null, homeFakePix = false }: QuizFlowProps) {
   const [fakePixLive, setFakePixLive] = useState(false);
+  const partialProjectIdRef = useRef<string | null>(null);
   const [modoMembro, setModoMembro] = useState(false);
   const [membroSlotId, setMembroSlotId] = useState<string | null>(null);
   const [membroNome, setMembroNome] = useState('');
@@ -370,7 +371,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
 
   // Renderiza/re-tenta quando o usuario esta no passo 1 (onde o widget vive)
   useEffect(() => {
-    if (isOpen && quizStep === 1) {
+    if (isOpen && quizStep === 2) {
       tryRenderTurnstile();
       const t1 = setTimeout(tryRenderTurnstile, 600);
       const t2 = setTimeout(tryRenderTurnstile, 2000);
@@ -591,6 +592,15 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       setSlideDirection('next');
       setQuizStep(4);
       return;
+    }
+    // lead parcial: WhatsApp + nome da banda ficam salvos (aba Inscricoes mostra o progresso)
+    if (quizStep === 2 && respPhone && projectName.trim()) {
+      (async () => {
+        try {
+          const { data: res } = await supabase.rpc('salvar_banda_parcial', { p_nome: projectName.trim(), p_whatsapp: respPhone });
+          if (res && res.project_id) partialProjectIdRef.current = res.project_id;
+        } catch { /* silencioso - nao trava o quiz */ }
+      })();
     }
     setSlideDirection('next');
     setQuizStep(Math.min(quizStep + 1, limite));
@@ -1682,8 +1692,8 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                         )}
                     </div>
 
-                    {/* verificação anti-robô - somente na primeira etapa */}
-                    {quizStep === 1 && (
+                    {/* verificação anti-robô - na etapa do WhatsApp */}
+                    {quizStep === 2 && (
                       <div className="flex justify-center pt-1 shrink-0">
                         <div id="cf-ts" />
                       </div>

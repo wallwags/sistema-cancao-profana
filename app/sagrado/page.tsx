@@ -366,6 +366,7 @@ export default function SagradoPage() {
     let query = supabase
       .from('projects')
       .select('id, name, style, bio, instagram, video_link, photo_url, status, batch_id, created_at', { count: 'exact' });
+      // telefone do lider vem do detalhe (RPC); na lista, o nome da banda ja identifica
     if (searchQ.trim()) query = query.ilike('name', `%${searchQ.trim()}%`);
     if (statusFilter) query = query.eq('status', statusFilter);
     // filtro por lote passou a ser feito client-side (batches ja carregados)
@@ -1116,6 +1117,9 @@ export default function SagradoPage() {
                             )}
                             {p.status === 'awaiting_members' && (
                               <span className="text-[11px] font-black px-2 py-0.5 rounded font-mono uppercase border bg-amber-500/15 text-amber-300 border-amber-500/40">Não-pago</span>
+                            )}
+                            {p.status === 'awaiting_members' && (p.style || '') === '' && (
+                              <span className="text-[11px] font-black px-2 py-0.5 rounded font-mono uppercase border bg-sky-500/15 text-sky-300 border-sky-500/40">Lead parcial</span>
                             )}
                             {p.status === 'paid' && (
                               <span className="text-[11px] font-black px-2 py-0.5 rounded font-mono uppercase border bg-[#10B981]/15 text-[#10B981] border-[#10B981]/40">Pago ✓</span>

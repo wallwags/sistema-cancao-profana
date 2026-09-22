@@ -34,6 +34,7 @@ export default function AbandonosCard({ supabase, fmtDate, isDev = false }: { su
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [filtro, setFiltro] = useState<Filtro>('todos');
+  const [aberto, setAberto] = useState(false);
   const [excluirRef, setExcluirRef] = useState('');
   const [detalhe, setDetalhe] = useState<{ ref: string; total: string; primeiro: string; ultimo: string; ip: string; ua: string; is_test: boolean; eventos: Array<{ event: string; step: string; quando: string; ip: string; ua: string; is_test: boolean }> } | null>(null);
   const [carregandoDetalhe, setCarregandoDetalhe] = useState(false);
@@ -82,11 +83,21 @@ export default function AbandonosCard({ supabase, fmtDate, isDev = false }: { su
   ];
 
   return (
-    <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-sky-400/30 rounded-2xl p-5 space-y-3">
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-        <span className="font-display font-bold text-white uppercase text-sm">Pessoas no meio do caminho · últimos 30 dias</span>
-        <span className="font-mono text-[10px] text-gray-500 uppercase">quiz_step, checkout e pix · sem identificação pessoal</span>
-      </div>
+    <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-sky-400/30 rounded-2xl overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setAberto(!aberto)}
+        className="w-full flex justify-between items-center px-5 py-4 hover:bg-white/5 transition-colors"
+      >
+        <span className="flex items-center gap-2.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+          <span className="font-display font-bold text-white uppercase text-sm">Pessoas no meio do caminho · últimos 30 dias</span>
+          <span className="font-mono text-[11px] text-sky-400 font-bold px-2 py-0.5 rounded-full border border-sky-500/30 bg-sky-500/10">{lista.length}</span>
+        </span>
+        <span className="font-mono text-[11px] text-gray-400">{aberto ? 'fechar ▲' : 'abrir ▼'}</span>
+      </button>
+      {aberto && (
+      <div className="px-5 pb-5 pt-1 space-y-3">
       <div className="flex flex-wrap gap-1.5">
         {chips.map(c => (
           <button
@@ -138,6 +149,8 @@ export default function AbandonosCard({ supabase, fmtDate, isDev = false }: { su
           </div>
         ))}
       </div>
+      </div>
+      )}
 
       {detalhe && (
         <div className="bg-[#0B0F19]/80 border border-[#F0C265]/30 rounded-2xl p-5 space-y-3">
