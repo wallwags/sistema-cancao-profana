@@ -211,6 +211,7 @@ export default function SagradoPage() {
   const [gwState, setGwState] = useState<{ token_set: boolean; token_mask: string; secret_set: boolean; updated_at?: string } | null>(null);
   const [mpToken, setMpToken] = useState('');
   const [mpSecret, setMpSecret] = useState('');
+  const [mpPublicKey, setMpPublicKey] = useState('');
   const [vip, setVip] = useState<Record<string, string>>({});
   const [vipLeads, setVipLeads] = useState<Array<Record<string, unknown>>>([]);
 
@@ -333,7 +334,11 @@ export default function SagradoPage() {
 
   const loadGateway = useCallback(async () => {
     const { data } = await supabase.rpc('dev_get_gateway_state');
-    if (data && typeof data === 'object') setGwState(data as any);
+    if (data && typeof data === 'object') {
+      setGwState(data as any);
+      const st = data as { public_key?: string };
+      if (st.public_key) setMpPublicKey(st.public_key);
+    }
   }, []);
 
   const loadFaqs = useCallback(async () => {
@@ -854,7 +859,7 @@ export default function SagradoPage() {
   const saveGateway = () => guarded('gateway', async () => {
     if (!mpToken.trim()) return 'Informe o Access Token de produção do Mercado Pago.';
     const { data: res, error } = await supabase.rpc('dev_save_gateway_keys', {
-      p_token: mpToken.trim(), p_secret: mpSecret.trim()
+      p_token: mpToken.trim(), p_secret: mpSecret.trim(), p_public_key: mpPublicKey.trim()
     });
     if (error) return 'Erro ao salvar: ' + error.message;
     if (res !== 'ok') return String(res);
@@ -1153,7 +1158,8 @@ export default function SagradoPage() {
                           const { data: token, error } = await supabase.rpc('create_portal_bypass', { p_code: detail?.invite_code });
                           setBusy(null);
                           if (error || !token) { setMsg('portal-' + p.id, 'err', 'Erro: ' + (error?.message || 'sem token')); return; }
-                          window.open(`/minha-inscricao?k=${detail?.invite_code}&t=${token}`, '_blank');
+                          const w = window.open(`/minha-inscricao?k=${detail?.invite_code}&t=${token}`, '_blank');
+                          if (!w) window.location.href = `/minha-inscricao?k=${detail?.invite_code}&t=${token}`;
                         } catch { setBusy(null); setMsg('portal-' + p.id, 'err', 'Falha de conexão.'); }
                       }}
                       disabled={busy === 'portal-' + p.id || !detail?.invite_code}
@@ -1466,7 +1472,7 @@ export default function SagradoPage() {
 
           {/* GATEWAY - componente extraido */}
           {tab === 'gateway' && canGateway && (
-            <GatewayTab gwState={gwState} mpToken={mpToken} setMpToken={setMpToken} mpSecret={mpSecret} setMpSecret={setMpSecret} saveGateway={saveGateway} busy={busy} notice={notice} setMsg={setMsg} guarded={guarded} Notice={Notice} />
+            <GatewayTab gwState={gwState} mpToken={mpToken} setMpToken={setMpToken} mpSecret={mpSecret} setMpSecret={setMpSecret} mpPublicKey={mpPublicKey} setMpPublicKey={setMpPublicKey} saveGateway={saveGateway} busy={busy} notice={notice} setMsg={setMsg} guarded={guarded} Notice={Notice} />
           )}
 
           {/* EQUIPE - componente extraido */}

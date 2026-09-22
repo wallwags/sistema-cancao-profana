@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { Trash2, Plus, X, Copy, Share2, Ticket, MessageCircle, Mic, Video, Apple, Loader2 } from 'lucide-react';
+import { Trash2, Plus, X, Copy, Share2, Ticket, MessageCircle, Mic, Video, Apple, Loader2, CreditCard, Lock, ShieldCheck } from 'lucide-react';
 import Script from 'next/script';
 import { supabase } from '../../lib/supabase';
 import {
@@ -180,6 +180,16 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   const [paymentMode, setPaymentMode] = useState<'individual' | 'lider'>('individual');
   const [sandboxV2, setSandboxV2] = useState<{ ativo: boolean; pix_real: boolean }>({ ativo: false, pix_real: false });
   const [pixData, setPixData] = useState<{ paymentId: string; qr: string | null; qrBase64: string | null; amount?: number; expiresAt?: string | null } | null>(null);
+  const [mpPublicKey, setMpPublicKey] = useState<string | null>(null);
+  const [cardStep, setCardStep] = useState(false);
+  const [cardNum, setCardNum] = useState('');
+  const [cardName, setCardName] = useState('');
+  const [cardExp, setCardExp] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
+  const [cardParcelas, setCardParcelas] = useState(1);
+  const [cardError, setCardError] = useState<string | null>(null);
+  const [cardBusy, setCardBusy] = useState(false);
+  const [cardResult, setCardResult] = useState<{ status: string; detail?: string } | null>(null);
   const pixDataRef = useRef<{ paymentId: string; qr: string | null; qrBase64: string | null; amount?: number; expiresAt?: string | null } | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -879,6 +889,12 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
   // Na home vale o flag global; na /v2 o dev decide via sandbox.
   useEffect(() => {
     if (!isOpen) return;
+    (async () => {
+      try {
+        const { data: gs } = await supabase.rpc('dev_get_gateway_state');
+        if (gs && gs.public_key) setMpPublicKey(String(gs.public_key));
+      } catch { /* sem permissao ou sem chave */ }
+    })();
     supabase.from('site_settings').select('key,value').in('key', ['gateway_pix_active', 'payment_mode', 'home_pix_fake'])
       .then(({ data }) => {
         const map: Record<string, string> = {};
@@ -1095,6 +1111,21 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
     const pp = (nome || '').trim().split(/\s+/).filter(Boolean);
     return ((pp[0]?.[0] || '') + (pp[1]?.[0] || '')).toUpperCase() || '?';
   };
+  const formatCardNumber = (v: string) => v.replace(/\D/g, '').slice(0, 16).replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+  const formatExp = (v: string) => {
+    const d = v.replace(/\D/g, '').slice(0, 4);
+    return d.length >= 3 ? d.slice(0, 2) + '/' + d.slice(2) : d;
+  };
+  const cardBrand = (() => {
+    const n = cardNum.replace(/\s/g, '');
+    if (/^4/.test(n)) return 'Visa';
+    if (/^(5[1-5]|2[2-7])/.test(n)) return 'Mastercard';
+    if (/^3[47]/.test(n)) return 'Amex';
+    if (/^(636368|438935|504175|451416|636297|5067|4576|4011)/.test(n)) return 'Elo';
+    if (/^(38|60)/.test(n)) return 'Hipercard';
+    return '';
+  })();
+  const PARCELAS_SEM_JUROS = 3;
   const fmtValidade = (iso: string) => {
     try {
       return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }).format(new Date(iso));
@@ -1176,6 +1207,12 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
           src="https://challenges.cloudflare.com/turnstile/v0/api.js"
           strategy="afterInteractive"
           onLoad={tryRenderTurnstile}
+        />
+      )}
+      {isOpen && mpPublicKey && (
+        <Script
+          src={`https://sdk.mercadopago.com/js/v2?publicKey=${encodeURIComponent(mpPublicKey)}`}
+          strategy="afterInteractive"
         />
       )}
 
@@ -1732,6 +1769,15 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                     <MessageCircle className="w-4 h-4" /> Tenho dúvidas <span className="opacity-60">›</span>
                   </a>
                 )}
+                {mpPublicKey && (
+                  <button
+                    type="button"
+                    onClick={() => { setCardStep(true); setCardError(null); setCardResult(null); }}
+                    className="mx-auto flex items-center gap-1.5 text-sm font-bold text-[#B57BFF] underline underline-offset-4 hover:text-[#C89AFF] transition-colors py-1"
+                  >
+                    <CreditCard className="w-4 h-4" /> Pagar com cartão de crédito
+                  </button>
+                )}
               </div>
 
               <div className="bg-[#10141D] p-4 rounded-xl flex flex-col items-center space-y-4 border border-white/25">
@@ -1841,6 +1887,139 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                   )}
                 </div>
               )}
+
+        {/* ETAPA DO CARTAO (Checkout Transparente MP, dentro do mesmo popup) */}
+        {checkoutVisible && cardStep && (
+          <div className="fixed inset-0 z-[55] overflow-y-auto bg-black/40 backdrop-blur-sm px-4 py-8 sm:p-6 flex justify-center items-start" onClick={() => { setCardStep(false); setCardError(null); }}>
+            <div className="absolute inset-0 cursor-pointer" onClick={() => { setCardStep(false); setCardError(null); }} />
+            <div className="bg-white w-full max-w-md rounded-2xl relative shadow-2xl z-10 my-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 pt-4 pb-2 border-b border-gray-200">
+                <div className="flex items-center gap-2">
+                  <img src="https://http2.mlstatic.com/frontend-assets/ui-navigation/5.21.22/mercadopago/logo__large.png" alt="Mercado Pago" className="h-6" />
+                </div>
+                <button onClick={() => { setCardStep(false); setCardError(null); }} className="text-gray-400 hover:text-gray-700 text-xl leading-none">×</button>
+              </div>
+
+              <div className="px-5 py-4 space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 leading-snug">Pagar com cartão de crédito</h3>
+                  <p className="text-sm text-gray-500 mt-0.5">{projectName || 'Banda'} · {activeLoteName} · R$ {unitFinal.toFixed(0)},00</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Número do cartão</label>
+                  <input
+                    inputMode="numeric" autoComplete="cc-number" placeholder="1234 1234 1234 1234"
+                    value={cardNum} onChange={(e) => { setCardNum(formatCardNumber(e.target.value)); setCardError(null); }}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base text-gray-900 outline-none focus:border-[#009EE3] focus:ring-2 focus:ring-[#009EE3]/20"
+                  />
+                  {cardBrand && <span className="inline-block mt-1 text-xs font-semibold text-[#009EE3] uppercase tracking-wide">{cardBrand}</span>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome como está no cartão</label>
+                  <input autoComplete="cc-name" placeholder="Como aparece impresso" value={cardName} onChange={(e) => { setCardName(e.target.value); setCardError(null); }} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base text-gray-900 outline-none focus:border-[#009EE3] focus:ring-2 focus:ring-[#009EE3]/20" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Validade</label>
+                    <input inputMode="numeric" autoComplete="cc-exp" placeholder="MM/AA" value={cardExp} onChange={(e) => { setCardExp(formatExp(e.target.value)); setCardError(null); }} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base text-gray-900 outline-none focus:border-[#009EE3] focus:ring-2 focus:ring-[#009EE3]/20" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Código de segurança</label>
+                    <input inputMode="numeric" autoComplete="cc-csc" placeholder="123" maxLength={4} value={cardCvv} onChange={(e) => { setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4)); setCardError(null); }} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base text-gray-900 outline-none focus:border-[#009EE3] focus:ring-2 focus:ring-[#009EE3]/20" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Parcelas</label>
+                  <select value={cardParcelas} onChange={(e) => setCardParcelas(Number(e.target.value))} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base text-gray-900 outline-none focus:border-[#009EE3] bg-white">
+                    {Array.from({ length: PARCELAS_SEM_JUROS }).map((_, i) => {
+                      const n = i + 1;
+                      const valor = (pixData?.amount || unitFinal) / n;
+                      return <option key={n} value={n}>{n}x de R$ {valor.toFixed(2).replace('.', ',')} sem juros</option>;
+                    })}
+                  </select>
+                </div>
+
+                {cardError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-start gap-2.5">
+                    <span className="text-red-500 text-base leading-none mt-0.5">⚠</span>
+                    <span className="text-sm text-red-700 leading-snug flex-1">{cardError}</span>
+                    <button onClick={() => setCardError(null)} className="text-red-400 hover:text-red-600">×</button>
+                  </div>
+                )}
+                {cardResult && cardResult.status !== 'approved' && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 space-y-2">
+                    <span className="text-sm text-amber-800 font-semibold block">
+                      {cardResult.detail && cardResult.detail.includes('security') ? 'Código de segurança inválido.' :
+                       cardResult.detail && cardResult.detail.includes('funds') ? 'Saldo/limite insuficiente. Tente outro cartão ou use o Pix.' :
+                       cardResult.detail && cardResult.detail.includes('invalid') ? 'Dados do cartão inválidos. Confira número, validade e CVV.' :
+                       'Pagamento não aprovado. Tente novamente ou use o Pix.'}
+                    </span>
+                    <button onClick={() => { setCardResult(null); setCardStep(false); }} className="text-sm text-[#009EE3] font-semibold underline underline-offset-2 block">
+                      Voltar e pagar com Pix
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  disabled={cardBusy || cardNum.replace(/\s/g, '').length < 13 || cardName.trim().length < 3 || cardExp.length < 4 || cardCvv.length < 3 || !mpPublicKey}
+                  onClick={async () => {
+                    setCardBusy(true); setCardError(null); setCardResult(null);
+                    try {
+                      const w = window as unknown as { MercadopagoV2?: { createCardToken: (o: Record<string, unknown>) => Promise<{ id: string }> } };
+                      if (!w.MercadopagoV2) throw new Error('sdk');
+                      const [mm, aa] = cardExp.split('/');
+                      const tk = await w.MercadopagoV2.createCardToken({ cardNumber: cardNum.replace(/\s/g, ''), cardholderName: cardName, cardExpirationMonth: Number(mm), cardExpirationYear: Number(aa), securityCode: cardCvv, identificationType: 'CPF', identificationNumber: respCpf.replace(/\D/g, '') });
+                      const res = await fetch('/api/card/create', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code: inviteCodeRef.current, cardToken: tk.id, memberId: modoMembro && membroSlotId ? membroSlotId : undefined, payerName: cardName, payerCpf: respCpf, payerEmail: respEmail, installments: cardParcelas })
+                      });
+                      const d = await res.json().catch(() => null);
+                      if (!res.ok || !d?.ok) { setCardError(d?.detail || 'Não foi possível processar agora. Tente novamente.'); setCardBusy(false); return; }
+                      if (d.alreadyPaid) { setCardBusy(false); setCardStep(false); return; }
+                      if (d.status === 'approved') {
+                        webhookDoneRef.current = true;
+                        setCardBusy(false); setCardStep(false);
+                        handleSimulateWebhook(true);
+                        return;
+                      }
+                      setCardResult({ status: d.status, detail: d.statusDetail });
+                      setCardBusy(false);
+                    } catch (e2) {
+                      setCardError(e2 instanceof Error && e2.message === 'sdk' ? 'Carregador de pagamentos ainda não carregou. Aguarde 2 segundos e tente de novo.' : 'Falha de conexão. Verifique sua internet e tente novamente.');
+                      setCardBusy(false);
+                    }
+                  }}
+                  className="w-full flex items-center justify-center gap-2 bg-[#009EE3] hover:bg-[#0089C4] text-white font-semibold text-base py-3.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {cardBusy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-4 h-4" />}
+                  {cardBusy ? 'Processando pagamento...' : `Pagar R$ ${unitFinal.toFixed(0)},00`}
+                </button>
+
+                <div className="flex items-center justify-center pt-1">
+                  <button onClick={() => { setCardStep(false); setCardError(null); setCardResult(null); }} className="text-sm text-[#009EE3] font-semibold underline underline-offset-2">
+                    Voltar para o Pix
+                  </button>
+                </div>
+
+                <div className="border-t border-gray-200 pt-3 pb-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-gray-500">
+                  <span className="flex items-center gap-1"><Lock className="w-3 h-3" /> Conexão segura</span>
+                  <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Pagamentos via Mercado Pago</span>
+                  <span>Seus dados de cartão não são armazenados</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 opacity-80 pb-1">
+                  <img src="https://img.icons8.com/color/48/visa.png" alt="Visa" className="h-5" />
+                  <img src="https://img.icons8.com/color/48/mastercard.png" alt="Mastercard" className="h-5" />
+                  <img src="https://img.icons8.com/color/48/elo.png" alt="Elo" className="h-5" />
+                  <img src="https://img.icons8.com/color/48/amex.png" alt="Amex" className="h-5" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
               {/* Barra de seguranca e credibilidade (rodape) */}
               <div className="border-t border-white/25 pt-3">

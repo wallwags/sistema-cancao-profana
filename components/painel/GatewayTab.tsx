@@ -5,11 +5,13 @@ import { Loader2 } from 'lucide-react';
 import { inputCls, btnGold, btnGhost } from './ui';
 
 interface GatewayTabProps {
-  gwState: { token_set?: boolean; token_mask?: string } | null;
+  gwState: { token_set?: boolean; token_mask?: string; public_key?: string } | null;
   mpToken: string;
   setMpToken: (v: string) => void;
   mpSecret: string;
   setMpSecret: (v: string) => void;
+  mpPublicKey: string;
+  setMpPublicKey: (v: string) => void;
   saveGateway: () => void;
   busy: string | null;
   notice: Record<string, { kind: 'ok' | 'err' | 'info'; msg: string }>;
@@ -18,7 +20,7 @@ interface GatewayTabProps {
   Notice: (p: { kind: 'ok' | 'err' | 'info'; children: React.ReactNode }) => JSX.Element | null;
 }
 
-export default function GatewayTab({ gwState, mpToken, setMpToken, mpSecret, setMpSecret, saveGateway, busy, notice, setMsg, guarded, Notice }: GatewayTabProps) {
+export default function GatewayTab({ gwState, mpToken, setMpToken, mpSecret, setMpSecret, mpPublicKey, setMpPublicKey, saveGateway, busy, notice, setMsg, guarded, Notice }: GatewayTabProps) {
   return (
     <div className="space-y-4 max-w-xl fade-up-800">
       <Notice kind="info">
@@ -48,6 +50,18 @@ export default function GatewayTab({ gwState, mpToken, setMpToken, mpSecret, set
           {gwState?.token_set && (
             <span className="font-mono text-[10px] text-gray-500 block">Chave atual: {gwState.token_mask}. Insira uma nova para substituir.</span>
           )}
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="block font-mono text-[11px] text-[#F0C265] font-bold uppercase tracking-wider">Public Key (cartão de crédito)</label>
+          <input
+            className={inputCls}
+            value={mpPublicKey}
+            onChange={(e) => setMpPublicKey(e.target.value)}
+            placeholder="TESTAPP... ou APP_USR_..."
+            autoComplete="off"
+          />
+          <span className="font-mono text-[10px] text-gray-500 block">Fica ao lado do Access Token no painel do MP. Habilita o pagamento com cartão no site.{gwState?.public_key ? ` Atual: ${gwState.public_key}` : ''}</span>
         </div>
 
         <div className="space-y-1.5">
