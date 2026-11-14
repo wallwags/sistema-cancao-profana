@@ -12,6 +12,7 @@ import FeatureGrid from '../../components/v2/FeatureGrid';
 import GlobalCta from '../../components/v2/GlobalCta';
 import CountdownBar from '../../components/v2/CountdownBar';
 import SocialProofWidget from './SocialProofWidget';
+import MetaPixel from './MetaPixel';
 import { parseDbDate } from '../../lib/dates';
 import { TermsModal, PrivacyModal } from '../../components/v2/LegalModals';
 import { supabase } from '../../lib/supabase';
@@ -953,6 +954,9 @@ export default function HomeClient({ cfg }: { cfg: HomeCfg | null }) {
         vMin={cfg?.widget?.vMin ?? 25}
         vMax={cfg?.widget?.vMax ?? 78}
       />
+
+      {/* META PIXEL */}
+      <MetaPixel />
 
       {/* Legal popups (footer) - CSS-animated, zero JS cost when closed */}
       <TermsModal open={isTermsOpen} onClose={() => setIsTermsOpen(false)} />

@@ -9,6 +9,13 @@ import { supabase } from '../../lib/supabase';
 import { X, Check, Users, Loader2, Copy, MessageCircle } from 'lucide-react';
 import { applyCpfMask, applyPhoneMask, isValidCPF, isValidWhatsApp } from '../../lib/validators';
 
+const fbq = (event: string, params?: Record<string, unknown>) => {
+  try {
+    const w = window as unknown as { fbq?: (...args: unknown[]) => void };
+    if (w.fbq) w.fbq('track', event, params || {});
+  } catch { /* pixel bloqueado */ }
+};
+
 interface Slot {
   id: string;
   name: string;
@@ -186,6 +193,7 @@ export default function InviteSheet({ inviteCode, startPhase = 'confirm', onClos
       total: Number(res?.total ?? data?.total_members ?? selectedSlotCount + 1),
       ativa: Boolean(res?.banda_ativa),
     });
+    fbq('Purchase', { value: Number(price) || 0, currency: 'BRL' });
     setPhase('done');
   };
 

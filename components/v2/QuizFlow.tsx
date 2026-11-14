@@ -33,6 +33,12 @@ const FUNCOES = ['Vocalista', 'MC', 'Beatmaker', 'Guitarrista', 'Baixista', 'Bat
 
 export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName, onPaymentSuccess, onJoinBand, waitlistMode = false, origem = 'home', sandboxPix = false, linkLoteId = null, cupom = null, suporteWa = null, homeFakePix = false }: QuizFlowProps) {
   const [fakePixLive, setFakePixLive] = useState(false);
+  const fbq = (event: string, params?: Record<string, unknown>) => {
+    try {
+      const w = window as unknown as { fbq?: (...args: unknown[]) => void };
+      if (w.fbq) w.fbq('track', event, params || {});
+    } catch { /* pixel bloqueado */ }
+  };
   const partialProjectIdRef = useRef<string | null>(null);
   const [modoMembro, setModoMembro] = useState(false);
   const [membroSlotId, setMembroSlotId] = useState<string | null>(null);
@@ -312,6 +318,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       quizClosingRef.current = false;
       setQuizVisible(true);
       quizOpenedAt.current = Date.now();
+      fbq('Lead');
     }
   }, [isOpen]);
 
@@ -1014,6 +1021,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
         }
         applyPixData({ paymentId: String(data.paymentId), qr: data.qr ? String(data.qr) : null, qrBase64: data.qrBase64 ? String(data.qrBase64) : null, amount: typeof data.amount === 'number' ? data.amount : undefined, expiresAt: data.expiresAt ? String(data.expiresAt) : null });
         try { window.sessionStorage.setItem('cp_pix_pendente', '1'); } catch { /* */ }
+        fbq('CompleteRegistration');
         setIsCheckoutLoading(false);
       } catch {
         if (!cancelled) {
@@ -1086,6 +1094,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
       setBandResult({ pago: Number(payRes.pago), minimo: Number(payRes.minimo), total: Number(payRes.total), ativa: Boolean(payRes.banda_ativa) });
 
       try { window.sessionStorage.removeItem('cp_pix_pendente'); } catch { /* */ }
+      if (!sandboxSimulacao) fbq('Purchase', { value: Number(displayTotal) || 0, currency: 'BRL' });
       setTicketCode(deriveTicketCode(id));
       onPaymentSuccess();
 
@@ -2012,6 +2021,7 @@ export default function QuizFlow({ isOpen, onClose, activePrice, activeLoteName,
                       if (d.alreadyPaid) { setCardBusy(false); setCardStep(false); return; }
                       if (d.status === 'approved') {
                         webhookDoneRef.current = true;
+                        fbq('Purchase', { value: Number(unitFinal) || 0, currency: 'BRL' });
                         setCardBusy(false); setCardStep(false);
                         handleSimulateWebhook(true);
                         return;
